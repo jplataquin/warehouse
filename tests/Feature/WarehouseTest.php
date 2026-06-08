@@ -1,0 +1,115 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\User;
+use App\Models\Warehouse;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class WarehouseTest extends TestCase
+{
+    use RefreshDatabase, \Illuminate\Foundation\Testing\WithoutMiddleware;
+
+    public function test_supervisor_can_view_warehouse_details()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $warehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Test Warehouse',
+            'status' => 'ACTIVE'
+        ]);
+
+        $response = $this->actingAs($supervisor)
+            ->get(route('warehouses.show', $warehouse));
+
+        $response->assertStatus(200);
+        $response->assertSee($warehouse->name);
+        $response->assertSee('Warehouse Information');
+        $response->assertSee('Assigned Loggers');
+        $response->assertSee('Actions');
+    }
+
+    public function test_warehouse_index_shows_clickable_rows_without_loggers_column()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $warehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Test Warehouse',
+            'status' => 'ACTIVE'
+        ]);
+
+        $response = $this->actingAs($supervisor)
+            ->get(route('warehouses.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('clickable-row');
+        $response->assertDontSee('Loggers</th>');
+        $response->assertSee(route('warehouses.show', $warehouse));
+    }
+
+    public function test_supervisor_can_assign_logger_from_show_page()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $warehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Test Warehouse',
+            'status' => 'ACTIVE'
+        ]);
+        $logger = User::factory()->create(['role' => 'logger', 'name' => 'John Doe']);
+
+        $response = $this->actingAs($supervisor)
+            ->post(route('warehouses.loggers.assign', $warehouse), [
+                'logger_id' => $logger->id,
+            ]);
+
+        $response->assertRedirect(route('warehouses.show', $warehouse));
+        $this->assertTrue($warehouse->loggers->contains($logger));
+    }
+
+    public function test_warehouse_index_search_filters_results()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Main Warehouse',
+            'status' => 'ACTIVE'
+        ]);
+        Warehouse::create([
+            'type' => 'SITE',
+            'name' => 'Sub Warehouse',
+            'status' => 'ACTIVE'
+        ]);
+
+        $response = $this->actingAs($supervisor)
+            ->get(route('warehouses.index', ['search' => 'Main']));
+
+        $response->assertStatus(200);
+        $response->assertSee('Main Warehouse');
+        $response->assertDontSee('Sub Warehouse');
+    }
+
+    public function test_warehouse_index_search_filters_results_by_project_name()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $project = \App\Models\Project::create(['name' => 'Project Alpha']);
+        Warehouse::create([
+            'project_id' => $project->id,
+            'type' => 'CENTRAL',
+            'name' => 'Main Warehouse',
+            'status' => 'ACTIVE'
+        ]);
+        Warehouse::create([
+            'type' => 'SITE',
+            'name' => 'Sub Warehouse',
+            'status' => 'ACTIVE'
+        ]);
+
+        $response = $this->actingAs($supervisor)
+            ->get(route('warehouses.index', ['search' => 'Alpha']));
+
+        $response->assertStatus(200);
+        $response->assertSee('Main Warehouse');
+        $response->assertDontSee('Sub Warehouse');
+    }
+}
