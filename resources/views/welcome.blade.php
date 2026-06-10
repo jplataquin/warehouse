@@ -17,7 +17,7 @@
     <div class="container d-flex align-items-center justify-content-center min-vh-100">
         <div class="text-center">
             <h1 class="display-4 fw-bold text-primary mb-4">{{ config('app.name', 'Warehousing Information System') }}</h1>
-            <p class="lead mb-5">Efficient inventory and item movement control for construction projects.</p>
+            <p class="lead mb-5">Control inventory and asset movement.</p>
             
             <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
                 @if (Route::has('login'))
@@ -33,9 +33,7 @@
                 @endif
             </div>
             
-            <div class="mt-5 text-muted small">
-                Laravel v{{ Illuminate\Foundation\Application::VERSION }} (PHP v{{ PHP_VERSION }})
-            </div>
+           
         </div>
     </div>
 </body>
