@@ -20,6 +20,9 @@ Route::get('/test-mqms-projects', [TestMqmsController::class, 'projects']);
 Auth::routes(['register' => false]);
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('/password/change', [\App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangeForm'])->name('password.change');
+    Route::post('/password/change', [\App\Http\Controllers\Auth\ChangePasswordController::class, 'updatePassword'])->name('password.change.update');
+
     Route::get('/home', [DashboardController::class, 'index'])->name('home');
     Route::get('/search', [\App\Http\Controllers\SearchController::class, 'index'])->name('global.search');
     Route::get('/warehouses/{warehouse}/dashboard', [DashboardController::class, 'warehouseDashboard'])

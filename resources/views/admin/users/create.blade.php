@@ -31,7 +31,9 @@
                     <label class="form-label">Confirm Password</label>
                     <input type="password" name="password_confirmation" class="form-control" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Save User</button>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">Save User</button>
+                </div>
             </form>
         </div>
     </div>
