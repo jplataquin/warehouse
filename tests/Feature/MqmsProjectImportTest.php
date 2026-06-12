@@ -112,4 +112,19 @@ class MqmsProjectImportTest extends TestCase
             'status' => 'ACTIVE'
         ]);
     }
+
+    public function test_store_warns_when_no_projects_selected_or_all_unchecked()
+    {
+        $response = $this->actingAs($this->user)
+            ->post(route('projects.mqms-import.store'), [
+                'selected_projects' => [
+                    ['name' => 'Project Alpha'], // No ID, represents unchecked checkbox
+                    ['name' => 'Project Beta'],  // No ID, represents unchecked checkbox
+                ]
+            ]);
+
+        $response->assertRedirect(route('projects.index'));
+        $response->assertSessionHas('warning', 'No projects were selected for import.');
+        $this->assertEquals(0, Project::count());
+    }
 }

@@ -88,6 +88,11 @@ class MqmsComponentImportController extends Controller
     {
         $selectedComponents = $request->input('selected_components', []);
 
+        // Filter out entries that were not selected (they will not have the 'id' key set because the checkbox was unchecked)
+        $selectedComponents = array_filter($selectedComponents, function ($data) {
+            return isset($data['id']);
+        });
+
         if (empty($selectedComponents)) {
             return redirect()->route('warehouses.show', $warehouse)->with('warning', 'No components were selected for import.');
         }
@@ -95,6 +100,8 @@ class MqmsComponentImportController extends Controller
         $count = 0;
         DB::transaction(function () use ($selectedComponents, $warehouse, &$count) {
             foreach ($selectedComponents as $data) {
+                if (!isset($data['id'])) continue;
+
                 // Uniqueness check
                 $exists = Allocation::where('warehouse_id', $warehouse->id)
                     ->where(function($query) use ($data) {

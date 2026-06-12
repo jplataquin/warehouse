@@ -9,6 +9,10 @@
     body {
         padding-top: 0 !important;
     }
+    /* Ensure alerts are not covered by the fixed-top navbar */
+    #app > main > .container .alert {
+        margin-top: 60px;
+    }
 </style>
 @endpush
 

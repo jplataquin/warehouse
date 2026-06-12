@@ -106,4 +106,25 @@ class MqmsComponentImportTest extends TestCase
             ->where('mapped_to_component_id', 'C1')
             ->count());
     }
+
+    public function test_store_warns_when_no_components_selected_or_all_unchecked()
+    {
+        $response = $this->actingAs($this->user)
+            ->post(route('warehouses.import-components.store', $this->warehouse), [
+                'selected_components' => [
+                    ['name' => 'Component A'], // No ID, represents unchecked checkbox
+                    ['name' => 'Component B'],  // No ID, represents unchecked checkbox
+                ]
+            ]);
+
+        $response->assertRedirect(route('warehouses.show', $this->warehouse));
+        $response->assertSessionHas('warning', 'No components were selected for import.');
+        $this->assertEquals(1, Allocation::count());
+        $this->assertDatabaseMissing('allocations', [
+            'name' => 'Component A'
+        ]);
+        $this->assertDatabaseMissing('allocations', [
+            'name' => 'Component B'
+        ]);
+    }
 }

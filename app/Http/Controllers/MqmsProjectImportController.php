@@ -64,6 +64,11 @@ class MqmsProjectImportController extends Controller
     {
         $selectedProjectData = $request->input('selected_projects', []);
 
+        // Filter out entries that were not selected (they will not have the 'id' key set because the checkbox was unchecked)
+        $selectedProjectData = array_filter($selectedProjectData, function ($data) {
+            return isset($data['id']);
+        });
+
         if (empty($selectedProjectData)) {
             return redirect()->route('projects.index')->with('warning', 'No projects were selected for import.');
         }
