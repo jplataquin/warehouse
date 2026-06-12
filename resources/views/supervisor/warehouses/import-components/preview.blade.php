@@ -25,7 +25,7 @@
                                 <thead class="table-light text-uppercase small">
                                     <tr>
                                         <th width="40" class="ps-4">
-                                            <input type="checkbox" id="select-all" class="form-check-input border border-primary">
+                                            <input type="checkbox" id="select-all" class="form-check-input border border-primary" checked>
                                         </th>
                                         <th>Component Name</th>
                                         <th>MQMS ID</th>
@@ -37,7 +37,7 @@
                                         <tr class="{{ !$item['is_valid'] ? 'table-light text-muted' : '' }}">
                                             <td class="ps-4">
                                                 @if($item['is_valid'])
-                                                    <input type="checkbox" name="selected_components[{{ $index }}][id]" value="{{ $item['id'] }}" class="form-check-input component-checkbox border border-primary">
+                                                    <input type="checkbox" name="selected_components[{{ $index }}][id]" value="{{ $item['id'] }}" class="form-check-input component-checkbox border border-primary" checked>
                                                     <input type="hidden" name="selected_components[{{ $index }}][name]" value="{{ $item['name'] }}">
                                                 @else
                                                     <input type="checkbox" class="form-check-input border border-primary" disabled>
@@ -101,6 +101,9 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxes.forEach(cb => {
         cb.addEventListener('change', updateImportBtn);
     });
+
+    // Run once on page load to set correct initial state
+    updateImportBtn();
 });
 </script>
 @endsection
