@@ -20,7 +20,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 40px;">
-                                    <input type="checkbox" id="select-all" class="form-check-input">
+                                    <input type="checkbox" id="select-all" class="form-check-input border border-primary">
                                 </th>
                                 <th>MQMS ID</th>
                                 <th>Project Name</th>
@@ -33,7 +33,7 @@
                             <tr class="{{ !$item['is_valid'] ? 'table-light text-muted' : '' }}">
                                 <td>
                                     <input type="checkbox" name="selected_projects[{{ $index }}][id]" value="{{ $item['id'] }}" 
-                                           class="form-check-input row-checkbox" {{ !$item['is_valid'] ? 'disabled' : '' }}>
+                                           class="form-check-input row-checkbox border border-primary" {{ !$item['is_valid'] ? 'disabled' : '' }}>
                                     <input type="hidden" name="selected_projects[{{ $index }}][name]" value="{{ $item['name'] }}">
                                 </td>
                                 <td class="font-monospace small">{{ $item['id'] }}</td>
@@ -41,7 +41,7 @@
                                 <td>
                                     <div class="form-check">
                                         <input type="checkbox" name="selected_projects[{{ $index }}][create_warehouse]" value="1" 
-                                               class="form-check-input" checked {{ !$item['is_valid'] ? 'disabled' : '' }}>
+                                               class="form-check-input border border-primary" checked {{ !$item['is_valid'] ? 'disabled' : '' }}>
                                         <label class="form-check-label small text-muted">Site Warehouse</label>
                                     </div>
                                 </td>

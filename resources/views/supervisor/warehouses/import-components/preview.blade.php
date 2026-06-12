@@ -25,7 +25,7 @@
                                 <thead class="table-light text-uppercase small">
                                     <tr>
                                         <th width="40" class="ps-4">
-                                            <input type="checkbox" id="select-all" class="form-check-input">
+                                            <input type="checkbox" id="select-all" class="form-check-input border border-primary">
                                         </th>
                                         <th>Component Name</th>
                                         <th>MQMS ID</th>
@@ -37,10 +37,10 @@
                                         <tr class="{{ !$item['is_valid'] ? 'table-light text-muted' : '' }}">
                                             <td class="ps-4">
                                                 @if($item['is_valid'])
-                                                    <input type="checkbox" name="selected_components[{{ $index }}][id]" value="{{ $item['id'] }}" class="form-check-input component-checkbox">
+                                                    <input type="checkbox" name="selected_components[{{ $index }}][id]" value="{{ $item['id'] }}" class="form-check-input component-checkbox border border-primary">
                                                     <input type="hidden" name="selected_components[{{ $index }}][name]" value="{{ $item['name'] }}">
                                                 @else
-                                                    <input type="checkbox" class="form-check-input" disabled>
+                                                    <input type="checkbox" class="form-check-input border border-primary" disabled>
                                                 @endif
                                             </td>
                                             <td class="fw-bold">{{ $item['name'] }}</td>
