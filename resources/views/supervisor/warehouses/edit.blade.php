@@ -54,7 +54,9 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Update Warehouse</button>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">Update Warehouse</button>
+                </div>
             </form>
         </div>
     </div>
