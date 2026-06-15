@@ -30,8 +30,8 @@
                 <div class="mb-3">
                     <label class="form-label">Status</label>
                     <select name="status" class="form-select" required>
-                        <option value="Active" selected>Active</option>
-                        <option value="Deactivated">Deactivated</option>
+                        <option value="ACTIVE" selected>ACTIVE</option>
+                        <option value="DEACTIVATED">DEACTIVATED</option>
                     </select>
                 </div>
 

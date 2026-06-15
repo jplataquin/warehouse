@@ -31,8 +31,8 @@
                 <div class="mb-3">
                     <label class="form-label">Status</label>
                     <select name="status" class="form-select" required>
-                        <option value="Active" {{ $warehouse->status === 'Active' || $warehouse->status === 'ACTIVE' ? 'selected' : '' }}>Active</option>
-                        <option value="Deactivated" {{ $warehouse->status === 'Deactivated' || $warehouse->status === 'DEACTIVATED' ? 'selected' : '' }}>Deactivated</option>
+                        <option value="ACTIVE" {{ $warehouse->status === 'Active' || $warehouse->status === 'ACTIVE' ? 'selected' : '' }}>ACTIVE</option>
+                        <option value="DEACTIVATED" {{ $warehouse->status === 'Deactivated' || $warehouse->status === 'DEACTIVATED' ? 'selected' : '' }}>DEACTIVATED</option>
                     </select>
                 </div>
 

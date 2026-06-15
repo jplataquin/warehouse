@@ -88,6 +88,8 @@ class WarehouseController extends Controller
             'logger_ids' => 'nullable|array',
             'logger_ids.*' => 'exists:users,id',
         ]);
+        
+        $validated['status'] = strtoupper($validated['status']);
         $warehouse = Warehouse::create($validated);
         
         if ($request->has('logger_ids')) {
@@ -97,15 +99,21 @@ class WarehouseController extends Controller
         return redirect()->route('warehouses.index')->with('success', 'Warehouse created successfully.');
     }
 
-    public function edit(Warehouse $warehouse)
+    public function edit($warehouse)
     {
+        if (!$warehouse instanceof Warehouse) {
+            $warehouse = Warehouse::findOrFail($warehouse);
+        }
         $projects = Project::all();
         $loggers = User::where('role', 'logger')->get();
         return view('supervisor.warehouses.edit', compact('warehouse', 'projects', 'loggers'));
     }
 
-    public function update(Request $request, Warehouse $warehouse)
+    public function update(Request $request, $warehouse)
     {
+        if (!$warehouse instanceof Warehouse) {
+            $warehouse = Warehouse::findOrFail($warehouse);
+        }
         $validated = $request->validate([
             'project_id' => 'nullable|exists:projects,id',
             'type' => 'required|in:SITE,CENTRAL',
@@ -114,6 +122,8 @@ class WarehouseController extends Controller
             'logger_ids' => 'nullable|array',
             'logger_ids.*' => 'exists:users,id',
         ]);
+        
+        $validated['status'] = strtoupper($validated['status']);
         $warehouse->update($validated);
         
         $warehouse->loggers()->sync($request->logger_ids ?? []);
@@ -121,8 +131,11 @@ class WarehouseController extends Controller
         return redirect()->route('warehouses.index')->with('success', 'Warehouse updated successfully.');
     }
 
-    public function destroy(Warehouse $warehouse)
+    public function destroy($warehouse)
     {
+        if (!$warehouse instanceof Warehouse) {
+            $warehouse = Warehouse::findOrFail($warehouse);
+        }
         $warehouse->delete();
         return redirect()->route('warehouses.index')->with('success', 'Warehouse deleted successfully.');
     }

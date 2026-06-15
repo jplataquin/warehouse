@@ -112,4 +112,77 @@ class WarehouseTest extends TestCase
         $response->assertSee('Main Warehouse');
         $response->assertDontSee('Sub Warehouse');
     }
+
+    public function test_supervisor_can_create_warehouse_manually_and_status_is_saved_in_all_caps()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        // Test with title-case 'Active'
+        $response1 = $this->actingAs($supervisor)
+            ->post(route('warehouses.store'), [
+                'name' => 'Manual Site WH 1',
+                'type' => 'SITE',
+                'status' => 'Active',
+            ]);
+
+        $response1->assertRedirect(route('warehouses.index'));
+        $this->assertDatabaseHas('warehouses', [
+            'name' => 'Manual Site WH 1',
+            'status' => 'ACTIVE',
+        ]);
+
+        // Test with all-caps 'ACTIVE'
+        $response2 = $this->actingAs($supervisor)
+            ->post(route('warehouses.store'), [
+                'name' => 'Manual Site WH 2',
+                'type' => 'SITE',
+                'status' => 'ACTIVE',
+            ]);
+
+        $response2->assertRedirect(route('warehouses.index'));
+        $this->assertDatabaseHas('warehouses', [
+            'name' => 'Manual Site WH 2',
+            'status' => 'ACTIVE',
+        ]);
+    }
+
+    public function test_supervisor_can_update_warehouse_manually_and_status_is_saved_in_all_caps()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $warehouse = Warehouse::create([
+            'name' => 'Original WH',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+
+        // Test updating to title-case 'Deactivated'
+        $response1 = $this->actingAs($supervisor)
+            ->put(route('warehouses.update', $warehouse), [
+                'name' => 'Updated WH 1',
+                'type' => 'CENTRAL',
+                'status' => 'Deactivated',
+            ]);
+
+        $response1->assertRedirect(route('warehouses.index'));
+        $this->assertDatabaseHas('warehouses', [
+            'id' => $warehouse->id,
+            'name' => 'Updated WH 1',
+            'status' => 'DEACTIVATED',
+        ]);
+
+        // Test updating to all-caps 'DEACTIVATED'
+        $response2 = $this->actingAs($supervisor)
+            ->put(route('warehouses.update', $warehouse), [
+                'name' => 'Updated WH 2',
+                'type' => 'CENTRAL',
+                'status' => 'DEACTIVATED',
+            ]);
+
+        $response2->assertRedirect(route('warehouses.index'));
+        $this->assertDatabaseHas('warehouses', [
+            'id' => $warehouse->id,
+            'name' => 'Updated WH 2',
+            'status' => 'DEACTIVATED',
+        ]);
+    }
 }
