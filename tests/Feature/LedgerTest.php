@@ -350,6 +350,82 @@ class LedgerTest extends TestCase
         $response->assertSessionHas('error', 'Remarks are required for direct asset/recoverable log-ins.');
     }
 
+    public function test_initial_stock_requires_remarks()
+    {
+        $user = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+
+        $response = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'IN',
+                    'action' => 'INITIAL_STOCK',
+                    'item_id' => $item->id,
+                    'quantity' => 100,
+                    'warehouse_id' => $warehouse->id,
+                    'remarks' => '', // Missing
+                ]
+            ]
+        ]);
+
+        $response->assertSessionHas('error', 'Remarks are required for initial stock entries.');
+    }
+
+    public function test_initial_stock_must_be_in_type()
+    {
+        $user = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+
+        $response = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'OUT',
+                    'action' => 'INITIAL_STOCK',
+                    'item_id' => $item->id,
+                    'quantity' => 10,
+                    'warehouse_id' => $warehouse->id,
+                    'remarks' => 'Reducing initial stock (invalid type)',
+                ]
+            ]
+        ]);
+
+        $response->assertSessionHas('error', 'Initial stock action must be of type IN.');
+    }
+
+    public function test_initial_stock_successful()
+    {
+        $user = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+
+        $response = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'IN',
+                    'action' => 'INITIAL_STOCK',
+                    'item_id' => $item->id,
+                    'quantity' => 150,
+                    'warehouse_id' => $warehouse->id,
+                    'remarks' => 'Starting balance of cement',
+                ]
+            ]
+        ]);
+
+        $response->assertSessionHas('success', 'Ledger entries created successfully.');
+        $this->assertDatabaseHas('ledgers', [
+            'item_id' => $item->id,
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'quantity' => 150,
+            'remarks' => 'Starting balance of cement',
+        ]);
+    }
+
     public function test_ledger_can_be_filtered_by_type_and_action()
     {
         $user = User::factory()->create(['role' => 'logger']);

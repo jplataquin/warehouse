@@ -93,6 +93,16 @@ class LedgerService
             }
         }
 
+        // Rule: INITIAL_STOCK must be IN and requires remarks
+        if ($action === 'INITIAL_STOCK') {
+            if ($type !== 'IN') {
+                throw new Exception("Initial stock action must be of type IN.");
+            }
+            if (empty($data['remarks'])) {
+                throw new Exception("Remarks are required for initial stock entries.");
+            }
+        }
+
         // Rule: Cannot log OUT if there's no enough stock in the warehouse
         if ($type === 'OUT') {
             $warehouseId = $data['warehouse_id'] ?? null;

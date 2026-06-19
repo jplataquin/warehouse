@@ -233,7 +233,7 @@
                 </div>
             </div>
 
-            <div class="row g-3 mt-1">
+            <div class="row g-3 mt-1 assigned-plate-row">
                 <div class="col-md-6">
                     <label class="form-label small fw-bold text-uppercase text-muted">Assigned To</label>
                     <input type="text" name="entries[__INDEX__][assigned_to]" class="form-control shadow-sm" placeholder="Personnel Name (Optional)">
@@ -488,7 +488,8 @@ document.addEventListener('DOMContentLoaded', function() {
         let options = [];
         if (type === 'IN') {
             options = [
-                { value: 'DELIVERY', text: 'DELIVERY (Purchases)' }
+                { value: 'DELIVERY', text: 'DELIVERY (Purchases)' },
+                { value: 'INITIAL_STOCK', text: 'INITIAL STOCK' }
             ];
             if (currentItem.type === 'ASSET' || currentItem.type === 'RECOVERABLE') {
                 options.splice(1, 0, { value: 'DIRECT', text: 'DIRECT (Asset Log-in)' });
@@ -544,6 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const plateInput = row.querySelector('.plate-input');
         const remarksInput = row.querySelector('.remarks-input');
         const remarksAsterisk = row.querySelector('.remarks-required');
+        const assignedPlateRow = row.querySelector('.assigned-plate-row');
         
         // Reset visibility
         inTransfer.style.display = 'none';
@@ -553,6 +555,7 @@ document.addEventListener('DOMContentLoaded', function() {
         plateAsterisk.style.display = 'none';
         plateInput.required = false;
         plateInput.placeholder = 'Vehicle Plate No. (Optional)';
+        if (assignedPlateRow) assignedPlateRow.style.display = 'flex';
         
         if (type === 'IN') {
             // TRANSFER (IN) is now hidden from manual selection as it is handled automatically from OUT-TRANSFER
@@ -563,8 +566,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const isDirectAsset = (currentItem.type === 'ASSET' || currentItem.type === 'RECOVERABLE') && action === 'DIRECT';
+            const isInitialStock = action === 'INITIAL_STOCK';
             const showReceipts = action === 'DELIVERY' || action === 'TRANSFER' || (action === 'DIRECT' && !isDirectAsset);
-            if (showReceipts) receiptRow.style.display = 'flex';
+            if (showReceipts && !isInitialStock) receiptRow.style.display = 'flex';
+
+            if (isInitialStock) {
+                if (assignedPlateRow) assignedPlateRow.style.display = 'none';
+            }
 
             // Requirements for receipts and plate no
             const isMandatory = ['CONSUMABLE', 'ASSET', 'RECOVERABLE'].includes(currentItem.type) && action === 'DELIVERY';
@@ -584,8 +592,13 @@ document.addEventListener('DOMContentLoaded', function() {
             row.querySelectorAll('.required-asterisk').forEach(ast => ast.style.display = isMandatory ? 'inline' : 'none');
             
             // Remarks Requirement
-            remarksInput.required = isDirectAsset;
-            remarksAsterisk.style.display = isDirectAsset ? 'inline' : 'none';
+            remarksInput.required = isDirectAsset || isInitialStock;
+            remarksAsterisk.style.display = (isDirectAsset || isInitialStock) ? 'inline' : 'none';
+            if (isInitialStock) {
+                remarksInput.placeholder = 'Required: Please state INITIAL STOCK details';
+            } else {
+                remarksInput.placeholder = 'Optional';
+            }
         } else {
             const isDispose = action === 'DISPOSE';
             

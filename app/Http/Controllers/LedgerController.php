@@ -183,7 +183,7 @@ class LedgerController extends Controller
             'entries' => 'required|array|min:1',
             'entries.*.entry_date' => 'required|date|before_or_equal:today',
             'entries.*.type' => 'required|in:IN,OUT',
-            'entries.*.action' => 'required|in:TRANSFER,DELIVERY,DIRECT,ALLOCATE,DISPOSE,LOST,RETURN,MAINTENANCE,CORRECTION',
+            'entries.*.action' => 'required|in:TRANSFER,DELIVERY,DIRECT,ALLOCATE,DISPOSE,LOST,RETURN,MAINTENANCE,CORRECTION,INITIAL_STOCK',
             'entries.*.item_id' => 'required|exists:items,id',
             'entries.*.quantity' => 'required|numeric|min:0.01',
             'entries.*.warehouse_id' => 'required|exists:warehouses,id',
