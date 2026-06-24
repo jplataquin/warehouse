@@ -4,18 +4,14 @@
 <div class="container py-4">
     <div class="card mb-4 shadow-sm border-0">
         <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2"></i> {{ $warehouse->name }} Public Stock Dashboard</h5>
+            <h5 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2"></i> {{ $warehouse->name }}</h5>
             <span class="badge bg-light text-primary fw-bold">{{ $warehouse->type }}</span>
         </div>
         <div class="card-body py-4">
             <div class="row text-center">
-                <div class="col-md-6 border-end">
+                <div class="col-md-12 border-end">
                     <h6 class="text-muted text-uppercase fw-bold small">Status</h6>
                     <p class="text-success fw-bold fs-5 mb-0">{{ $warehouse->status }}</p>
-                </div>
-                <div class="col-md-6">
-                    <h6 class="text-muted text-uppercase fw-bold small">Project</h6>
-                    <p class="fs-5 fw-bold text-dark mb-0">{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}</p>
                 </div>
             </div>
         </div>
@@ -67,7 +63,7 @@
     <div class="mb-4">
         <h5 class="fw-bold text-dark mb-3"><i class="bi bi-box-seam me-2"></i> Current Inventory Stock</h5>
         
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+        <div class="row row-cols-1 row-cols-xs-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
             @forelse($items as $item)
                 <div class="col">
                     <div class="card h-100 shadow-sm border-0" style="border: 1px solid #e3e6f0 !important;">
