@@ -27,12 +27,9 @@
         </div>
         <div class="card-body py-3">
             <div class="row align-items-end g-3">
-                <div class="col-md-8">
+                <div class="col-md-12">
                     <label class="form-label small text-muted text-uppercase fw-bold">Search Item</label>
                     <input type="text" id="dashboard-item-search" class="form-control" placeholder="Type item name..." list="item-options" autocomplete="off">
-                </div>
-                <div class="col-md-4 text-muted small pb-1">
-                    <i class="bi bi-info-circle me-1"></i> Stock levels are updated in real-time.
                 </div>
             </div>
         </div>
@@ -70,31 +67,39 @@
     <div class="mb-4">
         <h5 class="fw-bold text-dark mb-3"><i class="bi bi-box-seam me-2"></i> Current Inventory Stock</h5>
         
-        <div class="d-flex flex-wrap gap-3">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
             @forelse($items as $item)
-                <div class="card shadow-sm border-0 flex-grow-1" style="min-width: 220px; max-width: 280px; border: 1px solid #e3e6f0 !important;">
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="card-title fw-bold text-truncate mb-0" title="{{ $item->name }} {{ $item->specification }} {{ $item->unit }} ({{ $item->type }})">
-                                {{ $item->name }}
-                            </h6>
-                        </div>
-                        @if($item->specification)
-                            <div class="text-muted small mb-2 text-truncate">{{ $item->specification }}</div>
-                        @endif
-                        <div class="small text-muted text-uppercase fw-bold">Unit: {{ $item->unit }}</div>
-                        <div class="mt-3">
-                            <div class="small text-muted text-uppercase fw-bold">Stock Level</div>
-                            <div class="h4 mb-0 fw-bold text-primary">
-                                {{ $item->current_stock }}
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0" style="border: 1px solid #e3e6f0 !important;">
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title fw-bold text-truncate mb-0" title="{{ $item->name }} {{ $item->specification }} {{ $item->unit }} ({{ $item->type }})">
+                                        {{ $item->name }}
+                                    </h6>
+                                </div>
+                                @if($item->specification)
+                                    <div class="text-muted small mb-2 text-truncate">{{ $item->specification }}</div>
+                                @else
+                                    <div class="text-muted small mb-2 text-truncate" style="visibility: hidden;">No Specification</div>
+                                @endif
+                                <div class="small text-muted text-uppercase fw-bold">Unit: {{ $item->unit }}</div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="small text-muted text-uppercase fw-bold">Stock Level</div>
+                                <div class="h4 mb-0 fw-bold text-primary">
+                                    {{ $item->current_stock }}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             @empty
-                <div class="w-100 text-center py-5 bg-light rounded shadow-sm">
-                    <i class="bi bi-inbox fs-1 text-muted"></i>
-                    <p class="text-muted mt-2 mb-0">No inventory in stock at this warehouse.</p>
+                <div class="col-12">
+                    <div class="text-center py-5 bg-light rounded shadow-sm">
+                        <i class="bi bi-inbox fs-1 text-muted"></i>
+                        <p class="text-muted mt-2 mb-0">No inventory in stock at this warehouse.</p>
+                    </div>
                 </div>
             @endforelse
         </div>
