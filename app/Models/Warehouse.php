@@ -9,7 +9,7 @@ class Warehouse extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['project_id', 'type', 'name', 'status'];
+    protected $fillable = ['project_id', 'type', 'name', 'status', 'public_token'];
 
     public function scopeActive($query)
     {

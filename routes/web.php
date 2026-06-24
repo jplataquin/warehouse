@@ -17,6 +17,9 @@ Route::get('/', function () {
 
 Route::get('/test-mqms-projects', [TestMqmsController::class, 'projects']);
 
+Route::get('/public/dashboard/{token}', [\App\Http\Controllers\PublicDashboardController::class, 'show'])->name('public.warehouse.dashboard');
+Route::get('/public/items/{item}/stock', [\App\Http\Controllers\PublicDashboardController::class, 'getStock'])->name('public.items.stock');
+
 Auth::routes(['register' => false]);
 
 Route::middleware(['auth'])->group(function () {
@@ -52,6 +55,8 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('projects', ProjectController::class);
         Route::post('warehouses/{warehouse}/loggers', [WarehouseController::class, 'assignLogger'])->name('warehouses.loggers.assign');
         Route::delete('warehouses/{warehouse}/loggers/{logger}', [WarehouseController::class, 'removeLogger'])->name('warehouses.loggers.remove');
+        Route::post('warehouses/{warehouse}/public-token/generate', [WarehouseController::class, 'generatePublicToken'])->name('warehouses.public_token.generate');
+        Route::post('warehouses/{warehouse}/public-token/revoke', [WarehouseController::class, 'revokePublicToken'])->name('warehouses.public_token.revoke');
 
         // Bulk Warehouse Import
         Route::get('warehouses/bulk-import', [\App\Http\Controllers\WarehouseImportController::class, 'showUploadForm'])->name('warehouses.import.form');

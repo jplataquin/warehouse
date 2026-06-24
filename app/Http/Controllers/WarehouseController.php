@@ -139,4 +139,30 @@ class WarehouseController extends Controller
         $warehouse->delete();
         return redirect()->route('warehouses.index')->with('success', 'Warehouse deleted successfully.');
     }
+
+    public function generatePublicToken($warehouse)
+    {
+        if (!$warehouse instanceof Warehouse) {
+            $warehouse = Warehouse::findOrFail($warehouse);
+        }
+
+        $warehouse->update([
+            'public_token' => \Illuminate\Support\Str::random(32),
+        ]);
+
+        return redirect()->route('warehouses.show', $warehouse)->with('success', 'Public dashboard link generated successfully.');
+    }
+
+    public function revokePublicToken($warehouse)
+    {
+        if (!$warehouse instanceof Warehouse) {
+            $warehouse = Warehouse::findOrFail($warehouse);
+        }
+
+        $warehouse->update([
+            'public_token' => null,
+        ]);
+
+        return redirect()->route('warehouses.show', $warehouse)->with('success', 'Public dashboard link revoked successfully.');
+    }
 }

@@ -197,6 +197,41 @@
         </div>
 
         <div class="col-md-4">
+            <!-- Public Dashboard Link Section -->
+            <div class="card mb-4">
+                <div class="card-header">Public Stock Dashboard</div>
+                <div class="card-body">
+                    @if($warehouse->public_token)
+                        <div class="mb-3">
+                            <label class="form-label small text-muted text-uppercase fw-bold">Public Dashboard URL</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="publicUrlInput" value="{{ route('public.warehouse.dashboard', $warehouse->public_token) }}" readonly>
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyPublicUrl()"><i class="bi bi-copy"></i></button>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('public.warehouse.dashboard', $warehouse->public_token) }}" class="btn btn-outline-primary btn-sm flex-grow-1" target="_blank">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Open Dashboard
+                            </a>
+                            <form action="{{ route('warehouses.public_token.revoke', $warehouse) }}" method="POST" class="flex-grow-1">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-danger btn-sm w-100" onclick="return confirm('Are you sure you want to revoke this public access link?')">
+                                    <i class="bi bi-x-circle me-1"></i> Revoke
+                                </button>
+                            </form>
+                        </div>
+                    @else
+                        <p class="small text-muted mb-3">No public link generated. Create one to allow read-only real-time stock view without an account.</p>
+                        <form action="{{ route('warehouses.public_token.generate', $warehouse) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <i class="bi bi-link-45deg me-1"></i> Generate Public Link
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+
             <!-- Action Buttons Section -->
             <div class="card mb-4">
                 <div class="card-header">Actions</div>
@@ -225,6 +260,21 @@
 </div>
 
 <script>
+    window.copyPublicUrl = function() {
+        const publicUrlInput = document.getElementById('publicUrlInput');
+        if (publicUrlInput) {
+            publicUrlInput.select();
+            publicUrlInput.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(publicUrlInput.value)
+                .then(() => {
+                    alert('Public URL copied to clipboard!');
+                })
+                .catch(err => {
+                    console.error('Error copying text: ', err);
+                });
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const loggerSearch = document.getElementById('logger_search');
         const loggerIdInput = document.getElementById('logger_id');
