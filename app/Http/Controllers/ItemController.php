@@ -75,7 +75,7 @@ class ItemController extends Controller
             'unit' => 'required|string|max:50',
         ]);
         $item->update($validated);
-        return redirect()->route('items.index')->with('success', 'Item updated successfully.');
+        return redirect()->route('items.index', $request->query())->with('success', 'Item updated successfully.');
     }
 
     public function destroy(Item $item)

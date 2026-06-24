@@ -59,7 +59,7 @@
                             </td>
                             <td>{{ $item->unit }}</td>
                             <td class="text-end">
-                                <a href="{{ route('items.edit', $item) }}" class="btn btn-sm btn-outline-secondary">
+                                <a href="{{ route('items.edit', array_merge(['item' => $item->id], request()->query())) }}" class="btn btn-sm btn-outline-secondary">
                                     <i class="bi bi-pencil me-1"></i> Edit
                                 </a>
                             </td>

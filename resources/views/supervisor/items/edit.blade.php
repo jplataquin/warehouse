@@ -5,7 +5,7 @@
     <div class="card">
         <div class="card-header">Edit Item</div>
         <div class="card-body">
-            <form action="{{ route('items.update', $item) }}" method="POST">
+            <form action="{{ route('items.update', array_merge(['item' => $item->id], request()->query())) }}" method="POST">
                 @csrf
                 @method('PUT')
                 <div class="mb-3">
@@ -29,6 +29,7 @@
                     <input type="text" name="unit" class="form-control" value="{{ $item->unit }}" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Update Item</button>
+                <a href="{{ route('items.index', request()->query()) }}" class="btn btn-secondary">Cancel</a>
             </form>
         </div>
     </div>
