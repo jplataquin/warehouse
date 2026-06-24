@@ -114,4 +114,29 @@ class ItemRedirectionTest extends TestCase
             'specification' => '50kg'
         ]);
     }
+
+    public function test_pagination_renders_using_bootstrap_five_styling()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        
+        // Create 55 items to force pagination (since pagination limit is 50)
+        for ($i = 1; $i <= 55; $i++) {
+            Item::create([
+                'type' => 'CONSUMABLE',
+                'name' => "Cement Block {$i}",
+                'specification' => 'Standard',
+                'unit' => 'Pieces'
+            ]);
+        }
+
+        $response = $this->actingAs($supervisor)
+            ->get(route('items.index'));
+
+        $response->assertStatus(200);
+        
+        // Verify bootstrap 5 pagination classes are rendered on the page
+        $response->assertSee('class="pagination"', false);
+        $response->assertSee('class="page-item', false);
+        $response->assertSee('class="page-link"', false);
+    }
 }
