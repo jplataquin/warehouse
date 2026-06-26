@@ -19,7 +19,7 @@
             </div>
 
             {{-- Section 1: Item Selection --}}
-            <div class="card shadow-sm border-0 mb-4">
+            <div style="position:sticky; top:55px; z-index: 10" class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-primary text-white py-3">
                     <h5 class="mb-0"><i class="bi bi-search"></i> 1. Select Item</h5>
                 </div>
