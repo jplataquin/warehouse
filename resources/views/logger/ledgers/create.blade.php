@@ -106,7 +106,7 @@
                     <span id="calculated-item-stock">0</span>
                 </div>
             </div>
-            
+
         </div>
     </div>
 </div>
@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const displayName = document.getElementById('display-item-name');
     const displayStock = document.getElementById('display-item-stock');
     const calculatedStockDisplay = document.getElementById('calculated-item-stock');
-    const footerItemName = document.getElementById('footer-item-name');
+
     const stockFooter = document.getElementById('fixed-stock-footer');
     const globalItemIdInput = document.getElementById('global-item-id');
     const entriesSection = document.getElementById('entries-section');
@@ -325,7 +325,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (found) {
             globalItemIdInput.value = currentItem.id;
             displayName.textContent = currentItem.name;
-            footerItemName.textContent = currentItem.name;
             selectedItemInfo.style.display = 'block';
             entriesSection.style.display = 'block';
             stockFooter.style.display = 'block';
