@@ -64,7 +64,7 @@
                             <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('items.index') }}">Items</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('items.assets') }}">Asset Inventory</a>
+                            <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('items.assets') }}">Assets</a>
                         </li>
                         @if(Auth::user()->isAdmin())
                             <li class="nav-item">
