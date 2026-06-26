@@ -46,15 +46,6 @@ class SearchController extends Controller
                                  $itemQ->where('name', 'LIKE', "%{$keyword}%")
                                        ->orWhere('specification', 'LIKE', "%{$keyword}%")
                                        ->orWhere('type', 'LIKE', "%{$keyword}%");
-                             })
-                             ->orWhereHas('warehouse', function($warehouseQ) use ($keyword) {
-                                 $warehouseQ->where('name', 'LIKE', "%{$keyword}%");
-                             })
-                             ->orWhereHas('project', function($projectQ) use ($keyword) {
-                                 $projectQ->where('name', 'LIKE', "%{$keyword}%");
-                             })
-                             ->orWhereHas('allocation', function($allocationQ) use ($keyword) {
-                                 $allocationQ->where('name', 'LIKE', "%{$keyword}%");
                              });
                     });
                 }

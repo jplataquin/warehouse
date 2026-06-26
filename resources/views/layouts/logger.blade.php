@@ -41,7 +41,7 @@
                         <span class="input-group-text bg-secondary border-secondary text-light">
                             <i class="bi bi-search"></i>
                         </span>
-                        <input type="text" name="query" class="form-control bg-secondary border-secondary text-white" placeholder="Search PO, DR, OR or Warehouses..." value="{{ request('query') }}">
+                        <input type="text" name="query" class="form-control bg-secondary border-secondary text-white" placeholder="Search Item, PO, DR, OR or Plate No..." value="{{ request('query') }}">
                     </div>
                 </form>
                 @endunless
