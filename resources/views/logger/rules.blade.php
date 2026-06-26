@@ -113,7 +113,7 @@
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td>Used for sending items back to supplier/Central.</td>
+                        <td>Used for sending/rejecting items back to supplier.</td>
                     </tr>
                     <!-- MAINTENANCE -->
                     <tr>
