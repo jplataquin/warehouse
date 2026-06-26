@@ -123,39 +123,43 @@ document.addEventListener('DOMContentLoaded', function() {
         <h5 class="fw-bold text-dark mb-0"><i class="bi bi-box-seam me-2"></i> Current Inventory Stock</h5>
     </div>
     
-    <div class="d-flex flex-wrap gap-3">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
         @forelse($items as $item)
-            <div class="card shadow-sm border-1 flex-grow-1" style="min-width: 200px; max-width: 280px;">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h6 class="card-title fw-bold text-truncate mb-0" title="{{ $item->name }} {{ $item->specification }} {{ $item->unit }} ({{ $item->type }})">
-                            @if($item->type === 'CONSUMABLE')
-                                <span class="badge bg-danger me-1">C</span>
-                            @elseif($item->type === 'RECOVERABLE')
-                                <span class="badge bg-warning text-dark me-1">R</span>
-                            @elseif($item->type === 'ASSET')
-                                <span class="badge bg-success me-1">A</span>
-                            @endif
-                            {{ $item->name }} {{ $item->specification }} {{ $item->unit }}
-                        </h6>
-                    </div>
-                    <div class="mt-2">
-                        <div class="small text-muted text-uppercase fw-bold">Stock Level</div>
-                        <div class="h4 mb-0 fw-bold text-primary">
-                            {{ $item->current_stock }} <span class="fs-6 text-muted fw-normal">{{ $item->unit }}</span>
+            <div class="col">
+                <div class="card shadow-sm border-1 h-100">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title fw-bold text-truncate mb-0" title="{{ $item->name }} {{ $item->specification }}">
+                                @if($item->type === 'CONSUMABLE')
+                                    <span class="badge bg-danger me-1">C</span>
+                                @elseif($item->type === 'RECOVERABLE')
+                                    <span class="badge bg-warning text-dark me-1">R</span>
+                                @elseif($item->type === 'ASSET')
+                                    <span class="badge bg-success me-1">A</span>
+                                @endif
+                                {{ $item->name }} {{ $item->specification }}
+                            </h6>
+                        </div>
+                        <div class="mt-2">
+                            <div class="small text-muted text-uppercase fw-bold">Stock Level</div>
+                            <div class="h4 mb-0 fw-bold text-primary">
+                                {{ $item->current_stock }} <span class="fs-6 text-muted fw-normal">{{ $item->unit }}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="card-footer bg-transparent border-top-0 pt-0 pb-3">
-                    <a href="{{ route('ledgers.index', ['warehouse_id' => $warehouse->id, 'item_id' => $item->id]) }}" class="btn btn-sm btn-link p-0 text-decoration-none small">
-                        <i class="bi bi-clock-history me-1"></i> View History
-                    </a>
+                    <div class="card-footer bg-transparent border-top-0 pt-0 pb-3">
+                        <a href="{{ route('ledgers.index', ['warehouse_id' => $warehouse->id, 'item_id' => $item->id]) }}" class="btn btn-sm btn-link p-0 text-decoration-none small">
+                            <i class="bi bi-clock-history me-1"></i> View History
+                        </a>
+                    </div>
                 </div>
             </div>
         @empty
-            <div class="w-100 text-center py-5 bg-light rounded">
-                <i class="bi bi-inbox fs-1 text-muted"></i>
-                <p class="text-muted mt-2">No items found in the system.</p>
+            <div class="col-12">
+                <div class="text-center py-5 bg-light rounded">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">No items found in the system.</p>
+                </div>
             </div>
         @endforelse
     </div>
