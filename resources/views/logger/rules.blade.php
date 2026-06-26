@@ -27,7 +27,9 @@
                     <tr>
                         <th class="py-3">Action</th>
                         <th class="py-3">Type</th>
-                        <th class="py-3">Allowed Item Types</th>
+                        <th class="py-3 text-center">Consumable</th>
+                        <th class="py-3 text-center">Asset</th>
+                        <th class="py-3 text-center">Recoverable</th>
                         <th class="py-3">Required Input Fields</th>
                         <th class="py-3">Special Constraints & Notes</th>
                     </tr>
@@ -37,7 +39,9 @@
                     <tr>
                         <td><strong>DELIVERY</strong></td>
                         <td><span class="badge bg-success">IN</span></td>
-                        <td>Consumable, Asset, Recoverable</td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>PO No., Delivery Receipt, Plate No.</td>
                         <td>Use this for purchased items that are going in the warehouse.</td>
                     </tr>
@@ -45,7 +49,9 @@
                     <tr>
                         <td><strong>INITIAL_STOCK</strong></td>
                         <td><span class="badge bg-success">IN</span></td>
-                        <td>Consumable, Asset, Recoverable</td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Remarks</td>
                         <td>Use this when setting inital item stock of the warehouse.</td>
                     </tr>
@@ -53,7 +59,9 @@
                     <tr>
                         <td><strong>DIRECT</strong></td>
                         <td><span class="badge bg-success">IN</span></td>
-                        <td>Asset, Recoverable</td>
+                        <td class="text-center text-muted">-</td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Remarks</td>
                         <td>Use this for Assets and Recoverables that are delivered to the warehouse.</td>
                     </tr>
@@ -61,7 +69,9 @@
                     <tr>
                         <td><strong>TRANSFER</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
-                        <td>Consumable, Asset, Recoverable</td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Destination Warehouse, Plate No.</td>
                         <td>Use this if the items are transfered from one warehouse to another.</td>
                     </tr>
@@ -69,7 +79,9 @@
                     <tr>
                         <td><strong>ALLOCATE</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
-                        <td>Consumable</td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center text-muted">-</td>
+                        <td class="text-center text-muted">-</td>
                         <td>Allocation</td>
                         <td>Use this if the item being logged out for an budgeted item of work.</td>
                     </tr>
@@ -77,7 +89,9 @@
                     <tr>
                         <td><strong>UTILIZE</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
-                        <td>Consumable, Asset, Recoverable</td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Remarks</td>
                         <td>Use this if the item being logged out is not used for a any budgeted item of work.</td>
                     </tr>
@@ -85,7 +99,9 @@
                     <tr>
                         <td><strong>DISPOSE</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
-                        <td>Consumable, Asset, Recoverable</td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Remarks</td>
                         <td>Used for materials logged out as scrap or waste.</td>
                     </tr>
@@ -93,7 +109,9 @@
                     <tr>
                         <td><strong>LOST</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
-                        <td>Consumable, Asset, Recoverable</td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Remarks</td>
                         <td>Deducts stock levels for missing or stolen items.</td>
                     </tr>
@@ -101,7 +119,9 @@
                     <tr>
                         <td><strong>RETURN</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
-                        <td>Consumable, Asset, Recoverable</td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>PO No., Delivery Receipt, Remarks</td>
                         <td>Used for sending items back to supplier/Central.</td>
                     </tr>
@@ -109,7 +129,9 @@
                     <tr>
                         <td><strong>MAINTENANCE</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
-                        <td>Asset, Recoverable</td>
+                        <td class="text-center text-muted">-</td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Remarks</td>
                         <td>Logs out items temporarily for service.</span></td>
                     </tr>
