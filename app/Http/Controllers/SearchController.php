@@ -20,19 +20,44 @@ class SearchController extends Controller
             ]);
         }
 
+        $keywords = array_filter(explode(' ', $query));
+
         $warehouses = collect();
         if (!auth()->user()->isAdmin() && !auth()->user()->isSupervisor()) {
-            $warehouses = Warehouse::where('name', 'LIKE', "%{$query}%")
-                ->limit(10)
-                ->get();
+            $warehouses = Warehouse::where(function($q) use ($keywords) {
+                foreach ($keywords as $keyword) {
+                    $q->where('name', 'LIKE', "%{$keyword}%");
+                }
+            })
+            ->limit(10)
+            ->get();
         }
 
         $ledgers = Ledger::with(['item', 'warehouse', 'project'])
-            ->where(function($q) use ($query) {
-                $q->where('po_number', 'LIKE', "%{$query}%")
-                  ->orWhere('offical_receipt', 'LIKE', "%{$query}%")
-                  ->orWhere('delivery_receipt', 'LIKE', "%{$query}%")
-                  ->orWhere('plate_no', 'LIKE', "%{$query}%");
+            ->where(function($q) use ($keywords) {
+                foreach ($keywords as $keyword) {
+                    $q->where(function($subQ) use ($keyword) {
+                        $subQ->where('po_number', 'LIKE', "%{$keyword}%")
+                             ->orWhere('offical_receipt', 'LIKE', "%{$keyword}%")
+                             ->orWhere('delivery_receipt', 'LIKE', "%{$keyword}%")
+                             ->orWhere('plate_no', 'LIKE', "%{$keyword}%")
+                             ->orWhere('remarks', 'LIKE', "%{$keyword}%")
+                             ->orWhereHas('item', function($itemQ) use ($keyword) {
+                                 $itemQ->where('name', 'LIKE', "%{$keyword}%")
+                                       ->orWhere('specification', 'LIKE', "%{$keyword}%")
+                                       ->orWhere('type', 'LIKE', "%{$keyword}%");
+                             })
+                             ->orWhereHas('warehouse', function($warehouseQ) use ($keyword) {
+                                 $warehouseQ->where('name', 'LIKE', "%{$keyword}%");
+                             })
+                             ->orWhereHas('project', function($projectQ) use ($keyword) {
+                                 $projectQ->where('name', 'LIKE', "%{$keyword}%");
+                             })
+                             ->orWhereHas('allocation', function($allocationQ) use ($keyword) {
+                                 $allocationQ->where('name', 'LIKE', "%{$keyword}%");
+                             });
+                    });
+                }
             })
             ->latest('entry_date')
             ->paginate(20)

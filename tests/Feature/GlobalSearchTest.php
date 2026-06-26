@@ -67,6 +67,17 @@ class GlobalSearchTest extends TestCase
         $response = $this->actingAs($logger)->get(route('global.search', ['query' => 'PLAT-777']));
         $response->assertStatus(200);
         $response->assertSee('PLAT-777');
+
+        // Search by Item Name
+        $response = $this->actingAs($logger)->get(route('global.search', ['query' => 'Test Item']));
+        $response->assertStatus(200);
+        $response->assertSee('Test Item');
+
+        // Search by combination of keywords (Plate No and Item Name)
+        $response = $this->actingAs($logger)->get(route('global.search', ['query' => 'PLAT-777 Item']));
+        $response->assertStatus(200);
+        $response->assertSee('Test Item');
+        $response->assertSee('PLAT-777');
     }
 
     public function test_admin_and_supervisor_search_excludes_warehouses()
@@ -100,12 +111,16 @@ class GlobalSearchTest extends TestCase
         // Admin search for warehouse name
         $response = $this->actingAs($admin)->get(route('global.search', ['query' => 'Secret']));
         $response->assertStatus(200);
-        $response->assertDontSee('Secret Warehouse');
+        $response->assertViewHas('warehouses', function($warehouses) {
+            return $warehouses->isEmpty();
+        });
 
         // Supervisor search for warehouse name
         $response = $this->actingAs($supervisor)->get(route('global.search', ['query' => 'Secret']));
         $response->assertStatus(200);
-        $response->assertDontSee('Secret Warehouse');
+        $response->assertViewHas('warehouses', function($warehouses) {
+            return $warehouses->isEmpty();
+        });
 
         // Verify ledger search still works
         $response = $this->actingAs($admin)->get(route('global.search', ['query' => 'PO-ADMIN-1']));
