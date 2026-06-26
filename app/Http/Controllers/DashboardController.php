@@ -46,4 +46,15 @@ class DashboardController extends Controller
         return view('logger.warehouses.dashboard', compact('warehouse', 'items'));
     }
 
+    public function loggerRules()
+    {
+        $user = auth()->user();
+        $warehouses = [];
+        
+        if ($user->role === 'logger') {
+            $warehouses = $user->warehouses;
+        }
+        
+        return view('logger.rules', compact('warehouses'));
+    }
 }

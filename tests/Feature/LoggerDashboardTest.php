@@ -59,4 +59,27 @@ class LoggerDashboardTest extends TestCase
 
         $response->assertStatus(404);
     }
+
+    public function test_logger_can_access_rules_page()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $warehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Logger Warehouse',
+            'status' => 'ACTIVE'
+        ]);
+        $logger->warehouses()->attach($warehouse);
+
+        // Access rules page while logged in
+        $response = $this->actingAs($logger)->get(route('logger.rules'));
+        $response->assertStatus(200);
+        $response->assertSee('Movement Rules Guide');
+        $response->assertSee('INITIAL_STOCK');
+        $response->assertSee('UTILIZE');
+        
+        // Assert unauthenticated is redirected
+        auth()->logout();
+        $response = $this->get(route('logger.rules'));
+        $response->assertRedirect(route('login'));
+    }
 }

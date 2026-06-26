@@ -90,27 +90,23 @@
 <div id="fixed-stock-footer" class="fixed-bottom bg-dark text-white py-2 shadow-lg border-top border-primary border-3" style="display: none; z-index: 1030;">
     <div class="container-fluid px-4">
         <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-                <div class="bg-primary p-2 rounded-circle me-3">
-                    <i class="bi bi-stack fs-4 text-white"></i>
-                </div>
-                <div class="me-5">
-                    <div class="small text-muted text-uppercase fw-bold">Current Stock</div>
-                    <div class="h4 mb-0 fw-bold">
-                        <span id="display-item-stock">0</span>
-                    </div>
-                </div>
-                <div>
-                    <div class="small text-warning text-uppercase fw-bold">Calculated Balance</div>
-                    <div class="h4 mb-0 fw-bold text-warning">
-                        <span id="calculated-item-stock">0</span>
-                    </div>
+            
+            <div>
+                <div class="small text-uppercase fw-bold">Current Stock</div>
+                <div class="h4 mb-0 fw-bold text-warning">
+                    <span id="display-item-stock">0</span>
                 </div>
             </div>
-            <div class="text-end">
-                <div class="small text-muted text-uppercase fw-bold">Selected Item</div>
-                <div class="fw-bold text-info" id="footer-item-name"></div>
+
+                
+                
+            <div>
+                <div class="small text-warning text-uppercase fw-bold">Ending Balance</div>
+                <div class="h4 mb-0 fw-bold text-warning">
+                    <span id="calculated-item-stock">0</span>
+                </div>
             </div>
+            
         </div>
     </div>
 </div>
@@ -372,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 
                 baseStock = parseFloat(data.balance) || 0;
-                displayStock.textContent = data.balance + ' ' + data.unit;
+                displayStock.textContent = data.balance.toFixed(2).replace(/\.00$/, '') + ' ' + data.unit;
                 updateCalculatedStock();
 
                 // Update all row units

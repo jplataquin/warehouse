@@ -31,6 +31,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/warehouses/{warehouse}/dashboard', [DashboardController::class, 'warehouseDashboard'])
         ->name('logger.warehouse.dashboard')
         ->middleware('logger');
+    Route::get('/logger/rules', [DashboardController::class, 'loggerRules'])
+        ->name('logger.rules')
+        ->middleware('logger');
 
     Route::get('items/{item}/stock', [ItemController::class, 'getStock'])->name('items.stock');
 

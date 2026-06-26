@@ -25,3 +25,11 @@
         @endforelse
     </div>
 </div>
+
+<div class="card shadow-sm border-0 mt-4">
+    <div class="list-group list-group-flush rounded">
+        <a href="{{ route('logger.rules') }}" class="list-group-item list-group-item-action d-flex align-items-center {{ request()->routeIs('logger.rules') ? 'active bg-primary text-white fw-bold' : 'text-primary' }}">
+            <i class="bi bi-info-circle-fill me-2"></i> Movement Rules Guide
+        </a>
+    </div>
+</div>
