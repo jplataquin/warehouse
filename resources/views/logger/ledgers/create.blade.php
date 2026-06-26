@@ -618,6 +618,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (action === 'RETURN') {
                 receiptRow.style.display = 'flex';
             }
+            if (action === 'UTILIZE') {
+                if (assignedPlateRow) assignedPlateRow.style.display = 'none';
+            }
             
             // Requirements for receipts (Shared logic for RETURN)
             const isReceiptMandatory = action === 'RETURN';
