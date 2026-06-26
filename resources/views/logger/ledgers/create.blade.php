@@ -93,7 +93,7 @@
             
             <div>
                 <div class="small text-uppercase fw-bold">Current Stock</div>
-                <div class="h4 mb-0 fw-bold text-warning">
+                <div class="h4 mb-0 fw-bold">
                     <span id="display-item-stock">0</span>
                 </div>
             </div>
@@ -103,7 +103,7 @@
             <div>
                 <div class="small text-warning text-uppercase fw-bold">Ending Balance</div>
                 <div class="h4 mb-0 fw-bold text-warning">
-                    <span id="calculated-item-stock">0</span>
+                    <span id="calculated-item-stock">0</span> <span class="row-unit-display"></span>
                 </div>
             </div>
 
