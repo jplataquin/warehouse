@@ -52,7 +52,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted text-uppercase">Item Type</label>
                     <select name="item_type" class="form-select" onchange="this.form.submit()">
                         <option value="">All Types</option>
@@ -62,51 +62,6 @@
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted text-uppercase">Movement Type</label>
-                    <select name="type" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Movements</option>
-                        <option value="IN" {{ request('type') === 'IN' ? 'selected' : '' }}>IN</option>
-                        <option value="OUT" {{ request('type') === 'OUT' ? 'selected' : '' }}>OUT</option>
-                    </select>
-                </div>
-
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted text-uppercase">Action</label>
-                    <select name="action" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Actions</option>
-                        <option value="TRANSFER" {{ request('action') === 'TRANSFER' ? 'selected' : '' }}>Transfer</option>
-                        <option value="DELIVERY" {{ request('action') === 'DELIVERY' ? 'selected' : '' }}>Delivery</option>
-                        <option value="DIRECT" {{ request('action') === 'DIRECT' ? 'selected' : '' }}>Direct</option>
-                        <option value="ALLOCATE" {{ request('action') === 'ALLOCATE' ? 'selected' : '' }}>Allocate</option>
-                        <option value="DISPOSE" {{ request('action') === 'DISPOSE' ? 'selected' : '' }}>Dispose</option>
-                        <option value="UTILIZE" {{ request('action') === 'UTILIZE' ? 'selected' : '' }}>Utilize</option>
-                        <option value="LOST" {{ request('action') === 'LOST' ? 'selected' : '' }}>Lost</option>
-                        <option value="RETURN" {{ request('action') === 'RETURN' ? 'selected' : '' }}>Return</option>
-                        <option value="MAINTENANCE" {{ request('action') === 'MAINTENANCE' ? 'selected' : '' }}>Maintenance</option>
-                        <option value="CORRECTION" {{ request('action') === 'CORRECTION' ? 'selected' : '' }}>Correction</option>
-                    </select>
-                </div>
-
-                <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1">
-                        <i class="bi bi-filter"></i> Apply
-                    </button>
-                    <a href="{{ route('ledgers.index') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-counterclockwise"></i>
-                    </a>
-                </div>
-            </div>
-
-            <div class="row g-3 align-items-end mt-1">
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted text-uppercase">Start Date</label>
-                    <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted text-uppercase">End Date</label>
-                    <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
-                </div>
                 @if($selectedWarehouse && isset($allocations) && $allocations->count() > 0)
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted text-uppercase">Allocation</label>
@@ -120,6 +75,15 @@
                     </select>
                 </div>
                 @endif
+
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-filter"></i> Apply
+                    </button>
+                    <a href="{{ route('ledgers.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                </div>
                 <input type="hidden" name="item_id" value="{{ request('item_id') }}">
             </div>
         </form>
