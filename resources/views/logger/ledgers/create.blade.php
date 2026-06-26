@@ -265,8 +265,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const itemSearch = document.getElementById('global-item-search');
     const itemsDatalist = document.getElementById('item-options');
-    //const selectedItemInfo = document.getElementById('selected-item-info');
-    //const displayName = document.getElementById('display-item-name');
     const displayStock = document.getElementById('display-item-stock');
     const calculatedStockDisplay = document.getElementById('calculated-item-stock');
 
@@ -328,8 +326,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (found) {
             globalItemIdInput.value = currentItem.id;
-            //displayName.textContent = currentItem.name;
-            //selectedItemInfo.style.display = 'block';
             entriesSection.style.display = 'block';
             stockFooter.style.display = 'block';
             document.body.style.paddingBottom = '80px';
