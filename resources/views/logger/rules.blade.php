@@ -77,7 +77,7 @@
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center text-muted">-</td>
                         <td class="text-center text-muted">-</td>
-                        <td>Use this if the item being logged out for an budgeted item of work.</td>
+                        <td>Use this if the the item being logged out is used for a budgeted work item (Component).</td>
                     </tr>
                     <!-- UTILIZE -->
                     <tr>
@@ -86,7 +86,7 @@
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td>Use this if the item being logged out is not used for a any budgeted item of work.</td>
+                        <td>Use this if the the item being logged out is utlized, but not used for any budgeted work item (Component).</td>
                     </tr>
                     <!-- DISPOSE -->
                     <tr>

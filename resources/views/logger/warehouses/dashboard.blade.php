@@ -129,7 +129,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h6 class="card-title fw-bold text-truncate mb-0" title="{{ $item->name }} {{ $item->specification }} {{ $item->unit }} ({{ $item->type }})">
-                            {{ $item->name }} {{ $item->specification }} {{ $item->unit }} ({{ $item->type }})
+                            @if($item->type === 'CONSUMABLE')
+                                <span class="badge bg-danger me-1">C</span>
+                            @elseif($item->type === 'RECOVERABLE')
+                                <span class="badge bg-warning text-dark me-1">R</span>
+                            @elseif($item->type === 'ASSET')
+                                <span class="badge bg-success me-1">A</span>
+                            @endif
+                            {{ $item->name }} {{ $item->specification }} {{ $item->unit }}
                         </h6>
                     </div>
                     <div class="mt-2">
