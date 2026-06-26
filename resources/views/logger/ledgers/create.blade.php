@@ -33,11 +33,15 @@
                                 </span>
                                 <input type="text" id="global-item-search" class="form-control border-primary border-opacity-25" placeholder="Type item name to search..." list="item-options" autocomplete="off">
                             </div>
+
+                            <!--
                             <div id="selected-item-info" class="mt-3" style="display: none;">
                                 <span class="badge bg-info text-dark px-3 py-2 rounded-pill shadow-sm">
                                     <i class="bi bi-info-circle me-1"></i> Selected: <strong id="display-item-name"></strong>
                                 </span>
                             </div>
+
+                            -->
                         </div>
                         <div class="col-md-4 text-center d-none d-md-block">
                             <div class="text-muted small">
@@ -261,8 +265,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     const itemSearch = document.getElementById('global-item-search');
     const itemsDatalist = document.getElementById('item-options');
-    const selectedItemInfo = document.getElementById('selected-item-info');
-    const displayName = document.getElementById('display-item-name');
+    //const selectedItemInfo = document.getElementById('selected-item-info');
+    //const displayName = document.getElementById('display-item-name');
     const displayStock = document.getElementById('display-item-stock');
     const calculatedStockDisplay = document.getElementById('calculated-item-stock');
 
@@ -324,8 +328,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (found) {
             globalItemIdInput.value = currentItem.id;
-            displayName.textContent = currentItem.name;
-            selectedItemInfo.style.display = 'block';
+            //displayName.textContent = currentItem.name;
+            //selectedItemInfo.style.display = 'block';
             entriesSection.style.display = 'block';
             stockFooter.style.display = 'block';
             document.body.style.paddingBottom = '80px';
@@ -392,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Optional: reset if cleared
             if (val === '') {
                 currentItem = { id: null, type: null, name: null };
-                selectedItemInfo.style.display = 'none';
+                //selectedItemInfo.style.display = 'none';
                 entriesSection.style.display = 'none';
                 stockFooter.style.display = 'none';
                 document.body.style.paddingBottom = '0';
