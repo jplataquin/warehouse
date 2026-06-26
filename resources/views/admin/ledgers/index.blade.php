@@ -40,7 +40,7 @@
     <div class="card-body p-4">
         <form action="{{ route('ledgers.index') }}" method="GET">
             <div class="row g-3 align-items-end">
-                <div class="col-md-4">
+                <div class="col-md-5">
                     <label class="form-label small fw-bold text-muted text-uppercase">Select Warehouse</label>
                     <select name="warehouse_id" class="form-select border-primary shadow-sm" onchange="this.form.submit()">
                         <option value="">-- Choose Warehouse --</option>
@@ -52,7 +52,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label class="form-label small fw-bold text-muted text-uppercase">Item Type</label>
                     <select name="item_type" class="form-select" onchange="this.form.submit()">
                         <option value="">All Types</option>
@@ -62,21 +62,7 @@
                     </select>
                 </div>
 
-                @if($selectedWarehouse && isset($allocations) && $allocations->count() > 0)
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted text-uppercase">Allocation</label>
-                    <select name="allocation_id" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Allocations</option>
-                        @foreach($allocations as $alloc)
-                            <option value="{{ $alloc->id }}" {{ request('allocation_id') == $alloc->id ? 'selected' : '' }}>
-                                {{ $alloc->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                @endif
-
-                <div class="col-md-2 d-flex gap-2">
+                <div class="col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1">
                         <i class="bi bi-filter"></i> Apply
                     </button>
@@ -104,29 +90,33 @@
             @php
                 $cardRoute = route('ledgers.item_history', [$selectedWarehouse->id, $sItem->id]);
             @endphp
-            <a href="{{ $cardRoute }}" 
-               class="card h-100 border-1 shadow-sm hover-shadow transition-all text-decoration-none">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="bg-primary bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-box text-primary fs-4"></i>
-                        </div>
-                        <span class="badge bg-light text-dark border small">{{ $sItem->type }}</span>
+            <div class="card shadow-sm border-1 h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title fw-bold text-truncate mb-0" title="{{ $sItem->name }} {{ $sItem->specification }}">
+                            @if($sItem->type === 'CONSUMABLE')
+                                <span class="badge bg-danger me-1">C</span>
+                            @elseif($sItem->type === 'RECOVERABLE')
+                                <span class="badge bg-warning text-dark me-1">R</span>
+                            @elseif($sItem->type === 'ASSET')
+                                <span class="badge bg-success me-1">A</span>
+                            @endif
+                            {{ $sItem->name }} {{ $sItem->specification }}
+                        </h6>
                     </div>
-                    <h5 class="fw-bold mb-1 text-truncate text-dark" title="{{ $sItem->name }}">{{ $sItem->name }}</h5>
-                    <p class="text-muted small mb-3 text-truncate-2" style="height: 2.5rem;">{{ $sItem->specification }}</p>
-                    
-                    <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="small text-muted text-uppercase fw-bold tracking-tighter" style="font-size: 0.7rem;">Current Stock</div>
-                            <div class="h4 mb-0 fw-bold text-primary">{{ $sItem->balance }} <span class="fs-6 fw-normal text-muted">{{ $sItem->unit }}</span></div>
-                        </div>
-                        <div class="btn btn-sm btn-outline-primary rounded-circle">
-                            <i class="bi bi-clock-history"></i>
+                    <div class="mt-2">
+                        <div class="small text-muted text-uppercase fw-bold">Stock Level</div>
+                        <div class="h4 mb-0 fw-bold text-primary">
+                            {{ $sItem->balance }} <span class="fs-6 text-muted fw-normal">{{ $sItem->unit }}</span>
                         </div>
                     </div>
                 </div>
-            </a>
+                <div class="card-footer bg-transparent border-top-0 pt-0 pb-3">
+                    <a href="{{ $cardRoute }}" class="btn btn-sm btn-link p-0 text-decoration-none small">
+                        <i class="bi bi-clock-history me-1"></i> View History
+                    </a>
+                </div>
+            </div>
         </div>
         @empty
         <div class="col-12">
