@@ -39,7 +39,7 @@
                         <td><span class="badge bg-success">IN</span></td>
                         <td>Consumable, Asset, Recoverable</td>
                         <td>PO No., Delivery Receipt, Plate No.</td>
-                        <td>Use this if the item is purchased and delivered to the warehouse.</td>
+                        <td>Use this for purchased items that are going in the warehouse.</td>
                     </tr>
                     <!-- INITIAL_STOCK -->
                     <tr>
@@ -53,7 +53,7 @@
                     <tr>
                         <td><strong>DIRECT</strong></td>
                         <td><span class="badge bg-success">IN</span></td>
-                        <td><span class="text-primary fw-bold">Asset, Recoverable</span></td>
+                        <td>Asset, Recoverable</td>
                         <td>Remarks</td>
                         <td>Use this for Assets and Recoverables that are delivered to the warehouse.</td>
                     </tr>
@@ -69,7 +69,7 @@
                     <tr>
                         <td><strong>ALLOCATE</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
-                        <td><span class="text-primary fw-bold">Consumable</span></td>
+                        <td>Consumable</td>
                         <td>Allocation</td>
                         <td>Use this if the item being logged out for an budgeted item of work.</td>
                     </tr>
@@ -109,7 +109,7 @@
                     <tr>
                         <td><strong>MAINTENANCE</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
-                        <td><span class="text-primary fw-bold">Asset, Recoverable</span></td>
+                        <td>Asset, Recoverable</td>
                         <td>Remarks</td>
                         <td>Logs out items temporarily for service.</span></td>
                     </tr>
