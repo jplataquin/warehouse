@@ -32,7 +32,7 @@
         <div class="row align-items-end">
             <div class="col-md-8">
                 <label class="form-label small text-muted text-uppercase fw-bold">Search Item</label>
-                <input type="text" id="dashboard-item-search" class="form-control" placeholder="Type item name..." list="item-options" autocomplete="off">
+                <input type="text" id="dashboard-item-search" class="form-control" placeholder="Search item name or specification..." autocomplete="off">
             </div>
             <div class="col-md-4 text-muted small">
                 <i class="bi bi-info-circle me-1"></i> Stock includes both Pending and Approved entries.
@@ -41,78 +41,30 @@
     </div>
 </div>
 
-{{-- Fixed Footer Stock Bar --}}
-<div id="fixed-stock-footer" class="fixed-bottom bg-dark text-white py-2 shadow-lg border-top border-primary border-3" style="display: none; z-index: 1030;">
-    <div class="container-fluid px-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-                <div class="bg-primary p-2 rounded-circle me-3">
-                    <i class="bi bi-stack fs-4 text-white"></i>
-                </div>
-                <div>
-                    <div class="small text-muted text-uppercase fw-bold">Currently in Stock</div>
-                    <div class="h4 mb-0 fw-bold" id="stock-display-combined">
-                        <span id="stock-value">0</span>
-                    </div>
-                </div>
-            </div>
-            <div class="text-end">
-                <div class="small text-muted text-uppercase fw-bold">Selected Item</div>
-                <div class="fw-bold text-info" id="footer-item-name"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<datalist id="item-options">
-    @foreach($items as $item)
-        <option value="{{ $item->name }} {{ $item->specification }} {{ $item->unit }} ({{ $item->type }})" data-id="{{ $item->id }}"></option>
-    @endforeach
-</datalist>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('dashboard-item-search');
-    const datalist = document.getElementById('item-options');
-    const stockFooter = document.getElementById('fixed-stock-footer');
-    const footerItemName = document.getElementById('footer-item-name');
-    const stockValue = document.getElementById('stock-value');
-    const stockUnit = document.getElementById('stock-unit');
-    const warehouseId = @json($warehouse->id);
+    
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.item-card-wrapper');
+        let visibleCount = 0;
 
-    searchInput.addEventListener('input', async function() {
-        const val = this.value;
-        const options = datalist.options;
-        let itemId = null;
-        let itemName = null;
-
-        for (let i = 0; i < options.length; i++) {
-            if (options[i].value === val) {
-                itemId = options[i].getAttribute('data-id');
-                itemName = val;
-                break;
+        cards.forEach(card => {
+            const itemName = card.getAttribute('data-item-name');
+            if (itemName.includes(query)) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
             }
-        }
+        });
 
-        if (itemId) {
-            stockValue.textContent = '...';
-            footerItemName.textContent = itemName;
-            stockFooter.style.display = 'block';
-            document.body.style.paddingBottom = '80px';
-
-            try {
-                const response = await fetch(`{{ url('items') }}/${itemId}/stock?warehouse_id=${warehouseId}`);
-                const data = await response.json();
-                stockValue.textContent = data.balance + ' ' + data.unit;
-            } catch (error) {
-                console.error('Error fetching stock:', error);
-                stockValue.textContent = 'Error';
-            }
+        const noResults = document.getElementById('no-search-results');
+        if (visibleCount === 0 && query !== '') {
+            noResults.style.display = 'block';
         } else {
-            if (val === '') {
-                stockFooter.style.display = 'none';
-                document.body.style.paddingBottom = '0';
-            }
+            noResults.style.display = 'none';
         }
     });
 });
@@ -125,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
         @forelse($items as $item)
-            <div class="col">
+            <div class="col item-card-wrapper" data-item-name="{{ strtolower($item->name) }} {{ strtolower($item->specification) }}">
                 <div class="card shadow-sm border-1 h-100">
                     <div class="card-body p-3">
                         <div class="d-flex justify-content-between align-items-start mb-2">
@@ -162,6 +114,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         @endforelse
+
+        <div id="no-search-results" class="col-12" style="display: none;">
+            <div class="text-center py-5 bg-light rounded text-muted">
+                <i class="bi bi-search fs-1 d-block mb-2"></i>
+                No items found matching your search.
+            </div>
+        </div>
     </div>
 </div>
 @endsection
