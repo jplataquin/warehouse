@@ -511,4 +511,78 @@ class LedgerTest extends TestCase
         $response->assertSee('ITEM LEDGER');
         $response->assertSee('Gravel');
     }
+
+    public function test_utilize_action_rules()
+    {
+        $user = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+
+        // 1. UTILIZE must be OUT type
+        $response = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'IN',
+                    'action' => 'UTILIZE',
+                    'item_id' => $item->id,
+                    'quantity' => 1,
+                    'warehouse_id' => $warehouse->id,
+                    'remarks' => 'Using some cement',
+                ]
+            ]
+        ]);
+        $response->assertSessionHas('error', 'UTILIZE action must be of type OUT.');
+
+        // 2. UTILIZE requires remarks
+        // First add stock so we don't fail on stock check
+        Ledger::create([
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+            'po_number' => 'PO-1',
+            'delivery_receipt' => 'DR-1',
+        ]);
+
+        $response = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'OUT',
+                    'action' => 'UTILIZE',
+                    'item_id' => $item->id,
+                    'quantity' => 1,
+                    'warehouse_id' => $warehouse->id,
+                    'remarks' => '', // Missing
+                ]
+            ]
+        ]);
+        $response->assertSessionHas('error', 'Remarks are required for UTILIZE movements.');
+
+        // 3. Valid UTILIZE action works
+        $response = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'OUT',
+                    'action' => 'UTILIZE',
+                    'item_id' => $item->id,
+                    'quantity' => 1,
+                    'warehouse_id' => $warehouse->id,
+                    'remarks' => 'Utilizing 1 bag for floor repair',
+                ]
+            ]
+        ]);
+        $response->assertSessionHas('success', 'Ledger entries created successfully.');
+        $this->assertDatabaseHas('ledgers', [
+            'item_id' => $item->id,
+            'type' => 'OUT',
+            'action' => 'UTILIZE',
+            'quantity' => 1,
+            'remarks' => 'Utilizing 1 bag for floor repair',
+        ]);
+    }
 }

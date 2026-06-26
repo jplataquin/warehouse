@@ -501,7 +501,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 { value: 'RETURN', text: 'RETURN (To Central/Supplier)' },
                 { value: 'MAINTENANCE', text: 'MAINTENANCE (Repair/Checkup)' },
                 { value: 'DISPOSE', text: 'DISPOSE (Scrap/Waste)' },
-                { value: 'LOST', text: 'LOST (Missing/Damage)' }
+                { value: 'LOST', text: 'LOST (Missing/Damage)' },
+                { value: 'UTILIZE', text: 'UTILIZE (Use/Consume)' }
             ];
 
             if (currentItem.type === 'CONSUMABLE') {
@@ -628,8 +629,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             row.querySelectorAll('.required-asterisk').forEach(ast => ast.style.display = isReceiptMandatory ? 'inline' : 'none');
 
-            // Remarks Requirement for LOST, DISPOSE, MAINTENANCE, RETURN
-            const requiresRemarks = ['LOST', 'DISPOSE', 'MAINTENANCE', 'RETURN'].includes(action);
+            // Remarks Requirement for LOST, DISPOSE, MAINTENANCE, RETURN, UTILIZE
+            const requiresRemarks = ['LOST', 'DISPOSE', 'MAINTENANCE', 'RETURN', 'UTILIZE'].includes(action);
             remarksInput.required = requiresRemarks;
             remarksAsterisk.style.display = requiresRemarks ? 'inline' : 'none';
             

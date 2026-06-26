@@ -180,13 +180,13 @@ class LedgerService
             }
         }
 
-        // Rule: DISPOSE, LOST, RETURN are always OUT
-        if (in_array($action, ['DISPOSE', 'LOST', 'RETURN']) && $type !== 'OUT') {
+        // Rule: DISPOSE, LOST, RETURN, UTILIZE are always OUT
+        if (in_array($action, ['DISPOSE', 'LOST', 'RETURN', 'UTILIZE']) && $type !== 'OUT') {
             throw new Exception("{$action} action must be of type OUT.");
         }
 
         // Rule: Specific OUT actions require remarks
-        if (in_array($action, ['DISPOSE', 'LOST', 'MAINTENANCE', 'RETURN']) && empty($data['remarks'])) {
+        if (in_array($action, ['DISPOSE', 'LOST', 'MAINTENANCE', 'RETURN', 'UTILIZE']) && empty($data['remarks'])) {
             throw new Exception("Remarks are required for {$action} movements.");
         }
 
