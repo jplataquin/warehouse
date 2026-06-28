@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="mb-4">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
-        <h5 class="fw-bold text-dark mb-0"><i class="bi bi-box-seam me-2"></i> Current Inventory Stock</h5>
+        <h5 class="fw-bold text-dark mb-0"><i class="bi bi-box-seam me-2"></i> Inventory</h5>
         <div class="btn-group btn-group-sm w-100 w-md-auto" role="group" aria-label="Item Type Filters">
             <button type="button" class="btn btn-secondary active filter-btn" data-filter="ALL">All</button>
             <button type="button" class="btn btn-outline-danger filter-btn" data-filter="CONSUMABLE">Consumables</button>
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         @if($item->type === 'ASSET')
                         <div class="mt-2">
-                            <div class="small text-muted text-uppercase fw-bold">Status</div>
+                           
                             @if($item->status === 'Out of Order')
                                 <span class="badge bg-danger small"><i class="bi bi-exclamation-triangle-fill me-1"></i> Out of Order</span>
                             @else
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="card-footer bg-transparent border-top-0 pt-0 pb-3">
                         <a href="{{ route('ledgers.index', ['warehouse_id' => $warehouse->id, 'item_id' => $item->id]) }}" class="btn btn-sm btn-link p-0 text-decoration-none small">
-                            <i class="bi bi-clock-history me-1"></i> View History
+                            <i class="bi bi-clock-history me-1"></i> View Ledger
                         </a>
                     </div>
                 </div>
