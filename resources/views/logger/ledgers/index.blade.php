@@ -28,7 +28,7 @@
 <div class="card shadow-sm border-0 mb-4 bg-primary text-white">
     <div class="card-body p-4">
         <div class="row align-items-center">
-            <div class="col-md-8">
+            <div class="col-md-{{ $item->type === 'ASSET' ? '5' : '8' }}">
                 <div class="d-flex align-items-center">
                     <div>
                         <h4 class="fw-bold mb-1">{{ $item->name }}</h4>
@@ -38,6 +38,19 @@
                     </div>
                 </div>
             </div>
+            @if($item->type === 'ASSET')
+            <div class="col-md-3 mt-3 mt-md-0">
+                <form action="{{ route('items.update-status', $item) }}" method="POST" class="d-inline-block text-start w-100">
+                    @csrf
+                    @method('PATCH')
+                    <div class="small text-white-50 text-uppercase fw-bold mb-1">Asset Status</div>
+                    <select name="status" class="form-select form-select-sm bg-white text-dark border-0 fw-bold py-2" onchange="this.form.submit()">
+                        <option value="Operational" {{ $item->status === 'Operational' ? 'selected' : '' }}>Operational</option>
+                        <option value="Out of Order" {{ $item->status === 'Out of Order' ? 'selected' : '' }}>Out of Order</option>
+                    </select>
+                </form>
+            </div>
+            @endif
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
                 <div class="small text-white-50 text-uppercase fw-bold mb-1">Current Stock in {{ $selectedWarehouse->name }}</div>
                 <div class="h2 mb-0 fw-bold">

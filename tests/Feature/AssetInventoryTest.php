@@ -78,6 +78,26 @@ class AssetInventoryTest extends TestCase
         $response->assertSee('Excavator X1');
         $response->assertSee('Asset Inventory');
         $response->assertDontSee('Add New Item');
+    }
+
+    public function test_logger_can_see_status_dropdown_on_ledgers_page()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $warehouse = Warehouse::create([
+            'name' => 'Logger Warehouse',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE'
+        ]);
+        $logger->warehouses()->attach($warehouse);
+
+        $asset = Item::create(['name' => 'Drill D1', 'type' => 'ASSET', 'unit' => 'UNIT']);
+
+        $response = $this->actingAs($logger)
+            ->get(route('ledgers.index', ['warehouse_id' => $warehouse->id, 'item_id' => $asset->id]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Drill D1');
+        $response->assertSee('Asset Status');
         $response->assertSee('select name="status"', false);
     }
 
