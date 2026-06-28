@@ -3,7 +3,7 @@
 @section('inner_content')
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Dashboard</span>
+        <span>{{ $warehouse->name }} Dashboard</span>
         <span class="badge bg-primary">{{ $warehouse->type }}</span>
     </div>
     <div class="card-body">
@@ -36,6 +36,47 @@
         </div>
     </div>
 </div>
+
+@push('styles')
+<style>
+    #item-type-tabs .nav-link {
+        border-radius: 8px 8px 0 0;
+        margin-right: 4px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-bottom: none;
+        padding: 0.5rem 1rem;
+        transition: all 0.15s ease-in-out;
+    }
+    #item-type-tabs .nav-link:hover {
+        background-color: #e9ecef;
+        color: inherit;
+    }
+    #item-type-tabs .nav-link.active {
+        background-color: #fff !important;
+        border-color: #dee2e6 #dee2e6 #fff !important;
+    }
+    #item-type-tabs .nav-link[data-filter="CONSUMABLE"].active {
+        border-top: 3px solid #dc3545 !important;
+        color: #dc3545 !important;
+    }
+    #item-type-tabs .nav-link[data-filter="ASSET"].active {
+        border-top: 3px solid #198754 !important;
+        color: #198754 !important;
+    }
+    #item-type-tabs .nav-link[data-filter="RECOVERABLE"].active {
+        border-top: 3px solid #ffc107 !important;
+        color: #212529 !important;
+    }
+    #item-type-tabs .nav-link[data-filter="ALL"].active {
+        border-top: 3px solid #6c757d !important;
+        color: #6c757d !important;
+    }
+    #item-type-tabs {
+        border-bottom: 1px solid #dee2e6;
+    }
+</style>
+@endpush
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -77,17 +118,10 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             filterButtons.forEach(b => {
                 b.classList.remove('active');
-                if (b.getAttribute('data-filter') === 'ALL') b.className = 'btn btn-outline-secondary filter-btn';
-                if (b.getAttribute('data-filter') === 'CONSUMABLE') b.className = 'btn btn-outline-danger filter-btn';
-                if (b.getAttribute('data-filter') === 'ASSET') b.className = 'btn btn-outline-success filter-btn';
-                if (b.getAttribute('data-filter') === 'RECOVERABLE') b.className = 'btn btn-outline-warning text-dark filter-btn';
             });
 
+            this.classList.add('active');
             currentFilter = this.getAttribute('data-filter');
-            if (currentFilter === 'ALL') this.className = 'btn btn-secondary active filter-btn';
-            if (currentFilter === 'CONSUMABLE') this.className = 'btn btn-danger active filter-btn';
-            if (currentFilter === 'ASSET') this.className = 'btn btn-success active filter-btn';
-            if (currentFilter === 'RECOVERABLE') this.className = 'btn btn-warning text-dark active filter-btn';
 
             filterItems();
         });
@@ -96,13 +130,21 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <div class="mb-4">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
-        <div class="btn-group btn-group-sm w-100 w-md-auto" role="group" aria-label="Item Type Filters">
-            <button type="button" class="btn btn-secondary active filter-btn" data-filter="ALL">All</button>
-            <button type="button" class="btn btn-outline-danger filter-btn" data-filter="CONSUMABLE">Consumables</button>
-            <button type="button" class="btn btn-outline-success filter-btn" data-filter="ASSET">Assets</button>
-            <button type="button" class="btn btn-outline-warning text-dark filter-btn" data-filter="RECOVERABLE">Recoverables</button>
-        </div>
+    <div class="mb-3">
+        <ul class="nav nav-tabs border-bottom-0" id="item-type-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active filter-btn text-secondary fw-bold" type="button" data-filter="ALL">All</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link filter-btn text-danger fw-bold" type="button" data-filter="CONSUMABLE">Consumable</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link filter-btn text-success fw-bold" type="button" data-filter="ASSET">Asset</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link filter-btn text-warning text-dark fw-bold" type="button" data-filter="RECOVERABLE">Recoverable</button>
+            </li>
+        </ul>
     </div>
     
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
