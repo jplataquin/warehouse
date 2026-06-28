@@ -79,4 +79,40 @@ class AssetInventoryTest extends TestCase
         $response->assertSee('Asset Inventory');
         $response->assertDontSee('Add New Item');
     }
+
+    public function test_asset_status_defaults_to_operational_and_can_be_updated_to_out_of_order()
+    {
+        $asset = Item::create([
+            'name' => 'Bulldozer B2',
+            'type' => 'ASSET',
+            'unit' => 'UNIT'
+        ]);
+
+        // Default should be Operational
+        $this->assertEquals('Operational', $asset->fresh()->status);
+
+        // View assets page and verify Operational badge is shown
+        $response = $this->actingAs($this->supervisor)
+            ->get(route('items.assets'));
+        $response->assertStatus(200);
+        $response->assertSee('Operational');
+
+        // Update status to 'Out of Order'
+        $response = $this->actingAs($this->supervisor)
+            ->put(route('items.update', $asset), [
+                'type' => 'ASSET',
+                'name' => 'Bulldozer B2',
+                'unit' => 'UNIT',
+                'status' => 'Out of Order'
+            ]);
+
+        $response->assertRedirect(route('items.index'));
+        $this->assertEquals('Out of Order', $asset->fresh()->status);
+
+        // View assets page again and verify Out of Order badge is shown
+        $response = $this->actingAs($this->supervisor)
+            ->get(route('items.assets'));
+        $response->assertStatus(200);
+        $response->assertSee('Out of Order');
+    }
 }

@@ -56,6 +56,7 @@ class ItemController extends Controller
             'name' => 'required|string|max:255',
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
+            'status' => 'nullable|in:Operational,Out of Order',
         ]);
         Item::create($validated);
         return redirect()->route('items.index')->with('success', 'Item created successfully.');
@@ -73,6 +74,7 @@ class ItemController extends Controller
             'name' => 'required|string|max:255',
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
+            'status' => 'nullable|in:Operational,Out of Order',
         ]);
         $item->update($validated);
         return redirect()->route('items.index', $request->query())->with('success', 'Item updated successfully.');

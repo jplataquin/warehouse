@@ -32,6 +32,15 @@
                             <p class="mb-0 text-dark small text-truncate-2" style="height: 2.5rem;">{{ $asset->specification ?: 'N/A' }}</p>
                         </div>
                         
+                        <div class="mb-3">
+                            <label class="small text-muted text-uppercase fw-bold d-block mb-1">Status</label>
+                            @if($asset->status === 'Out of Order')
+                                <span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i> Out of Order</span>
+                            @else
+                                <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i> Operational</span>
+                            @endif
+                        </div>
+                        
                         <div class="mb-3 mt-auto">
                             <div class="p-3 bg-light rounded-3 border">
                                 <label class="small text-muted text-uppercase fw-bold d-block mb-2">Current Location</label>
