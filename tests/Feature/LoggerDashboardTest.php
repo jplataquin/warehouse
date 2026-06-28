@@ -131,5 +131,7 @@ class LoggerDashboardTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Generator X5');
         $response->assertSee('Out of Order');
+        $response->assertSee('Item Count');
+        $response->assertSee('class="fw-bold text-primary mb-0 fs-5">1</p>', false);
     }
 }
