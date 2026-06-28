@@ -20,7 +20,7 @@ Route::get('/test-mqms-projects', [TestMqmsController::class, 'projects']);
 Route::get('/public/dashboard/{token}', [\App\Http\Controllers\PublicDashboardController::class, 'show'])->name('public.warehouse.dashboard');
 Route::get('/public/items/{item}/stock', [\App\Http\Controllers\PublicDashboardController::class, 'getStock'])->name('public.items.stock');
 
-Auth::routes(['register' => false]);
+Auth::routes(['register' => false, 'reset' => false]);
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/password/change', [\App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangeForm'])->name('password.change');

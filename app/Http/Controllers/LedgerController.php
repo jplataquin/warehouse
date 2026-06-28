@@ -132,7 +132,7 @@ class LedgerController extends Controller
                 }
             }
 
-            $allocations = Allocation::where('warehouse_id', $selectedWarehouseId)->get();
+            $allocations = Allocation::where('warehouse_id', $selectedWarehouseId)->orderBy('name', 'asc')->get();
         } else {
             // Return empty pagination if no warehouse selected
             $ledgers = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 50);
@@ -155,7 +155,7 @@ class LedgerController extends Controller
         $selectedItemId = $request->item_id;
         $items = Item::all();
         $warehouses = Warehouse::active()->get();
-        $allocations = Allocation::all();
+        $allocations = Allocation::orderBy('name', 'asc')->get();
         $projects = \App\Models\Project::all();
         
         $warehouse = null;
@@ -169,7 +169,7 @@ class LedgerController extends Controller
     public function getAllocationsByWarehouse(Request $request)
     {
         $request->validate(['warehouse_id' => 'required|exists:warehouses,id']);
-        $allocations = Allocation::where('warehouse_id', $request->warehouse_id)->get(['id', 'name']);
+        $allocations = Allocation::where('warehouse_id', $request->warehouse_id)->orderBy('name', 'asc')->get(['id', 'name']);
         return response()->json($allocations);
     }
 
@@ -300,7 +300,7 @@ class LedgerController extends Controller
             }, 0);
 
         $balance = $item->getBalance($warehouse->id);
-        $allocations = Allocation::where('warehouse_id', $warehouse->id)->get();
+        $allocations = Allocation::where('warehouse_id', $warehouse->id)->orderBy('name', 'asc')->get();
 
         return view($this->getRoleView('item_history'), compact('ledgers', 'item', 'warehouse', 'balance', 'openingBalance', 'allocations'));
     }

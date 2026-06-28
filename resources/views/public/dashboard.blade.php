@@ -4,7 +4,7 @@
 <div class="container py-4">
     <div class="card mb-4 shadow-sm border-0">
         <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2"></i> {{ $warehouse->name }}</h5>
+            <h5 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2"></i> {{ $warehouse->name }} Public Stock Dashboard</h5>
             <span class="badge bg-light text-primary fw-bold">{{ $warehouse->type }}</span>
         </div>
         <div class="card-body py-4">

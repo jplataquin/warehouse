@@ -82,4 +82,15 @@ class LoggerDashboardTest extends TestCase
         $response = $this->get(route('logger.rules'));
         $response->assertRedirect(route('login'));
     }
+
+    public function test_responsive_mobile_navigation_elements_are_present()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        $response = $this->actingAs($supervisor)->get(route('home'));
+
+        $response->assertStatus(200);
+        $response->assertSee('navbar-toggler');
+        $response->assertSee('id="loggerNavbarContent"', false);
+    }
 }
