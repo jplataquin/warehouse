@@ -64,4 +64,19 @@ class AssetInventoryTest extends TestCase
         $response->assertSee('Truck A');
         $response->assertDontSee('Drill B');
     }
+
+    public function test_logger_can_view_asset_inventory_page_but_cannot_add_item()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+
+        Item::create(['name' => 'Excavator X1', 'type' => 'ASSET', 'unit' => 'UNIT']);
+
+        $response = $this->actingAs($logger)
+            ->get(route('items.assets'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Excavator X1');
+        $response->assertSee('Asset Inventory');
+        $response->assertDontSee('Add New Item');
+    }
 }

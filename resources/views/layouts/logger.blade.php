@@ -81,6 +81,11 @@
                         </li>
                     @endif
                 @endif
+                @if(Auth::user()->isLogger())
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('items.assets') }}">Assets</a>
+                    </li>
+                @endif
             </ul>
 
             <!-- Right Side User & Badges -->

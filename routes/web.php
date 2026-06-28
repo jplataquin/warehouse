@@ -35,6 +35,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('logger.rules')
         ->middleware('logger');
 
+    Route::get('items/assets', [ItemController::class, 'assets'])->name('items.assets');
     Route::get('items/{item}/stock', [ItemController::class, 'getStock'])->name('items.stock');
 
     // Shared routes (mostly read-only for loggers, full for others)
@@ -80,7 +81,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('items/bulk-import/preview', [\App\Http\Controllers\ItemImportController::class, 'preview'])->name('items.import.preview');
         Route::post('items/bulk-import/store', [\App\Http\Controllers\ItemImportController::class, 'store'])->name('items.import.store');
 
-        Route::get('items/assets', [ItemController::class, 'assets'])->name('items.assets');
         Route::resource('items', ItemController::class);
         Route::resource('allocations', AllocationController::class)->except(['index', 'create']);
         

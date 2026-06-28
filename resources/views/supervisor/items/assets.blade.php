@@ -71,9 +71,11 @@
                 </div>
                 <h4 class="fw-bold">No assets found</h4>
                 <p class="text-muted">Adjust your search or add new assets to the system.</p>
+                @if(Auth::user()->isAdmin() || Auth::user()->isSupervisor())
                 <a href="{{ route('items.create') }}" class="btn btn-primary mt-2">
                     <i class="bi bi-plus-circle me-1"></i> Add New Item
                 </a>
+                @endif
             </div>
         @endforelse
     </div>
