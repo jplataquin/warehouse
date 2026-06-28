@@ -26,16 +26,13 @@
 
 <div class="card mb-4">
     <div class="card-header bg-white">
-        <i class="bi bi-search me-1"></i> Check Item Stock
+        <i class="bi bi-search me-1"></i>Check Item
     </div>
     <div class="card-body">
         <div class="row align-items-end">
-            <div class="col-md-8">
+            <div class="col-md-12">
                 <label class="form-label small text-muted text-uppercase fw-bold">Search Item</label>
                 <input type="text" id="dashboard-item-search" class="form-control" placeholder="Search item name or specification..." autocomplete="off">
-            </div>
-            <div class="col-md-4 text-muted small">
-                <i class="bi bi-info-circle me-1"></i> Stock includes both Pending and Approved entries.
             </div>
         </div>
     </div>
