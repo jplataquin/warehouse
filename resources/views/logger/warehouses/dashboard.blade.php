@@ -167,7 +167,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="mt-2">
                             <div class="small text-muted text-uppercase fw-bold">Stock Level</div>
                             <div class="h4 mb-0 fw-bold text-primary">
-                                {{ $item->current_stock }} <span class="fs-6 text-muted fw-normal">{{ $item->unit }}</span>
+
+                                @php 
+                                    $number         = $item->current_stock;
+                                    $decimals       = strlen(substr(strrchr($number, "."), 1));
+                                    $current_stock  = number_format($number, $decimals, '.', ',');
+                                @endphp
+                                {{ $current_stock }} <span class="fs-6 text-muted fw-normal">{{ $item->unit }}</span>
                             </div>
                         </div>
                         @if($item->type === 'ASSET')
