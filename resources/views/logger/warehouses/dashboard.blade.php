@@ -7,7 +7,7 @@
         <span class="badge bg-primary">{{ $warehouse->type }}</span>
     </div>
     <div class="card-body">
-        <div class="row text-center">
+        <div class="row">
             <div class="col-md-8 border-end mb-2">
                 <h5 class="text-muted small text-uppercase fw-bold">Project</h5>
                 <p class="text-dark mb-0 text-truncate" title="{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}">{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}</p>
