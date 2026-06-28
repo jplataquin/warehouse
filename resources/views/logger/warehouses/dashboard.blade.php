@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button class="nav-link filter-btn text-success fw-bold" type="button" data-filter="ASSET">Asset</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link filter-btn text-warning text-dark fw-bold" type="button" data-filter="RECOVERABLE">Recoverable</button>
+                <button class="nav-link filter-btn text-warning fw-bold" type="button" data-filter="RECOVERABLE">Recoverable</button>
             </li>
         </ul>
     </div>
