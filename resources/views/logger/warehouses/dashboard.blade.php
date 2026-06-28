@@ -26,7 +26,7 @@
 
 <div class="card mb-4">
     <div class="card-header bg-white">
-        <i class="bi bi-search me-1"></i>Check Item
+        <i class="bi bi-box-seam me-2"></i> Inventory
     </div>
     <div class="card-body">
         <div class="row align-items-end">
@@ -97,7 +97,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="mb-4">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
-        <h5 class="fw-bold text-dark mb-0"><i class="bi bi-box-seam me-2"></i> Inventory</h5>
         <div class="btn-group btn-group-sm w-100 w-md-auto" role="group" aria-label="Item Type Filters">
             <button type="button" class="btn btn-secondary active filter-btn" data-filter="ALL">All</button>
             <button type="button" class="btn btn-outline-danger filter-btn" data-filter="CONSUMABLE">Consumables</button>
