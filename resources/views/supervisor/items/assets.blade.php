@@ -23,7 +23,7 @@
         @forelse($assets as $asset)
             <div class="col">
                 <div class="card shadow-sm border-1 h-100" style="border-radius: 15px; overflow: hidden; transition: transform 0.2s;">
-                    <div class="card-header bg-primary text-white py-3 border-0">
+                    <div class="card-header bg-success text-white py-3 border-0">
                         <h5 class="card-title mb-0 text-truncate" title="{{ $asset->name }}">{{ $asset->name }}</h5>
                     </div>
                     <div class="card-body d-flex flex-column">
