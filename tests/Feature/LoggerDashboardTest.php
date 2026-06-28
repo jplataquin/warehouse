@@ -43,6 +43,10 @@ class LoggerDashboardTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee($warehouse->name . ' Dashboard');
+        $response->assertSee('data-filter="CONSUMABLE"', false);
+        $response->assertSee('data-filter="ASSET"', false);
+        $response->assertSee('data-filter="RECOVERABLE"', false);
+        $response->assertSee('filter-btn');
     }
 
     public function test_logger_cannot_access_unassigned_warehouse_dashboard()
