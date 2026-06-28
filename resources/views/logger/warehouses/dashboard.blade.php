@@ -3,24 +3,20 @@
 @section('inner_content')
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span>{{ $warehouse->name }} Dashboard</span>
+        <span>Dashboard</span>
         <span class="badge bg-primary">{{ $warehouse->type }}</span>
     </div>
     <div class="card-body">
         <div class="row text-center">
-            <div class="col-md-3 border-end">
-                <h5 class="text-muted small text-uppercase fw-bold">Status</h5>
-                <p class="text-success fw-bold mb-0">{{ $warehouse->status }}</p>
-            </div>
-            <div class="col-md-3 border-end">
+            <div class="col-md-8 border-end">
                 <h5 class="text-muted small text-uppercase fw-bold">Project</h5>
                 <p class="text-dark mb-0 text-truncate" title="{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}">{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}</p>
             </div>
-            <div class="col-md-3 border-end">
+            <div class="col-md-2 border-end">
                 <h5 class="text-muted small text-uppercase fw-bold">Item Count</h5>
                 <p class="fw-bold text-primary mb-0 fs-5">{{ $items->count() }}</p>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <h5 class="text-muted small text-uppercase fw-bold">Quick Actions</h5>
                 <a href="{{ route('ledgers.create', ['warehouse_id' => $warehouse->id]) }}" class="btn btn-sm btn-outline-primary">New Entry</a>
             </div>
