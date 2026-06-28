@@ -133,6 +133,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                 {{ $item->current_stock }} <span class="fs-6 text-muted fw-normal">{{ $item->unit }}</span>
                             </div>
                         </div>
+                        @if($item->type === 'ASSET')
+                        <div class="mt-2">
+                            <div class="small text-muted text-uppercase fw-bold">Status</div>
+                            @if($item->status === 'Out of Order')
+                                <span class="badge bg-danger small"><i class="bi bi-exclamation-triangle-fill me-1"></i> Out of Order</span>
+                            @else
+                                <span class="badge bg-success small"><i class="bi bi-check-circle-fill me-1"></i> Operational</span>
+                            @endif
+                        </div>
+                        @endif
                     </div>
                     <div class="card-footer bg-transparent border-top-0 pt-0 pb-3">
                         <a href="{{ route('ledgers.index', ['warehouse_id' => $warehouse->id, 'item_id' => $item->id]) }}" class="btn btn-sm btn-link p-0 text-decoration-none small">

@@ -97,4 +97,39 @@ class LoggerDashboardTest extends TestCase
         $response->assertSee('navbar-toggler');
         $response->assertSee('id="loggerNavbarContent"', false);
     }
+
+    public function test_logger_warehouse_dashboard_shows_asset_status()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $warehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Logger Warehouse',
+            'status' => 'ACTIVE'
+        ]);
+        $logger->warehouses()->attach($warehouse);
+
+        $asset = \App\Models\Item::create([
+            'name' => 'Generator X5',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'status' => 'Out of Order'
+        ]);
+
+        // Put 1 Generator in stock so it displays on the dashboard
+        \App\Models\Ledger::create([
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $asset->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED'
+        ]);
+
+        $response = $this->actingAs($logger)
+            ->get(route('logger.warehouse.dashboard', $warehouse));
+
+        $response->assertStatus(200);
+        $response->assertSee('Generator X5');
+        $response->assertSee('Out of Order');
+    }
 }
