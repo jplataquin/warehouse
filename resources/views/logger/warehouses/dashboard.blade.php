@@ -3,7 +3,7 @@
 @section('inner_content')
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span>{{ $warehouse->name }} Dashboard</span>
+        <span>Dashboard</span>
         <span class="badge bg-primary">{{ $warehouse->type }}</span>
     </div>
     <div class="card-body">
@@ -31,7 +31,6 @@
     <div class="card-body">
         <div class="row align-items-end">
             <div class="col-md-12">
-                <label class="form-label small text-muted text-uppercase fw-bold">Search Item</label>
                 <input type="text" id="dashboard-item-search" class="form-control" placeholder="Search item name or specification..." autocomplete="off">
             </div>
         </div>
