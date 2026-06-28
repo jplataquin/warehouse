@@ -3,7 +3,7 @@
 @section('inner_content')
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span>{{ $warehouse->name }} Dashboard</span>
+        <span>Dashboard</span>
         <span class="badge bg-primary">{{ $warehouse->type }}</span>
     </div>
     <div class="card-body">
