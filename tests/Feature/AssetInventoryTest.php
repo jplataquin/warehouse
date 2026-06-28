@@ -78,6 +78,23 @@ class AssetInventoryTest extends TestCase
         $response->assertSee('Excavator X1');
         $response->assertSee('Asset Inventory');
         $response->assertDontSee('Add New Item');
+        $response->assertSee('select name="status"', false);
+    }
+
+    public function test_logger_can_update_asset_status_via_dropdown()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $asset = Item::create(['name' => 'Drill D1', 'type' => 'ASSET', 'unit' => 'UNIT']);
+
+        $this->assertEquals('Operational', $asset->fresh()->status);
+
+        $response = $this->actingAs($logger)
+            ->patch(route('items.update-status', $asset), [
+                'status' => 'Out of Order'
+            ]);
+
+        $response->assertRedirect();
+        $this->assertEquals('Out of Order', $asset->fresh()->status);
     }
 
     public function test_asset_status_defaults_to_operational_and_can_be_updated_to_out_of_order()

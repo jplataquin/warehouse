@@ -96,4 +96,15 @@ class ItemController extends Controller
             'unit' => $item->unit
         ]);
     }
+
+    public function updateStatus(Request $request, Item $item)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:Operational,Out of Order',
+        ]);
+
+        $item->update(['status' => $validated['status']]);
+
+        return redirect()->back()->with('success', 'Asset status updated successfully.');
+    }
 }

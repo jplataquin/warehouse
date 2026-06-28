@@ -34,10 +34,21 @@
                         
                         <div class="mb-3">
                             <label class="small text-muted text-uppercase fw-bold d-block mb-1">Status</label>
-                            @if($asset->status === 'Out of Order')
-                                <span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i> Out of Order</span>
+                            @if(Auth::user()->isLogger())
+                                <form action="{{ route('items.update-status', $asset) }}" method="POST">
+                                    @csrf
+                                    @method('PATCH')
+                                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                        <option value="Operational" {{ $asset->status === 'Operational' ? 'selected' : '' }}>Operational</option>
+                                        <option value="Out of Order" {{ $asset->status === 'Out of Order' ? 'selected' : '' }}>Out of Order</option>
+                                    </select>
+                                </form>
                             @else
-                                <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i> Operational</span>
+                                @if($asset->status === 'Out of Order')
+                                    <span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i> Out of Order</span>
+                                @else
+                                    <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i> Operational</span>
+                                @endif
                             @endif
                         </div>
                         
