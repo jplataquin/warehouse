@@ -58,11 +58,11 @@
     }
     #item-type-tabs .nav-link[data-filter="CONSUMABLE"].active {
         border-top: 3px solid #dc3545 !important;
-        color: #dc3545 !important;
+        color: #212529 !important;
     }
     #item-type-tabs .nav-link[data-filter="ASSET"].active {
         border-top: 3px solid #198754 !important;
-        color: #198754 !important;
+        color: #212529 !important;
     }
     #item-type-tabs .nav-link[data-filter="RECOVERABLE"].active {
         border-top: 3px solid #ffc107 !important;
