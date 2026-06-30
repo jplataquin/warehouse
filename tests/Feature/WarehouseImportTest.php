@@ -3,11 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Models\Project;
-use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
 
 class WarehouseImportTest extends TestCase
@@ -47,7 +44,7 @@ class WarehouseImportTest extends TestCase
 
         $response = $this->actingAs($this->supervisor)
             ->post(route('warehouses.import.preview'), [
-                'file' => $file
+                'file' => $file,
             ]);
 
         $response->assertStatus(200);
@@ -65,7 +62,7 @@ class WarehouseImportTest extends TestCase
                 'status' => 'ACTIVE',
                 'row_number' => 2,
                 'is_valid' => true,
-                'errors' => []
+                'errors' => [],
             ],
             [
                 'name' => 'New Central WH',
@@ -74,8 +71,8 @@ class WarehouseImportTest extends TestCase
                 'status' => 'ACTIVE',
                 'row_number' => 3,
                 'is_valid' => true,
-                'errors' => []
-            ]
+                'errors' => [],
+            ],
         ];
 
         session(['warehouse_import_data' => $previewData]);

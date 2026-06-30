@@ -31,7 +31,7 @@ class MqmsProjectImportTest extends TestCase
                     'data' => [
                         ['id' => 'MQ-101', 'name' => 'Project Alpha'],
                         ['id' => 'MQ-102', 'name' => 'Project Beta'],
-                    ]
+                    ],
                 ]);
         });
 
@@ -71,7 +71,7 @@ class MqmsProjectImportTest extends TestCase
                 'selected_projects' => [
                     ['id' => 'MQ-101', 'name' => 'Imported Project 1'],
                     ['id' => 'MQ-102', 'name' => 'Imported Project 2'],
-                ]
+                ],
             ]);
 
         $response->assertRedirect(route('projects.index'));
@@ -79,11 +79,11 @@ class MqmsProjectImportTest extends TestCase
 
         $this->assertDatabaseHas('projects', [
             'name' => 'Imported Project 1',
-            'mapped_to_project_id' => 'MQ-101'
+            'mapped_to_project_id' => 'MQ-101',
         ]);
         $this->assertDatabaseHas('projects', [
             'name' => 'Imported Project 2',
-            'mapped_to_project_id' => 'MQ-102'
+            'mapped_to_project_id' => 'MQ-102',
         ]);
     }
 
@@ -93,15 +93,15 @@ class MqmsProjectImportTest extends TestCase
             ->post(route('projects.mqms-import.store'), [
                 'selected_projects' => [
                     [
-                        'id' => 'MQ-WH-1', 
-                        'name' => 'Project with Warehouse', 
-                        'create_warehouse' => '1'
+                        'id' => 'MQ-WH-1',
+                        'name' => 'Project with Warehouse',
+                        'create_warehouse' => '1',
                     ],
-                ]
+                ],
             ]);
 
         $response->assertRedirect(route('projects.index'));
-        
+
         $project = Project::where('mapped_to_project_id', 'MQ-WH-1')->first();
         $this->assertNotNull($project);
 
@@ -109,7 +109,7 @@ class MqmsProjectImportTest extends TestCase
             'project_id' => $project->id,
             'type' => 'SITE',
             'name' => 'Project with Warehouse - Site Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
     }
 
@@ -120,7 +120,7 @@ class MqmsProjectImportTest extends TestCase
                 'selected_projects' => [
                     ['name' => 'Project Alpha'], // No ID, represents unchecked checkbox
                     ['name' => 'Project Beta'],  // No ID, represents unchecked checkbox
-                ]
+                ],
             ]);
 
         $response->assertRedirect(route('projects.index'));

@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -13,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('items', function (Blueprint $table) {
-            $table->enum('type', ['CONSUMABLE', 'ASSET', 'RECOVERABLE'])->change();
+            $table->boolean('is_asset_utilized')->default(false);
         });
     }
 
@@ -22,11 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Change RECOVERABLE items to ASSET before removing the type from enum
-        DB::table('items')->where('type', 'RECOVERABLE')->update(['type' => 'ASSET']);
-
         Schema::table('items', function (Blueprint $table) {
-            $table->enum('type', ['CONSUMABLE', 'ASSET'])->change();
+            $table->dropColumn('is_asset_utilized');
         });
     }
 };

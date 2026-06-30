@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->enum('type', ['IN', 'OUT']);
             $table->enum('action', [
-                'TRANSFER', 'DELIVERY', 'DIRECT', 'ALLOCATE', 
-                'DISPOSE', 'LOST', 'RETURN', 'MAINTENANCE', 'CORRECTION'
+                'TRANSFER', 'DELIVERY', 'DIRECT', 'ALLOCATE',
+                'DISPOSE', 'LOST', 'RETURN', 'MAINTENANCE', 'CORRECTION',
             ]);
             $table->foreignId('item_id')->constrained()->onDelete('cascade');
             $table->decimal('quantity', 15, 2);

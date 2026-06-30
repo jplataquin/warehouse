@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use App\Models\Allocation;
 use App\Models\Item;
-use App\Models\Warehouse;
 use App\Models\Ledger;
+use App\Models\Project;
+use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,12 +19,12 @@ class ItemStockTest extends TestCase
     {
         $user = User::factory()->create();
         $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
-        $project = \App\Models\Project::create(['name' => 'Test Project']);
+        $project = Project::create(['name' => 'Test Project']);
         $warehouse = Warehouse::create(['name' => 'Main Warehouse', 'type' => 'CENTRAL', 'status' => 'ACTIVE', 'project_id' => $project->id]);
-        
-        $allocation = \App\Models\Allocation::create([
+
+        $allocation = Allocation::create([
             'name' => 'Test Alloc',
-            'warehouse_id' => $warehouse->id
+            'warehouse_id' => $warehouse->id,
         ]);
 
         // Add 100 bags (Approved)
@@ -65,7 +67,7 @@ class ItemStockTest extends TestCase
         $response->assertStatus(200);
         $response->assertJson([
             'balance' => 120, // 100 (In) + 50 (In) - 30 (Out) = 120
-            'unit' => 'Bags'
+            'unit' => 'Bags',
         ]);
     }
 
@@ -78,12 +80,12 @@ class ItemStockTest extends TestCase
 
         Ledger::create([
             'type' => 'IN', 'action' => 'DELIVERY', 'item_id' => $item->id, 'quantity' => 100,
-            'warehouse_id' => $warehouse1->id, 'status' => 'APPROVED', 'po_number' => 'P1', 'delivery_receipt' => 'D1'
+            'warehouse_id' => $warehouse1->id, 'status' => 'APPROVED', 'po_number' => 'P1', 'delivery_receipt' => 'D1',
         ]);
 
         Ledger::create([
             'type' => 'IN', 'action' => 'DELIVERY', 'item_id' => $item->id, 'quantity' => 50,
-            'warehouse_id' => $warehouse2->id, 'status' => 'APPROVED', 'po_number' => 'P2', 'delivery_receipt' => 'D2'
+            'warehouse_id' => $warehouse2->id, 'status' => 'APPROVED', 'po_number' => 'P2', 'delivery_receipt' => 'D2',
         ]);
 
         $response = $this->actingAs($user)->get("/items/{$item->id}/stock");
@@ -91,7 +93,7 @@ class ItemStockTest extends TestCase
         $response->assertStatus(200);
         $response->assertJson([
             'balance' => 150,
-            'unit' => 'Bags'
+            'unit' => 'Bags',
         ]);
     }
 }

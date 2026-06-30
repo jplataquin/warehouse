@@ -17,9 +17,9 @@ class ForcePasswordChange
     {
         if (auth()->check() && auth()->user()->needs_password_change) {
             // Check if the current request is already for changing password or logout
-            if (!$request->routeIs('password.change') && 
-                !$request->routeIs('password.change.update') && 
-                !$request->routeIs('logout')) {
+            if (! $request->routeIs('password.change') &&
+                ! $request->routeIs('password.change.update') &&
+                ! $request->routeIs('logout')) {
                 return redirect()->route('password.change')
                     ->with('error', 'You must change your password before proceeding.');
             }

@@ -30,7 +30,7 @@ class AssetItemSeeder extends Seeder
                 ['name' => $asset['name'], 'specification' => $asset['specification']],
                 [
                     'type' => 'ASSET',
-                    'unit' => $asset['unit']
+                    'unit' => $asset['unit'],
                 ]
             );
         }

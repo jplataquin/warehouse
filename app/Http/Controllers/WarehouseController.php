@@ -2,36 +2,38 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Warehouse;
 use App\Models\Project;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class WarehouseController extends Controller
 {
     public function index(Request $request)
     {
         $search = $request->input('search');
-        
+
         $query = Warehouse::with(['project', 'loggers']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('type', 'like', "%{$search}%")
-                  ->orWhereHas('project', function ($pq) use ($search) {
-                      $pq->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('type', 'like', "%{$search}%")
+                    ->orWhereHas('project', function ($pq) use ($search) {
+                        $pq->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
         $warehouses = $query->get();
+
         return view('supervisor.warehouses.index', compact('warehouses'));
     }
 
     public function show($warehouse)
     {
-        if (!$warehouse instanceof Warehouse) {
+        if (! $warehouse instanceof Warehouse) {
             $warehouse = Warehouse::findOrFail($warehouse);
         }
 
@@ -40,13 +42,13 @@ class WarehouseController extends Controller
             ->whereDoesntHave('warehouses', function ($query) use ($warehouse) {
                 $query->where('warehouses.id', $warehouse->id);
             })->get();
-            
+
         return view('supervisor.warehouses.show', compact('warehouse', 'availableLoggers'));
     }
 
     public function assignLogger(Request $request, $warehouse)
     {
-        if (!$warehouse instanceof Warehouse) {
+        if (! $warehouse instanceof Warehouse) {
             $warehouse = Warehouse::findOrFail($warehouse);
         }
 
@@ -61,13 +63,14 @@ class WarehouseController extends Controller
 
     public function removeLogger($warehouse, $logger)
     {
-        if (!$warehouse instanceof Warehouse) {
+        if (! $warehouse instanceof Warehouse) {
             $warehouse = Warehouse::findOrFail($warehouse);
         }
-        
+
         $loggerId = $logger instanceof User ? $logger->id : $logger;
 
         $warehouse->loggers()->detach($loggerId);
+
         return redirect()->route('warehouses.show', $warehouse)->with('success', 'Logger removed successfully.');
     }
 
@@ -75,6 +78,7 @@ class WarehouseController extends Controller
     {
         $projects = Project::all();
         $loggers = User::where('role', 'logger')->get();
+
         return view('supervisor.warehouses.create', compact('projects', 'loggers'));
     }
 
@@ -88,10 +92,10 @@ class WarehouseController extends Controller
             'logger_ids' => 'nullable|array',
             'logger_ids.*' => 'exists:users,id',
         ]);
-        
+
         $validated['status'] = strtoupper($validated['status']);
         $warehouse = Warehouse::create($validated);
-        
+
         if ($request->has('logger_ids')) {
             $warehouse->loggers()->sync($request->logger_ids);
         }
@@ -101,17 +105,18 @@ class WarehouseController extends Controller
 
     public function edit($warehouse)
     {
-        if (!$warehouse instanceof Warehouse) {
+        if (! $warehouse instanceof Warehouse) {
             $warehouse = Warehouse::findOrFail($warehouse);
         }
         $projects = Project::all();
         $loggers = User::where('role', 'logger')->get();
+
         return view('supervisor.warehouses.edit', compact('warehouse', 'projects', 'loggers'));
     }
 
     public function update(Request $request, $warehouse)
     {
-        if (!$warehouse instanceof Warehouse) {
+        if (! $warehouse instanceof Warehouse) {
             $warehouse = Warehouse::findOrFail($warehouse);
         }
         $validated = $request->validate([
@@ -122,10 +127,10 @@ class WarehouseController extends Controller
             'logger_ids' => 'nullable|array',
             'logger_ids.*' => 'exists:users,id',
         ]);
-        
+
         $validated['status'] = strtoupper($validated['status']);
         $warehouse->update($validated);
-        
+
         $warehouse->loggers()->sync($request->logger_ids ?? []);
 
         return redirect()->route('warehouses.index')->with('success', 'Warehouse updated successfully.');
@@ -133,21 +138,22 @@ class WarehouseController extends Controller
 
     public function destroy($warehouse)
     {
-        if (!$warehouse instanceof Warehouse) {
+        if (! $warehouse instanceof Warehouse) {
             $warehouse = Warehouse::findOrFail($warehouse);
         }
         $warehouse->delete();
+
         return redirect()->route('warehouses.index')->with('success', 'Warehouse deleted successfully.');
     }
 
     public function generatePublicToken($warehouse)
     {
-        if (!$warehouse instanceof Warehouse) {
+        if (! $warehouse instanceof Warehouse) {
             $warehouse = Warehouse::findOrFail($warehouse);
         }
 
         $warehouse->update([
-            'public_token' => \Illuminate\Support\Str::random(32),
+            'public_token' => Str::random(32),
         ]);
 
         return redirect()->route('warehouses.show', $warehouse)->with('success', 'Public dashboard link generated successfully.');
@@ -155,7 +161,7 @@ class WarehouseController extends Controller
 
     public function revokePublicToken($warehouse)
     {
-        if (!$warehouse instanceof Warehouse) {
+        if (! $warehouse instanceof Warehouse) {
             $warehouse = Warehouse::findOrFail($warehouse);
         }
 

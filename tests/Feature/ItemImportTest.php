@@ -2,11 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\Item;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
 
 class ItemImportTest extends TestCase
@@ -31,15 +30,15 @@ class ItemImportTest extends TestCase
     public function test_preview_parses_csv_data()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
-        
+
         $content = "type,name,specification,unit\n";
         $content .= "CONSUMABLE,Cement,40kg,Bags\n";
         $content .= "ASSET,Drill,Brushless,Units\n";
-        
+
         $file = UploadedFile::fake()->createWithContent('items.csv', $content);
 
         $response = $this->actingAs($supervisor)->post(route('items.import.preview'), [
-            'file' => $file
+            'file' => $file,
         ]);
 
         $response->assertStatus(200);
@@ -52,7 +51,7 @@ class ItemImportTest extends TestCase
     public function test_store_saves_valid_items()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
-        
+
         $importData = [
             [
                 'type' => 'CONSUMABLE',
@@ -60,7 +59,7 @@ class ItemImportTest extends TestCase
                 'specification' => 'Spec 1',
                 'unit' => 'Unit 1',
                 'is_valid' => true,
-                'row_number' => 2
+                'row_number' => 2,
             ],
             [
                 'type' => 'ASSET',
@@ -68,8 +67,8 @@ class ItemImportTest extends TestCase
                 'specification' => 'Spec 2',
                 'unit' => 'Unit 2',
                 'is_valid' => true,
-                'row_number' => 3
-            ]
+                'row_number' => 3,
+            ],
         ];
 
         session(['item_import_data' => $importData]);
@@ -84,26 +83,26 @@ class ItemImportTest extends TestCase
     public function test_uniqueness_is_enforced_in_preview()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
-        
+
         Item::create([
             'type' => 'CONSUMABLE',
             'name' => 'Existing Item',
             'specification' => 'Existing Spec',
-            'unit' => 'Existing Unit'
+            'unit' => 'Existing Unit',
         ]);
 
         $content = "type,name,specification,unit\n";
         $content .= "CONSUMABLE,Existing Item,Existing Spec,Existing Unit\n";
-        
+
         $file = UploadedFile::fake()->createWithContent('items.csv', $content);
 
         $response = $this->actingAs($supervisor)->post(route('items.import.preview'), [
-            'file' => $file
+            'file' => $file,
         ]);
 
         $response->assertStatus(200);
         $response->assertSee('Item already exists in database.');
-        
+
         $importData = session('item_import_data');
         $this->assertFalse($importData[0]['is_valid']);
     }
@@ -111,20 +110,20 @@ class ItemImportTest extends TestCase
     public function test_internal_file_duplicates_are_detected()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
-        
+
         $content = "type,name,specification,unit\n";
         $content .= "CONSUMABLE,Item X,Spec X,Unit X\n";
         $content .= "CONSUMABLE,Item X,Spec X,Unit X\n"; // Duplicate
-        
+
         $file = UploadedFile::fake()->createWithContent('items.csv', $content);
 
         $response = $this->actingAs($supervisor)->post(route('items.import.preview'), [
-            'file' => $file
+            'file' => $file,
         ]);
 
         $response->assertStatus(200);
         $response->assertSee('Duplicate item found in this file');
-        
+
         $importData = session('item_import_data');
         $this->assertTrue($importData[0]['is_valid']);
         $this->assertFalse($importData[1]['is_valid']);

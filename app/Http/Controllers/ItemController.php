@@ -13,9 +13,9 @@ class ItemController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('specification', 'LIKE', "%{$search}%");
+                    ->orWhere('specification', 'LIKE', "%{$search}%");
             });
         }
 
@@ -24,7 +24,7 @@ class ItemController extends Controller
         }
 
         $items = $query->latest()->paginate(50)->withQueryString();
-        
+
         return view('supervisor.items.index', compact('items'));
     }
 
@@ -34,13 +34,14 @@ class ItemController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('specification', 'LIKE', "%{$search}%");
+                    ->orWhere('specification', 'LIKE', "%{$search}%");
             });
         }
 
         $assets = $query->get();
+
         return view('supervisor.items.assets', compact('assets'));
     }
 
@@ -59,6 +60,7 @@ class ItemController extends Controller
             'status' => 'nullable|in:Operational,Out of Order',
         ]);
         Item::create($validated);
+
         return redirect()->route('items.index')->with('success', 'Item created successfully.');
     }
 
@@ -77,12 +79,14 @@ class ItemController extends Controller
             'status' => 'nullable|in:Operational,Out of Order',
         ]);
         $item->update($validated);
+
         return redirect()->route('items.index', $request->query())->with('success', 'Item updated successfully.');
     }
 
     public function destroy(Item $item)
     {
         $item->delete();
+
         return redirect()->route('items.index')->with('success', 'Item deleted successfully.');
     }
 
@@ -90,10 +94,10 @@ class ItemController extends Controller
     {
         $warehouseId = $request->query('warehouse_id');
         $balance = $item->getBalance($warehouseId);
-        
+
         return response()->json([
             'balance' => $balance,
-            'unit' => $item->unit
+            'unit' => $item->unit,
         ]);
     }
 

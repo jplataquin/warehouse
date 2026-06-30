@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\Item;
+use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,7 +18,7 @@ class LedgerViewTest extends TestCase
         $item = Item::create([
             'name' => 'Recoverable Item Test',
             'type' => 'RECOVERABLE',
-            'unit' => 'Units'
+            'unit' => 'Units',
         ]);
         $warehouse = Warehouse::create(['name' => 'Test WH', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
         $user->warehouses()->attach($warehouse);

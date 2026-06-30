@@ -58,12 +58,12 @@
                     <option value="">All Actions</option>
                     <option value="TRANSFER" {{ request('action') === 'TRANSFER' ? 'selected' : '' }}>Transfer</option>
                     <option value="DELIVERY" {{ request('action') === 'DELIVERY' ? 'selected' : '' }}>Delivery</option>
-                    <option value="DIRECT" {{ request('action') === 'DIRECT' ? 'selected' : '' }}>Direct</option>
+                    <option value="ASSET_RETURN" {{ request('action') === 'ASSET_RETURN' ? 'selected' : '' }}>Asset Return</option>
                     <option value="ALLOCATE" {{ request('action') === 'ALLOCATE' ? 'selected' : '' }}>Allocate</option>
                     <option value="DISPOSE" {{ request('action') === 'DISPOSE' ? 'selected' : '' }}>Dispose</option>
                     <option value="UTILIZE" {{ request('action') === 'UTILIZE' ? 'selected' : '' }}>Utilize</option>
                     <option value="LOST" {{ request('action') === 'LOST' ? 'selected' : '' }}>Lost</option>
-                    <option value="RETURN" {{ request('action') === 'RETURN' ? 'selected' : '' }}>Return</option>
+                    <option value="REJECT" {{ request('action') === 'REJECT' ? 'selected' : '' }}>Reject</option>
                     <option value="MAINTENANCE" {{ request('action') === 'MAINTENANCE' ? 'selected' : '' }}>Maintenance</option>
                     <option value="CORRECTION" {{ request('action') === 'CORRECTION' ? 'selected' : '' }}>Correction</option>
                 </select>

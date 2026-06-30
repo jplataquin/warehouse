@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ProjectTemplateExport;
 use App\Imports\ProjectImport;
 use App\Models\Project;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
-use App\Exports\ProjectTemplateExport;
-use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProjectImportController extends Controller
 {
@@ -26,12 +26,12 @@ class ProjectImportController extends Controller
     public function preview(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv'
+            'file' => 'required|mimes:xlsx,xls,csv',
         ]);
 
         $collection = Excel::toCollection(new ProjectImport, $request->file('file'));
         $rows = $collection->first() ?? collect();
-        
+
         $previewData = [];
         $fileProjects = [];
 
@@ -39,7 +39,7 @@ class ProjectImportController extends Controller
             $project = [
                 'name' => trim($row['name'] ?? ''),
                 'create_warehouse' => strtoupper(trim($row['create_warehouse'] ?? 'NO')) === 'YES',
-                'row_number' => $index + 2
+                'row_number' => $index + 2,
             ];
 
             $validator = Validator::make($project, [
@@ -47,17 +47,17 @@ class ProjectImportController extends Controller
             ]);
 
             $errors = $validator->errors()->all();
-            
+
             $nameKey = strtolower($project['name']);
 
             // Check uniqueness in DB
             if (Project::withTrashed()->where('name', $project['name'])->exists()) {
-                $errors[] = "Project name already exists in database.";
+                $errors[] = 'Project name already exists in database.';
             }
 
             // Check uniqueness in file
             if (isset($fileProjects[$nameKey])) {
-                $errors[] = "Duplicate project name found in this file (see row " . $fileProjects[$nameKey] . ").";
+                $errors[] = 'Duplicate project name found in this file (see row '.$fileProjects[$nameKey].').';
             } else {
                 $fileProjects[$nameKey] = $project['row_number'];
             }
@@ -76,7 +76,7 @@ class ProjectImportController extends Controller
     {
         $data = session('project_import_data');
 
-        if (!$data) {
+        if (! $data) {
             return redirect()->route('projects.import.form')->with('error', 'No data to import.');
         }
 
@@ -86,20 +86,20 @@ class ProjectImportController extends Controller
                 if ($row['is_valid']) {
                     $exists = Project::withTrashed()->where('name', $row['name'])->exists();
 
-                    if (!$exists) {
+                    if (! $exists) {
                         $project = Project::create([
                             'name' => $row['name'],
                         ]);
-                        
+
                         if ($row['create_warehouse']) {
                             Warehouse::create([
                                 'project_id' => $project->id,
                                 'type' => 'SITE',
-                                'name' => $project->name . ' - Site Warehouse',
-                                'status' => 'ACTIVE'
+                                'name' => $project->name.' - Site Warehouse',
+                                'status' => 'ACTIVE',
                             ]);
                         }
-                        
+
                         $count++;
                     }
                 }

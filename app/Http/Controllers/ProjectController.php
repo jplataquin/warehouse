@@ -10,7 +10,7 @@ class ProjectController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        
+
         $query = Project::query();
 
         if ($search) {
@@ -18,6 +18,7 @@ class ProjectController extends Controller
         }
 
         $projects = $query->get();
+
         return view('supervisor.projects.index', compact('projects'));
     }
 
@@ -30,6 +31,7 @@ class ProjectController extends Controller
     {
         $request->validate(['name' => 'required|string|max:255|unique:projects,name']);
         Project::create($request->all());
+
         return redirect()->route('projects.index')->with('success', 'Project created successfully.');
     }
 
@@ -40,14 +42,16 @@ class ProjectController extends Controller
 
     public function update(Request $request, Project $project)
     {
-        $request->validate(['name' => 'required|string|max:255|unique:projects,name,' . $project->id]);
+        $request->validate(['name' => 'required|string|max:255|unique:projects,name,'.$project->id]);
         $project->update($request->all());
+
         return redirect()->route('projects.index')->with('success', 'Project updated successfully.');
     }
 
     public function destroy(Project $project)
     {
         $project->delete();
+
         return redirect()->route('projects.index')->with('success', 'Project deleted successfully.');
     }
 

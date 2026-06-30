@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Models\Warehouse;
 use App\Services\MqmsApiClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,10 +20,10 @@ class MqmsProjectImportController extends Controller
     public function preview()
     {
         $response = $this->mqmsClient->getProjects(['status' => 'ACTV']);
-        
+
         // Handle potential errors from the API
         if (isset($response['error'])) {
-            return redirect()->route('projects.index')->with('error', 'MQMS API Error: ' . $response['message']);
+            return redirect()->route('projects.index')->with('error', 'MQMS API Error: '.$response['message']);
         }
 
         $mqmsProjects = $response['data'] ?? $response; // Adapt based on actual API response structure
@@ -32,13 +33,15 @@ class MqmsProjectImportController extends Controller
             $name = trim($mqmsProject['name'] ?? '');
             $mqmsId = $mqmsProject['id'] ?? null;
 
-            if (!$mqmsId || !$name) continue;
+            if (! $mqmsId || ! $name) {
+                continue;
+            }
 
             $errors = [];
-            
+
             // Check if name exists (including soft-deleted)
             if (Project::withTrashed()->where('name', $name)->exists()) {
-                $errors[] = "Project name already exists in database (check deleted projects).";
+                $errors[] = 'Project name already exists in database (check deleted projects).';
             }
 
             // Check if MQMS ID already mapped (including soft-deleted)
@@ -76,16 +79,18 @@ class MqmsProjectImportController extends Controller
         $count = 0;
         DB::transaction(function () use ($selectedProjectData, &$count) {
             foreach ($selectedProjectData as $data) {
-                if (!isset($data['id'])) continue;
+                if (! isset($data['id'])) {
+                    continue;
+                }
 
                 // Find existing project including soft-deleted ones
                 $project = Project::withTrashed()
-                    ->where(function($q) use ($data) {
+                    ->where(function ($q) use ($data) {
                         $q->where('name', $data['name'])
-                          ->orWhere('mapped_to_project_id', $data['id']);
+                            ->orWhere('mapped_to_project_id', $data['id']);
                     })->first();
 
-                if (!$project) {
+                if (! $project) {
                     $project = Project::create([
                         'name' => $data['name'],
                         'mapped_to_project_id' => $data['id'],
@@ -97,7 +102,7 @@ class MqmsProjectImportController extends Controller
                     // Update name/mapped_id just in case
                     $project->update([
                         'name' => $data['name'],
-                        'mapped_to_project_id' => $data['id']
+                        'mapped_to_project_id' => $data['id'],
                     ]);
                     $count++;
                 } else {
@@ -106,11 +111,11 @@ class MqmsProjectImportController extends Controller
                 }
 
                 if (isset($data['create_warehouse']) && $data['create_warehouse'] == '1') {
-                    \App\Models\Warehouse::create([
+                    Warehouse::create([
                         'project_id' => $project->id,
                         'type' => 'SITE',
-                        'name' => $project->name . ' - Site Warehouse',
-                        'status' => 'ACTIVE'
+                        'name' => $project->name.' - Site Warehouse',
+                        'status' => 'ACTIVE',
                     ]);
                 }
             }

@@ -15,7 +15,7 @@ class Ledger extends Model
         'po_number', 'offical_receipt', 'delivery_receipt',
         'warehouse_id', 'project_id', 'destination_warehouse_id', 'source_warehouse_id',
         'allocation_id', 'assigned_to', 'plate_no', 'remarks', 'linked_ledger_id',
-        'created_by', 'updated_by'
+        'created_by', 'updated_by',
     ];
 
     protected $casts = [

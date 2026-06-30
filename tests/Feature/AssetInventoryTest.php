@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\Item;
+use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -25,7 +25,7 @@ class AssetInventoryTest extends TestCase
         $warehouse = Warehouse::create([
             'name' => 'Main Warehouse',
             'type' => 'CENTRAL',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
 
         $asset = Item::create([
@@ -33,14 +33,14 @@ class AssetInventoryTest extends TestCase
             'type' => 'ASSET',
             'specification' => 'Large',
             'unit' => 'UNIT',
-            'current_warehouse_id' => $warehouse->id
+            'current_warehouse_id' => $warehouse->id,
         ]);
 
         $consumable = Item::create([
             'name' => 'Cement',
             'type' => 'CONSUMABLE',
             'specification' => '40kg',
-            'unit' => 'BAG'
+            'unit' => 'BAG',
         ]);
 
         $response = $this->actingAs($this->supervisor)
@@ -86,7 +86,7 @@ class AssetInventoryTest extends TestCase
         $warehouse = Warehouse::create([
             'name' => 'Logger Warehouse',
             'type' => 'CENTRAL',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
         $logger->warehouses()->attach($warehouse);
 
@@ -110,7 +110,7 @@ class AssetInventoryTest extends TestCase
 
         $response = $this->actingAs($logger)
             ->patch(route('items.update-status', $asset), [
-                'status' => 'Out of Order'
+                'status' => 'Out of Order',
             ]);
 
         $response->assertRedirect();
@@ -122,7 +122,7 @@ class AssetInventoryTest extends TestCase
         $asset = Item::create([
             'name' => 'Bulldozer B2',
             'type' => 'ASSET',
-            'unit' => 'UNIT'
+            'unit' => 'UNIT',
         ]);
 
         // Default should be Operational
@@ -140,7 +140,7 @@ class AssetInventoryTest extends TestCase
                 'type' => 'ASSET',
                 'name' => 'Bulldozer B2',
                 'unit' => 'UNIT',
-                'status' => 'Out of Order'
+                'status' => 'Out of Order',
             ]);
 
         $response->assertRedirect(route('items.index'));

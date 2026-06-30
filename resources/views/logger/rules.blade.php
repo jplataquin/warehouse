@@ -52,9 +52,9 @@
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Use this when setting inital item stock of the warehouse.</td>
                     </tr>
-                    <!-- DIRECT -->
+                    <!-- ASSET_RETURN -->
                     <tr>
-                        <td><strong>DIRECT</strong></td>
+                        <td><strong>ASSET_RETURN</strong></td>
                         <td><span class="badge bg-success">IN</span></td>
                         <td class="text-center text-muted">-</td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
@@ -106,9 +106,9 @@
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Deducts stock levels for missing or stolen items.</td>
                     </tr>
-                    <!-- RETURN -->
+                    <!-- REJECT -->
                     <tr>
-                        <td><strong>RETURN</strong></td>
+                        <td><strong>REJECT</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>

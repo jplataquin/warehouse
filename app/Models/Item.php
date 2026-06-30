@@ -9,15 +9,24 @@ class Item extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['type', 'name', 'specification', 'unit', 'current_warehouse_id', 'status'];
+    protected $fillable = ['type', 'name', 'specification', 'unit', 'current_warehouse_id', 'status', 'is_asset_utilized'];
 
     protected $attributes = [
         'status' => 'Operational',
     ];
 
+    protected $casts = [
+        'is_asset_utilized' => 'boolean',
+    ];
+
     public function ledgers()
     {
         return $this->hasMany(Ledger::class);
+    }
+
+    public function assetUtilizations()
+    {
+        return $this->hasMany(AssetUtilization::class);
     }
 
     public function currentWarehouse()
@@ -28,7 +37,7 @@ class Item extends Model
     public function getBalance($warehouseId = null)
     {
         $query = $this->ledgers();
-        
+
         if ($warehouseId) {
             $query->where('warehouse_id', $warehouseId);
         }

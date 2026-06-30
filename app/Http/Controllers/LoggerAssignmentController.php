@@ -12,6 +12,7 @@ class LoggerAssignmentController extends Controller
     {
         $loggers = User::where('role', 'logger')->with('warehouses')->get();
         $warehouses = Warehouse::all();
+
         return view('supervisor.assignments.index', compact('loggers', 'warehouses'));
     }
 
@@ -24,7 +25,7 @@ class LoggerAssignmentController extends Controller
         ]);
 
         $user = User::findOrFail($validated['user_id']);
-        
+
         if ($user->role !== 'logger') {
             return back()->with('error', 'Assignments can only be made to users with the logger role.');
         }

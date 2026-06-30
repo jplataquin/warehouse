@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Ledger;
-use App\Models\Item;
-use App\Models\Warehouse;
 use App\Models\Allocation;
+use App\Models\Item;
+use App\Models\Ledger;
+use App\Models\Project;
+use App\Models\Warehouse;
 use App\Services\LedgerService;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
+use Illuminate\Validation\ValidationException;
 
 class LedgerController extends Controller
 {
@@ -27,24 +31,24 @@ class LedgerController extends Controller
 
         if ($selectedWarehouseId) {
             $selectedWarehouse = Warehouse::active()->find($selectedWarehouseId);
-            
-            if (!$selectedWarehouse) {
+
+            if (! $selectedWarehouse) {
                 return redirect()->route('ledgers.index')->with('error', 'The selected warehouse is inactive or does not exist.');
             }
-            
+
             // Get items that have ledger entries in this warehouse
             $itemIdsQuery = Ledger::where('warehouse_id', $selectedWarehouseId);
-            
+
             if ($request->filled('item_type')) {
-                $itemIdsQuery->whereHas('item', function($q) use ($request) {
+                $itemIdsQuery->whereHas('item', function ($q) use ($request) {
                     $q->where('type', $request->item_type);
                 });
             }
 
             $itemIds = $itemIdsQuery->distinct()->pluck('item_id');
-            
+
             $items = Item::whereIn('id', $itemIds)->get();
-            
+
             foreach ($items as $item) {
                 $balance = $item->getBalance($selectedWarehouseId);
                 if ($balance > 0) {
@@ -57,7 +61,7 @@ class LedgerController extends Controller
             $query->where('warehouse_id', $selectedWarehouseId);
 
             if ($request->filled('item_type')) {
-                $query->whereHas('item', function($q) use ($request) {
+                $query->whereHas('item', function ($q) use ($request) {
                     $q->where('type', $request->item_type);
                 });
             }
@@ -92,14 +96,14 @@ class LedgerController extends Controller
                 $ledgers = $query->oldest('entry_date')
                     ->oldest('created_at')
                     ->paginate(50);
-                
+
                 $currentPage = $ledgers->currentPage();
                 $perPage = $ledgers->perPage();
-                
+
                 // Calculate opening balance for the page
                 $openingBalance = Ledger::where('warehouse_id', $selectedWarehouseId)
                     ->where('item_id', $request->item_id)
-                    ->where(function($q) use ($request) {
+                    ->where(function ($q) use ($request) {
                         if ($request->has('start_date') && $request->start_date) {
                             $q->whereDate('entry_date', '>=', $request->start_date);
                         }
@@ -114,7 +118,7 @@ class LedgerController extends Controller
                     ->oldest('created_at')
                     ->take(($currentPage - 1) * $perPage)
                     ->get()
-                    ->reduce(function($carry, $ledger) {
+                    ->reduce(function ($carry, $ledger) {
                         return $ledger->type === 'IN' ? $carry + $ledger->quantity : $carry - $ledger->quantity;
                     }, 0);
             } else {
@@ -122,7 +126,7 @@ class LedgerController extends Controller
                     ->latest('created_at')
                     ->paginate(50);
             }
-            
+
             $item = null;
             $balance = 0;
             if ($request->has('item_id') && $request->item_id) {
@@ -135,7 +139,7 @@ class LedgerController extends Controller
             $allocations = Allocation::where('warehouse_id', $selectedWarehouseId)->orderBy('name', 'asc')->get();
         } else {
             // Return empty pagination if no warehouse selected
-            $ledgers = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 50);
+            $ledgers = new LengthAwarePaginator([], 0, 50);
             $item = null;
             $balance = 0;
             $openingBalance = 0;
@@ -156,13 +160,13 @@ class LedgerController extends Controller
         $items = Item::all();
         $warehouses = Warehouse::active()->get();
         $allocations = Allocation::orderBy('name', 'asc')->get();
-        $projects = \App\Models\Project::all();
-        
+        $projects = Project::all();
+
         $warehouse = null;
         if ($selectedWarehouseId) {
             $warehouse = Warehouse::find($selectedWarehouseId);
         }
-        
+
         return view($this->getRoleView('create'), compact('items', 'warehouses', 'allocations', 'selectedWarehouseId', 'selectedItemId', 'warehouse', 'projects'));
     }
 
@@ -170,6 +174,7 @@ class LedgerController extends Controller
     {
         $request->validate(['warehouse_id' => 'required|exists:warehouses,id']);
         $allocations = Allocation::where('warehouse_id', $request->warehouse_id)->orderBy('name', 'asc')->get(['id', 'name']);
+
         return response()->json($allocations);
     }
 
@@ -183,7 +188,7 @@ class LedgerController extends Controller
             'entries' => 'required|array|min:1',
             'entries.*.entry_date' => 'required|date|before_or_equal:today',
             'entries.*.type' => 'required|in:IN,OUT',
-            'entries.*.action' => 'required|in:TRANSFER,DELIVERY,DIRECT,ALLOCATE,DISPOSE,LOST,RETURN,MAINTENANCE,CORRECTION,INITIAL_STOCK,UTILIZE',
+            'entries.*.action' => 'required|in:TRANSFER,DELIVERY,ASSET_RETURN,ALLOCATE,DISPOSE,LOST,REJECT,MAINTENANCE,CORRECTION,INITIAL_STOCK,UTILIZE',
             'entries.*.item_id' => 'required|exists:items,id',
             'entries.*.quantity' => 'required|numeric|min:0.01',
             'entries.*.warehouse_id' => 'required|exists:warehouses,id',
@@ -202,31 +207,31 @@ class LedgerController extends Controller
         try {
             $warehouseId = null;
             foreach ($validated['entries'] as $entry) {
-                if ($entry['action'] === 'CORRECTION' && !auth()->user()->isAdmin()) {
+                if ($entry['action'] === 'CORRECTION' && ! auth()->user()->isAdmin()) {
                     abort(403, 'Only admins can perform corrections.');
                 }
                 $this->ledgerService->createEntry($entry);
                 $warehouseId = $entry['warehouse_id'];
             }
 
-            $redirectUrl = $warehouseId 
-                ? route('logger.warehouse.dashboard', $warehouseId) 
+            $redirectUrl = $warehouseId
+                ? route('logger.warehouse.dashboard', $warehouseId)
                 : route('ledgers.index');
 
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Ledger entries created successfully.',
-                    'redirect' => $redirectUrl
+                    'redirect' => $redirectUrl,
                 ]);
             }
 
             return redirect()->to($redirectUrl)->with('success', 'Ledger entries created successfully.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => implode(' ', \Illuminate\Support\Arr::flatten($e->errors()))
+                    'message' => implode(' ', Arr::flatten($e->errors())),
                 ], 422);
             }
             throw $e;
@@ -234,9 +239,10 @@ class LedgerController extends Controller
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $e->getMessage()
+                    'message' => $e->getMessage(),
                 ], 422);
             }
+
             return back()->withInput()->with('error', $e->getMessage());
         }
     }
@@ -245,7 +251,7 @@ class LedgerController extends Controller
     {
         $warehouse = Warehouse::findOrFail($warehouseId);
         $item = Item::findOrFail($itemId);
-        
+
         $query = Ledger::with(['item', 'warehouse', 'project', 'allocation', 'sourceWarehouse', 'destinationWarehouse'])
             ->where('warehouse_id', $warehouse->id)
             ->where('item_id', $item->id);
@@ -273,14 +279,14 @@ class LedgerController extends Controller
         $ledgers = $query->oldest('entry_date')
             ->oldest('created_at')
             ->paginate(50);
-        
+
         $currentPage = $ledgers->currentPage();
         $perPage = $ledgers->perPage();
 
         // Calculate opening balance for the page
         $openingBalance = Ledger::where('warehouse_id', $warehouse->id)
             ->where('item_id', $item->id)
-            ->where(function($q) use ($request) {
+            ->where(function ($q) use ($request) {
                 if ($request->has('start_date') && $request->start_date) {
                     $q->whereDate('entry_date', '>=', $request->start_date);
                 }
@@ -295,7 +301,7 @@ class LedgerController extends Controller
             ->oldest('created_at')
             ->take(($currentPage - 1) * $perPage)
             ->get()
-            ->reduce(function($carry, $ledger) {
+            ->reduce(function ($carry, $ledger) {
                 return $ledger->type === 'IN' ? $carry + $ledger->quantity : $carry - $ledger->quantity;
             }, 0);
 
@@ -309,7 +315,7 @@ class LedgerController extends Controller
     {
         $warehouse = Warehouse::findOrFail($warehouseId);
         $item = Item::findOrFail($itemId);
-        
+
         $query = Ledger::with(['item', 'warehouse', 'project', 'allocation', 'sourceWarehouse', 'destinationWarehouse'])
             ->where('warehouse_id', $warehouse->id)
             ->where('item_id', $item->id);
@@ -337,25 +343,25 @@ class LedgerController extends Controller
         $ledgers = $query->oldest('entry_date')
             ->oldest('created_at')
             ->get();
-        
+
         $balance = $item->getBalance($warehouse->id);
 
         // For print, we calculate opening balance based on the full range up to the first shown record
         $openingBalance = 0;
         if ($request->filled('start_date') || $request->filled('end_date') || $request->filled('allocation_id')) {
-             $openingBalance = Ledger::where('warehouse_id', $warehouse->id)
+            $openingBalance = Ledger::where('warehouse_id', $warehouse->id)
                 ->where('item_id', $item->id)
-                ->where(function($q) use ($request) {
+                ->where(function ($q) use ($request) {
                     if ($request->has('start_date') && $request->start_date) {
                         $q->whereDate('entry_date', '<', $request->start_date);
                     }
-                    // Note: If no start date but other filters exist, we might need a more complex "history" calc, 
+                    // Note: If no start date but other filters exist, we might need a more complex "history" calc,
                     // but usually print follows what's on screen.
                 })
                 ->oldest('entry_date')
                 ->oldest('created_at')
                 ->get()
-                ->reduce(function($carry, $ledger) {
+                ->reduce(function ($carry, $ledger) {
                     return $ledger->type === 'IN' ? $carry + $ledger->quantity : $carry - $ledger->quantity;
                 }, 0);
         }
@@ -366,12 +372,14 @@ class LedgerController extends Controller
     public function show(Ledger $ledger)
     {
         $ledger->load(['item', 'warehouse', 'project', 'allocation', 'sourceWarehouse', 'destinationWarehouse', 'linkedLedger']);
+
         return view($this->getRoleView('show'), compact('ledger'));
     }
 
     private function getRoleView($viewName)
     {
         $role = auth()->user()->role;
+
         return "{$role}.ledgers.{$viewName}";
     }
 
@@ -379,8 +387,9 @@ class LedgerController extends Controller
     {
         $ledger->update([
             'status' => 'APPROVED',
-            'updated_by' => auth()->id()
+            'updated_by' => auth()->id(),
         ]);
+
         return back()->with('success', 'Ledger entry approved.');
     }
 }

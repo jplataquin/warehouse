@@ -2,11 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\Project;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
 
 class ProjectImportTest extends TestCase
@@ -48,7 +47,7 @@ class ProjectImportTest extends TestCase
 
         $response = $this->actingAs($this->supervisor)
             ->post(route('projects.import.preview'), [
-                'file' => $file
+                'file' => $file,
             ]);
 
         $response->assertStatus(200);
@@ -64,8 +63,8 @@ class ProjectImportTest extends TestCase
                 'create_warehouse' => true,
                 'row_number' => 2,
                 'is_valid' => true,
-                'errors' => []
-            ]
+                'errors' => [],
+            ],
         ];
 
         session(['project_import_data' => $previewData]);
@@ -75,11 +74,11 @@ class ProjectImportTest extends TestCase
 
         $response->assertRedirect(route('projects.index'));
         $this->assertDatabaseHas('projects', ['name' => 'New Project X']);
-        
+
         $project = Project::where('name', 'New Project X')->first();
         $this->assertDatabaseHas('warehouses', [
             'project_id' => $project->id,
-            'name' => 'New Project X - Site Warehouse'
+            'name' => 'New Project X - Site Warehouse',
         ]);
     }
 }

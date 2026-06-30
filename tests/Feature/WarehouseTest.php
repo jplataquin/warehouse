@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Project;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -9,7 +10,7 @@ use Tests\TestCase;
 
 class WarehouseTest extends TestCase
 {
-    use RefreshDatabase, \Illuminate\Foundation\Testing\WithoutMiddleware;
+    use \Illuminate\Foundation\Testing\WithoutMiddleware, RefreshDatabase;
 
     public function test_supervisor_can_view_warehouse_details()
     {
@@ -17,7 +18,7 @@ class WarehouseTest extends TestCase
         $warehouse = Warehouse::create([
             'type' => 'CENTRAL',
             'name' => 'Test Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
 
         $response = $this->actingAs($supervisor)
@@ -36,7 +37,7 @@ class WarehouseTest extends TestCase
         $warehouse = Warehouse::create([
             'type' => 'CENTRAL',
             'name' => 'Test Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
 
         $response = $this->actingAs($supervisor)
@@ -54,7 +55,7 @@ class WarehouseTest extends TestCase
         $warehouse = Warehouse::create([
             'type' => 'CENTRAL',
             'name' => 'Test Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
         $logger = User::factory()->create(['role' => 'logger', 'name' => 'John Doe']);
 
@@ -73,12 +74,12 @@ class WarehouseTest extends TestCase
         Warehouse::create([
             'type' => 'CENTRAL',
             'name' => 'Main Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
         Warehouse::create([
             'type' => 'SITE',
             'name' => 'Sub Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
 
         $response = $this->actingAs($supervisor)
@@ -92,17 +93,17 @@ class WarehouseTest extends TestCase
     public function test_warehouse_index_search_filters_results_by_project_name()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
-        $project = \App\Models\Project::create(['name' => 'Project Alpha']);
+        $project = Project::create(['name' => 'Project Alpha']);
         Warehouse::create([
             'project_id' => $project->id,
             'type' => 'CENTRAL',
             'name' => 'Main Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
         Warehouse::create([
             'type' => 'SITE',
             'name' => 'Sub Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
 
         $response = $this->actingAs($supervisor)

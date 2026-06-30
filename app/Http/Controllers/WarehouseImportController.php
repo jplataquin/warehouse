@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\WarehouseTemplateExport;
 use App\Imports\WarehouseImport;
 use App\Models\Warehouse;
-use App\Models\Project;
 use Illuminate\Http\Request;
-use App\Exports\WarehouseTemplateExport;
-use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 
 class WarehouseImportController extends Controller
 {
@@ -26,12 +25,12 @@ class WarehouseImportController extends Controller
     public function preview(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv'
+            'file' => 'required|mimes:xlsx,xls,csv',
         ]);
 
         $collection = Excel::toCollection(new WarehouseImport, $request->file('file'));
         $rows = $collection->first() ?? collect();
-        
+
         $previewData = [];
         $fileWarehouses = [];
 
@@ -41,7 +40,7 @@ class WarehouseImportController extends Controller
                 'type' => strtoupper(trim($row['type'] ?? '')),
                 'status' => 'ACTIVE',
                 'project_id' => null,
-                'row_number' => $index + 2
+                'row_number' => $index + 2,
             ];
 
             $validator = Validator::make($warehouse, [
@@ -50,19 +49,19 @@ class WarehouseImportController extends Controller
             ]);
 
             $errors = $validator->errors()->all();
-            
+
             // Check uniqueness in DB (name and project_id which is null here)
             $existsInDb = Warehouse::where('name', $warehouse['name'])
                 ->whereNull('project_id')
                 ->exists();
-            
+
             if ($existsInDb) {
-                $errors[] = "Warehouse name already exists.";
+                $errors[] = 'Warehouse name already exists.';
             }
 
             // Check uniqueness in file
             if (isset($fileWarehouses[$warehouse['name']])) {
-                $errors[] = "Duplicate warehouse name found in this file (see row " . $fileWarehouses[$warehouse['name']] . ").";
+                $errors[] = 'Duplicate warehouse name found in this file (see row '.$fileWarehouses[$warehouse['name']].').';
             } else {
                 $fileWarehouses[$warehouse['name']] = $warehouse['row_number'];
             }
@@ -81,7 +80,7 @@ class WarehouseImportController extends Controller
     {
         $data = session('warehouse_import_data');
 
-        if (!$data) {
+        if (! $data) {
             return redirect()->route('warehouses.import.form')->with('error', 'No data to import.');
         }
 
@@ -94,7 +93,7 @@ class WarehouseImportController extends Controller
                         ->where('project_id', $row['project_id'])
                         ->exists();
 
-                    if (!$exists) {
+                    if (! $exists) {
                         Warehouse::create([
                             'name' => $row['name'],
                             'type' => $row['type'],

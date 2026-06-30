@@ -16,23 +16,23 @@ class GlobalSearchTest extends TestCase
     public function test_logger_can_search_warehouses_and_ledgers()
     {
         $logger = User::factory()->create(['role' => 'logger']);
-        
+
         $warehouse = Warehouse::create([
             'name' => 'Target Warehouse',
             'type' => 'CENTRAL',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
 
         $item = Item::create([
             'name' => 'Test Item',
             'type' => 'CONSUMABLE',
-            'unit' => 'PCS'
+            'unit' => 'PCS',
         ]);
 
         $ledger = Ledger::create([
             'entry_date' => now(),
             'type' => 'IN',
-            'action' => 'DIRECT',
+            'action' => 'DELIVERY',
             'item_id' => $item->id,
             'quantity' => 10,
             'warehouse_id' => $warehouse->id,
@@ -40,7 +40,7 @@ class GlobalSearchTest extends TestCase
             'offical_receipt' => 'OR-67890',
             'delivery_receipt' => 'DR-11223',
             'plate_no' => 'PLAT-777',
-            'status' => 'PENDING'
+            'status' => 'PENDING',
         ]);
 
         // Search for Warehouse
@@ -84,41 +84,41 @@ class GlobalSearchTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $supervisor = User::factory()->create(['role' => 'supervisor']);
-        
+
         $warehouse = Warehouse::create([
             'name' => 'Secret Warehouse',
             'type' => 'CENTRAL',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
 
         $item = Item::create([
             'name' => 'Searchable Item',
             'type' => 'CONSUMABLE',
-            'unit' => 'PCS'
+            'unit' => 'PCS',
         ]);
 
         Ledger::create([
             'entry_date' => now(),
             'type' => 'IN',
-            'action' => 'DIRECT',
+            'action' => 'DELIVERY',
             'item_id' => $item->id,
             'quantity' => 10,
             'warehouse_id' => $warehouse->id,
             'po_number' => 'PO-ADMIN-1',
-            'status' => 'PENDING'
+            'status' => 'PENDING',
         ]);
 
         // Admin search for warehouse name
         $response = $this->actingAs($admin)->get(route('global.search', ['query' => 'Secret']));
         $response->assertStatus(200);
-        $response->assertViewHas('warehouses', function($warehouses) {
+        $response->assertViewHas('warehouses', function ($warehouses) {
             return $warehouses->isEmpty();
         });
 
         // Supervisor search for warehouse name
         $response = $this->actingAs($supervisor)->get(route('global.search', ['query' => 'Secret']));
         $response->assertStatus(200);
-        $response->assertViewHas('warehouses', function($warehouses) {
+        $response->assertViewHas('warehouses', function ($warehouses) {
             return $warehouses->isEmpty();
         });
 

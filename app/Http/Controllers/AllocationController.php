@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Allocation;
 use App\Models\Warehouse;
-use App\Models\Project;
 use Illuminate\Http\Request;
 
 class AllocationController extends Controller
@@ -20,6 +19,7 @@ class AllocationController extends Controller
             'name' => 'required|string|max:255',
         ]);
         Allocation::create($validated);
+
         return redirect()->route('warehouses.show', $request->warehouse_id)->with('success', 'Allocation created successfully.');
     }
 
@@ -30,6 +30,7 @@ class AllocationController extends Controller
         }
 
         $warehouses = Warehouse::all();
+
         return view('supervisor.allocations.edit', compact('allocation', 'warehouses'));
     }
 
@@ -48,6 +49,7 @@ class AllocationController extends Controller
             'name' => 'required|string|max:255',
         ]);
         $allocation->update($validated);
+
         return redirect()->route('warehouses.show', $allocation->warehouse_id)->with('success', 'Allocation updated successfully.');
     }
 
@@ -59,6 +61,7 @@ class AllocationController extends Controller
 
         $warehouseId = $allocation->warehouse_id;
         $allocation->delete();
+
         return redirect()->route('warehouses.show', $warehouseId)->with('success', 'Allocation deleted successfully.');
     }
 }

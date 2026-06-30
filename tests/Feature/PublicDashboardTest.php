@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Item;
+use App\Models\Ledger;
+use App\Models\Project;
 use App\Models\User;
 use App\Models\Warehouse;
-use App\Models\Item;
-use App\Models\Project;
-use App\Models\Ledger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,7 +20,7 @@ class PublicDashboardTest extends TestCase
         $warehouse = Warehouse::create([
             'type' => 'CENTRAL',
             'name' => 'Main central WH',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
 
         $this->assertNull($warehouse->public_token);
@@ -48,7 +48,7 @@ class PublicDashboardTest extends TestCase
         $warehouse = Warehouse::create([
             'type' => 'CENTRAL',
             'name' => 'Main central WH',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
 
         // Try generating
@@ -68,14 +68,14 @@ class PublicDashboardTest extends TestCase
             'type' => 'CENTRAL',
             'name' => 'Public WH',
             'status' => 'ACTIVE',
-            'public_token' => 'test-valid-public-token-12345'
+            'public_token' => 'test-valid-public-token-12345',
         ]);
 
         $item = Item::create([
             'type' => 'CONSUMABLE',
             'name' => 'Public Cement',
             'specification' => '40kg',
-            'unit' => 'Bags'
+            'unit' => 'Bags',
         ]);
 
         // Put 50 bags in stock
@@ -87,7 +87,7 @@ class PublicDashboardTest extends TestCase
             'warehouse_id' => $warehouse->id,
             'status' => 'APPROVED',
             'po_number' => 'PO-1',
-            'delivery_receipt' => 'DR-1'
+            'delivery_receipt' => 'DR-1',
         ]);
 
         $response = $this->get(route('public.warehouse.dashboard', 'test-valid-public-token-12345'));
@@ -115,14 +115,14 @@ class PublicDashboardTest extends TestCase
             'type' => 'CENTRAL',
             'name' => 'Public WH',
             'status' => 'ACTIVE',
-            'public_token' => 'test-valid-public-token-12345'
+            'public_token' => 'test-valid-public-token-12345',
         ]);
 
         $item = Item::create([
             'type' => 'CONSUMABLE',
             'name' => 'Public Cement',
             'specification' => '40kg',
-            'unit' => 'Bags'
+            'unit' => 'Bags',
         ]);
 
         // Put 75 bags in stock
@@ -134,19 +134,19 @@ class PublicDashboardTest extends TestCase
             'warehouse_id' => $warehouse->id,
             'status' => 'APPROVED',
             'po_number' => 'PO-1',
-            'delivery_receipt' => 'DR-1'
+            'delivery_receipt' => 'DR-1',
         ]);
 
         // Fetch stock with token
         $response = $this->get(route('public.items.stock', [
             'item' => $item->id,
-            'token' => 'test-valid-public-token-12345'
+            'token' => 'test-valid-public-token-12345',
         ]));
 
         $response->assertStatus(200);
         $response->assertJson([
             'balance' => 75,
-            'unit' => 'Bags'
+            'unit' => 'Bags',
         ]);
     }
 
@@ -156,14 +156,14 @@ class PublicDashboardTest extends TestCase
             'type' => 'CENTRAL',
             'name' => 'Public WH',
             'status' => 'ACTIVE',
-            'public_token' => 'test-valid-public-token-12345'
+            'public_token' => 'test-valid-public-token-12345',
         ]);
 
         $item = Item::create([
             'type' => 'CONSUMABLE',
             'name' => 'Public Cement',
             'specification' => '40kg',
-            'unit' => 'Bags'
+            'unit' => 'Bags',
         ]);
 
         // Without token
@@ -173,7 +173,7 @@ class PublicDashboardTest extends TestCase
         // With invalid token
         $response = $this->get(route('public.items.stock', [
             'item' => $item->id,
-            'token' => 'invalid-token'
+            'token' => 'invalid-token',
         ]));
         $response->assertStatus(404);
     }

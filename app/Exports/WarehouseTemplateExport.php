@@ -3,12 +3,12 @@
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 
-class WarehouseTemplateExport implements FromCollection, WithHeadings, WithEvents
+class WarehouseTemplateExport implements FromCollection, WithEvents, WithHeadings
 {
     public function collection()
     {
@@ -20,7 +20,7 @@ class WarehouseTemplateExport implements FromCollection, WithHeadings, WithEvent
             [
                 'name' => 'Sample CENTRAL Warehouse',
                 'type' => 'CENTRAL',
-            ]
+            ],
         ]);
     }
 
@@ -35,9 +35,9 @@ class WarehouseTemplateExport implements FromCollection, WithHeadings, WithEvent
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event) {
+            AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                
+
                 // Type Validation (SITE, CENTRAL)
                 $typeValidation = $sheet->getCell('B2')->getDataValidation();
                 $typeValidation->setType(DataValidation::TYPE_LIST);

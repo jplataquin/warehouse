@@ -491,14 +491,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 { value: 'DELIVERY', text: 'DELIVERY (Purchases)' },
                 { value: 'INITIAL_STOCK', text: 'INITIAL STOCK' }
             ];
-            if (currentItem.type === 'ASSET' || currentItem.type === 'RECOVERABLE') {
-                options.splice(1, 0, { value: 'DIRECT', text: 'DIRECT (Asset Log-in)' });
+            if (currentItem.type === 'ASSET') {
+                options.splice(1, 0, { value: 'ASSET_RETURN', text: 'ASSET_RETURN (Asset Log-in)' });
             }
         } else {
             options = [
                 { value: 'ALLOCATE', text: 'ALLOCATE (Target)' },
                 { value: 'TRANSFER', text: 'TRANSFER (Send to Warehouse)' },
-                { value: 'RETURN', text: 'RETURN (To Central/Supplier)' },
+                { value: 'REJECT', text: 'REJECT (Return To Vendor)' },
                 { value: 'MAINTENANCE', text: 'MAINTENANCE (Repair/Checkup)' },
                 { value: 'DISPOSE', text: 'DISPOSE (Scrap/Waste)' },
                 { value: 'LOST', text: 'LOST (Missing/Damage)' },
@@ -566,9 +566,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 outAllocate.style.display = 'block';
             }
             
-            const isDirectAsset = (currentItem.type === 'ASSET' || currentItem.type === 'RECOVERABLE') && action === 'DIRECT';
+            const isAssetReturn = action === 'ASSET_RETURN';
             const isInitialStock = action === 'INITIAL_STOCK';
-            const showReceipts = action === 'DELIVERY' || action === 'TRANSFER' || (action === 'DIRECT' && !isDirectAsset);
+            const showReceipts = action === 'DELIVERY' || action === 'TRANSFER';
             if (showReceipts && !isInitialStock) receiptRow.style.display = 'flex';
 
             if (isInitialStock) {
@@ -593,8 +593,8 @@ document.addEventListener('DOMContentLoaded', function() {
             row.querySelectorAll('.required-asterisk').forEach(ast => ast.style.display = isMandatory ? 'inline' : 'none');
             
             // Remarks Requirement
-            remarksInput.required = isDirectAsset || isInitialStock;
-            remarksAsterisk.style.display = (isDirectAsset || isInitialStock) ? 'inline' : 'none';
+            remarksInput.required = isAssetReturn || isInitialStock;
+            remarksAsterisk.style.display = (isAssetReturn || isInitialStock) ? 'inline' : 'none';
             if (isInitialStock) {
                 remarksInput.placeholder = 'Required: Please state INITIAL STOCK details';
             } else {
@@ -615,15 +615,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (action === 'ALLOCATE') {
                 outAllocate.style.display = 'block';
             }
-            if (action === 'RETURN') {
+            if (action === 'REJECT') {
                 receiptRow.style.display = 'flex';
             }
             if (action === 'UTILIZE') {
                 if (assignedPlateRow) assignedPlateRow.style.display = 'none';
             }
             
-            // Requirements for receipts (Shared logic for RETURN)
-            const isReceiptMandatory = action === 'RETURN';
+            // Requirements for receipts (Shared logic for REJECT)
+            const isReceiptMandatory = action === 'REJECT';
             row.querySelectorAll('.receipt-input').forEach(input => {
                 if (input.getAttribute('data-mandatory') === 'true') {
                     input.required = isReceiptMandatory;
@@ -632,8 +632,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             row.querySelectorAll('.required-asterisk').forEach(ast => ast.style.display = isReceiptMandatory ? 'inline' : 'none');
 
-            // Remarks Requirement for LOST, DISPOSE, MAINTENANCE, RETURN, UTILIZE
-            const requiresRemarks = ['LOST', 'DISPOSE', 'MAINTENANCE', 'RETURN', 'UTILIZE'].includes(action);
+            // Remarks Requirement for LOST, DISPOSE, MAINTENANCE, REJECT, UTILIZE
+            const requiresRemarks = ['LOST', 'DISPOSE', 'MAINTENANCE', 'REJECT', 'UTILIZE'].includes(action);
             remarksInput.required = requiresRemarks;
             remarksAsterisk.style.display = requiresRemarks ? 'inline' : 'none';
             

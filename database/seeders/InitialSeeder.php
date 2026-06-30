@@ -2,7 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Item;
+use App\Models\Project;
+use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
 
 class InitialSeeder extends Seeder
@@ -13,7 +16,7 @@ class InitialSeeder extends Seeder
     public function run(): void
     {
         // Admin User
-        \App\Models\User::create([
+        User::create([
             'name' => 'Admin User',
             'email' => 'admin@warehouse.com',
             'password' => bcrypt('password'),
@@ -21,7 +24,7 @@ class InitialSeeder extends Seeder
         ]);
 
         // Supervisor User
-        \App\Models\User::create([
+        User::create([
             'name' => 'Supervisor User',
             'email' => 'supervisor@warehouse.com',
             'password' => bcrypt('password'),
@@ -29,7 +32,7 @@ class InitialSeeder extends Seeder
         ]);
 
         // Logger User
-        \App\Models\User::create([
+        User::create([
             'name' => 'Logger User',
             'email' => 'logger@warehouse.com',
             'password' => bcrypt('password'),
@@ -37,36 +40,36 @@ class InitialSeeder extends Seeder
         ]);
 
         // Projects
-        $projectA = \App\Models\Project::create(['name' => 'Project Alpha']);
-        $projectB = \App\Models\Project::create(['name' => 'Project Beta']);
+        $projectA = Project::create(['name' => 'Project Alpha']);
+        $projectB = Project::create(['name' => 'Project Beta']);
 
         // Warehouses
-        $central = \App\Models\Warehouse::create([
+        $central = Warehouse::create([
             'type' => 'CENTRAL',
             'name' => 'Main Central Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
 
-        $siteA = \App\Models\Warehouse::create([
+        $siteA = Warehouse::create([
             'project_id' => $projectA->id,
             'type' => 'SITE',
             'name' => 'Alpha Site Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
 
         // Items
-        \App\Models\Item::create([
+        Item::create([
             'type' => 'CONSUMABLE',
             'name' => 'Cement',
             'specification' => '40kg Bag',
-            'unit' => 'Bags'
+            'unit' => 'Bags',
         ]);
 
-        \App\Models\Item::create([
+        Item::create([
             'type' => 'ASSET',
             'name' => 'Drill Machine',
             'specification' => 'Bosch GSB 13 RE',
-            'unit' => 'Units'
+            'unit' => 'Units',
         ]);
     }
 }

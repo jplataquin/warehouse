@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\Project;
-use App\Models\Warehouse;
 use App\Models\Allocation;
+use App\Models\Project;
+use App\Models\User;
+use App\Models\Warehouse;
 use App\Services\MqmsApiClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Mockery;
+use Tests\TestCase;
 
 class MqmsComponentImportTest extends TestCase
 {
@@ -21,13 +21,13 @@ class MqmsComponentImportTest extends TestCase
         $this->user = User::factory()->create(['role' => 'supervisor']);
         $this->project = Project::create([
             'name' => 'MQMS Project',
-            'mapped_to_project_id' => 'MQ-123'
+            'mapped_to_project_id' => 'MQ-123',
         ]);
         $this->warehouse = Warehouse::create([
             'name' => 'Site WH',
             'type' => 'SITE',
             'project_id' => $this->project->id,
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
     }
 
@@ -61,7 +61,7 @@ class MqmsComponentImportTest extends TestCase
         $response = $this->actingAs($this->user)
             ->get(route('warehouses.import-components.preview', [
                 'warehouse' => $this->warehouse,
-                'section_id' => 'S1'
+                'section_id' => 'S1',
             ]));
 
         $response->assertStatus(200);
@@ -74,15 +74,15 @@ class MqmsComponentImportTest extends TestCase
         $response = $this->actingAs($this->user)
             ->post(route('warehouses.import-components.store', $this->warehouse), [
                 'selected_components' => [
-                    ['id' => 'C1', 'name' => 'New Component']
-                ]
+                    ['id' => 'C1', 'name' => 'New Component'],
+                ],
             ]);
 
         $response->assertRedirect(route('warehouses.show', $this->warehouse));
         $this->assertDatabaseHas('allocations', [
             'warehouse_id' => $this->warehouse->id,
             'name' => 'New Component',
-            'mapped_to_component_id' => 'C1'
+            'mapped_to_component_id' => 'C1',
         ]);
     }
 
@@ -91,14 +91,14 @@ class MqmsComponentImportTest extends TestCase
         Allocation::create([
             'warehouse_id' => $this->warehouse->id,
             'name' => 'Existing',
-            'mapped_to_component_id' => 'C1'
+            'mapped_to_component_id' => 'C1',
         ]);
 
         $response = $this->actingAs($this->user)
             ->post(route('warehouses.import-components.store', $this->warehouse), [
                 'selected_components' => [
-                    ['id' => 'C1', 'name' => 'Existing']
-                ]
+                    ['id' => 'C1', 'name' => 'Existing'],
+                ],
             ]);
 
         // Should not create a new one with same mapped ID
@@ -114,17 +114,17 @@ class MqmsComponentImportTest extends TestCase
                 'selected_components' => [
                     ['name' => 'Component A'], // No ID, represents unchecked checkbox
                     ['name' => 'Component B'],  // No ID, represents unchecked checkbox
-                ]
+                ],
             ]);
 
         $response->assertRedirect(route('warehouses.show', $this->warehouse));
         $response->assertSessionHas('warning', 'No components were selected for import.');
         $this->assertEquals(1, Allocation::count());
         $this->assertDatabaseMissing('allocations', [
-            'name' => 'Component A'
+            'name' => 'Component A',
         ]);
         $this->assertDatabaseMissing('allocations', [
-            'name' => 'Component B'
+            'name' => 'Component B',
         ]);
     }
 }

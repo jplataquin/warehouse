@@ -39,7 +39,7 @@ class ChangePasswordController extends Controller
         ]);
 
         $user = auth()->user();
-        
+
         // Update user password and set needs_password_change to false
         $user->update([
             'password' => Hash::make($request->password),

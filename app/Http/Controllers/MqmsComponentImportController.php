@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Warehouse;
 use App\Models\Allocation;
+use App\Models\Warehouse;
 use App\Services\MqmsApiClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +19,7 @@ class MqmsComponentImportController extends Controller
 
     public function sections(Warehouse $warehouse)
     {
-        if ($warehouse->type !== 'SITE' || !$warehouse->project || !$warehouse->project->mapped_to_project_id) {
+        if ($warehouse->type !== 'SITE' || ! $warehouse->project || ! $warehouse->project->mapped_to_project_id) {
             return response()->json(['error' => 'Warehouse is not mapped to an MQMS project.'], 422);
         }
 
@@ -40,11 +40,11 @@ class MqmsComponentImportController extends Controller
 
         $response = $this->mqmsClient->getComponents([
             'section_id' => $request->section_id,
-            'status' => 'APRV'
+            'status' => 'APRV',
         ]);
 
         if (isset($response['error'])) {
-            return redirect()->route('warehouses.show', $warehouse)->with('error', 'MQMS API Error: ' . $response['message']);
+            return redirect()->route('warehouses.show', $warehouse)->with('error', 'MQMS API Error: '.$response['message']);
         }
 
         $mqmsComponents = $response['data'] ?? $response;
@@ -59,18 +59,20 @@ class MqmsComponentImportController extends Controller
             $name = trim($component['name'] ?? $component['description'] ?? '');
             $mqmsId = $component['id'] ?? null;
 
-            if (!$mqmsId || !$name) continue;
+            if (! $mqmsId || ! $name) {
+                continue;
+            }
 
             $errors = [];
-            
+
             // Check if MQMS ID already mapped in this warehouse
             if (in_array($mqmsId, $existingMappedIds)) {
-                $errors[] = "Component is already imported to this warehouse.";
+                $errors[] = 'Component is already imported to this warehouse.';
             }
 
             // Check if name exists in this warehouse
             if (Allocation::where('warehouse_id', $warehouse->id)->where('name', $name)->exists()) {
-                $errors[] = "An allocation with this name already exists in this warehouse.";
+                $errors[] = 'An allocation with this name already exists in this warehouse.';
             }
 
             $previewData[] = [
@@ -100,17 +102,19 @@ class MqmsComponentImportController extends Controller
         $count = 0;
         DB::transaction(function () use ($selectedComponents, $warehouse, &$count) {
             foreach ($selectedComponents as $data) {
-                if (!isset($data['id'])) continue;
+                if (! isset($data['id'])) {
+                    continue;
+                }
 
                 // Uniqueness check
                 $exists = Allocation::where('warehouse_id', $warehouse->id)
-                    ->where(function($query) use ($data) {
+                    ->where(function ($query) use ($data) {
                         $query->where('name', $data['name'])
-                              ->orWhere('mapped_to_component_id', $data['id']);
+                            ->orWhere('mapped_to_component_id', $data['id']);
                     })
                     ->exists();
 
-                if (!$exists) {
+                if (! $exists) {
                     Allocation::create([
                         'warehouse_id' => $warehouse->id,
                         'name' => $data['name'],

@@ -6,10 +6,10 @@ use Illuminate\Support\Facades\Http;
 
 /**
  * MQMS API Client (Reference Implementation)
- * 
+ *
  * This class is designed to be dropped into any Laravel application to
  * communicate with the MQMS Third-Party API.
- * 
+ *
  * Instructions:
  * 1. Copy this file to app/Services/MqmsApiClient.php in your target application.
  * 2. Add MQMS_API_BASE_URL, MQMS_API_KEY, and MQMS_API_SECRET_KEY to your .env file.
@@ -17,15 +17,18 @@ use Illuminate\Support\Facades\Http;
 class MqmsApiClient
 {
     protected string $baseUrl;
+
     protected string $apiKey;
+
     protected string $secretKey;
+
     protected bool $verifySsl;
 
     public function __construct()
     {
         // Pull configuration from .env
-        $this->baseUrl   = rtrim((string) env('MQMS_API_BASE_URL'), '/') . '/';
-        $this->apiKey    = (string) env('MQMS_API_KEY');
+        $this->baseUrl = rtrim((string) env('MQMS_API_BASE_URL'), '/').'/';
+        $this->apiKey = (string) env('MQMS_API_KEY');
         $this->secretKey = (string) env('MQMS_API_SECRET_KEY');
         $this->verifySsl = (bool) env('MQMS_API_VERIFY_SSL', true);
     }
@@ -36,46 +39,46 @@ class MqmsApiClient
     protected function request(string $method, string $endpoint, array $data = [])
     {
         $timestamp = time();
-        $method    = strtoupper($method);
-        
+        $method = strtoupper($method);
+
         // Path used for signature must match the server's expectation (api/call/...)
-        $path = 'api/call/' . ltrim($endpoint, '/');
-        
+        $path = 'api/call/'.ltrim($endpoint, '/');
+
         // Prepare the body for the signature
         $body = $method === 'GET' ? '' : json_encode($data);
-        
+
         // Payload: METHOD + PATH + TIMESTAMP + BODY
-        $payload   = $method . $path . $timestamp . $body;
+        $payload = $method.$path.$timestamp.$body;
         $signature = hash_hmac('sha256', $payload, $this->secretKey);
 
         $headers = [
-            'X-API-KEY'   => $this->apiKey,
+            'X-API-KEY' => $this->apiKey,
             'X-TIMESTAMP' => $timestamp,
             'X-SIGNATURE' => $signature,
-            'Accept'      => 'application/json',
+            'Accept' => 'application/json',
         ];
 
         // Debug logging (check storage/logs/laravel.log)
         \Log::debug('MQMS Request Debug', [
-            'method'    => $method,
-            'url'       => $this->baseUrl . $endpoint,
-            'path'      => $path,
-            'payload'   => $payload,
+            'method' => $method,
+            'url' => $this->baseUrl.$endpoint,
+            'path' => $path,
+            'payload' => $payload,
             'signature' => $signature,
-            'headers'   => $headers,
-            'api_key'   => substr($this->apiKey, 0, 4) . '...', // Only log partial key
+            'headers' => $headers,
+            'api_key' => substr($this->apiKey, 0, 4).'...', // Only log partial key
         ]);
 
         $request = Http::withHeaders($headers);
 
-        if (!$this->verifySsl) {
+        if (! $this->verifySsl) {
             $request->withoutVerifying();
         }
 
-        $url = $this->baseUrl . $endpoint;
+        $url = $this->baseUrl.$endpoint;
 
-        $response = $method === 'GET' 
-            ? $request->get($url, $data) 
+        $response = $method === 'GET'
+            ? $request->get($url, $data)
             : $request->withBody($body, 'application/json')->send($method, $url);
 
         return $response->json();

@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\Item;
-use App\Models\Warehouse;
-use App\Models\Project;
 use App\Models\Allocation;
+use App\Models\Item;
 use App\Models\Ledger;
+use App\Models\Project;
+use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Tests\TestCase;
@@ -43,8 +43,8 @@ class LedgerTest extends TestCase
                     'item_id' => $item->id,
                     'quantity' => 10,
                     'warehouse_id' => $warehouse->id,
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHas('error', 'Delivery action must be of type IN.');
@@ -84,8 +84,8 @@ class LedgerTest extends TestCase
                     'quantity' => 1,
                     'warehouse_id' => $warehouse->id,
                     'allocation_id' => $allocation->id,
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHas('error', 'Allocate action can only be performed on CONSUMABLE items.');
@@ -107,8 +107,8 @@ class LedgerTest extends TestCase
                     'quantity' => 10,
                     'warehouse_id' => $warehouse->id,
                     'po_number' => '', // Missing
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHas('error', 'PO Number is required for item deliveries.');
@@ -130,8 +130,8 @@ class LedgerTest extends TestCase
                     'quantity' => 1,
                     'warehouse_id' => $warehouse->id,
                     'po_number' => '', // Missing
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHas('error', 'PO Number is required for item deliveries.');
@@ -156,8 +156,8 @@ class LedgerTest extends TestCase
                     'delivery_receipt' => 'DR-456',
                     'plate_no' => 'PLAT-123',
                     'offical_receipt' => '',
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHas('success', 'Ledger entries created successfully.');
@@ -169,7 +169,7 @@ class LedgerTest extends TestCase
         ]);
     }
 
-    public function test_direct_asset_requires_remarks()
+    public function test_asset_return_requires_remarks()
     {
         $user = User::factory()->create(['role' => 'logger']);
         $item = Item::create(['type' => 'ASSET', 'name' => 'Drill', 'unit' => 'Units']);
@@ -180,16 +180,16 @@ class LedgerTest extends TestCase
                 [
                     'entry_date' => now()->format('Y-m-d'),
                     'type' => 'IN',
-                    'action' => 'DIRECT',
+                    'action' => 'ASSET_RETURN',
                     'item_id' => $item->id,
                     'quantity' => 1,
                     'warehouse_id' => $warehouse->id,
                     'remarks' => '', // Missing
-                ]
-            ]
+                ],
+            ],
         ]);
 
-        $response->assertSessionHas('error', 'Remarks are required for direct asset/recoverable log-ins.');
+        $response->assertSessionHas('error', 'Remarks are required for asset returns.');
     }
 
     public function test_out_movement_requires_existing_stock()
@@ -208,8 +208,8 @@ class LedgerTest extends TestCase
                     'item_id' => $item->id,
                     'quantity' => 10,
                     'warehouse_id' => $warehouse->id,
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHas('error', "Cannot perform OUT movement. Available stock for 'Cement' is 0, but 10 was requested.");
@@ -243,8 +243,8 @@ class LedgerTest extends TestCase
                     'quantity' => 1,
                     'warehouse_id' => $warehouse->id,
                     'remarks' => '', // Missing
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHas('error', 'Remarks are required for DISPOSE movements.');
@@ -267,8 +267,8 @@ class LedgerTest extends TestCase
                     'warehouse_id' => $warehouse->id,
                     'po_number' => 'PO-1',
                     'delivery_receipt' => 'DR-1',
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHas('error', 'Asset items can only be processed one at a time (quantity must be 1).');
@@ -292,8 +292,8 @@ class LedgerTest extends TestCase
                     'po_number' => 'PO-REC',
                     'delivery_receipt' => 'DR-REC',
                     'plate_no' => 'PLAT-REC',
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHas('success', 'Ledger entries created successfully.');
@@ -320,14 +320,14 @@ class LedgerTest extends TestCase
                     'quantity' => 10,
                     'warehouse_id' => $warehouse->id,
                     'po_number' => '', // Missing
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHas('error', 'PO Number is required for item deliveries.');
     }
 
-    public function test_direct_recoverable_requires_remarks()
+    public function test_asset_return_not_allowed_for_recoverable()
     {
         $user = User::factory()->create(['role' => 'logger']);
         $item = Item::create(['type' => 'RECOVERABLE', 'name' => 'Scaffolding', 'unit' => 'Sets']);
@@ -338,16 +338,39 @@ class LedgerTest extends TestCase
                 [
                     'entry_date' => now()->format('Y-m-d'),
                     'type' => 'IN',
-                    'action' => 'DIRECT',
+                    'action' => 'ASSET_RETURN',
                     'item_id' => $item->id,
                     'quantity' => 10,
                     'warehouse_id' => $warehouse->id,
-                    'remarks' => '', // Missing
-                ]
-            ]
+                    'remarks' => 'Test remarks',
+                ],
+            ],
         ]);
 
-        $response->assertSessionHas('error', 'Remarks are required for direct asset/recoverable log-ins.');
+        $response->assertSessionHas('error', 'Asset Return action can only be performed on ASSET items.');
+    }
+
+    public function test_asset_return_not_allowed_for_consumable()
+    {
+        $user = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+
+        $response = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'IN',
+                    'action' => 'ASSET_RETURN',
+                    'item_id' => $item->id,
+                    'quantity' => 10,
+                    'warehouse_id' => $warehouse->id,
+                    'remarks' => 'Test remarks',
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHas('error', 'Asset Return action can only be performed on ASSET items.');
     }
 
     public function test_initial_stock_requires_remarks()
@@ -366,8 +389,8 @@ class LedgerTest extends TestCase
                     'quantity' => 100,
                     'warehouse_id' => $warehouse->id,
                     'remarks' => '', // Missing
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHas('error', 'Remarks are required for initial stock entries.');
@@ -389,8 +412,8 @@ class LedgerTest extends TestCase
                     'quantity' => 10,
                     'warehouse_id' => $warehouse->id,
                     'remarks' => 'Reducing initial stock (invalid type)',
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHas('error', 'Initial stock action must be of type IN.');
@@ -412,8 +435,8 @@ class LedgerTest extends TestCase
                     'quantity' => 150,
                     'warehouse_id' => $warehouse->id,
                     'remarks' => 'Starting balance of cement',
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHas('success', 'Ledger entries created successfully.');
@@ -434,16 +457,16 @@ class LedgerTest extends TestCase
 
         // Create entries of different types and actions
         Ledger::create([
-            'entry_date' => now(), 'type' => 'IN', 'action' => 'DELIVERY', 'item_id' => $item->id, 
+            'entry_date' => now(), 'type' => 'IN', 'action' => 'DELIVERY', 'item_id' => $item->id,
             'quantity' => 10, 'warehouse_id' => $warehouse->id, 'status' => 'APPROVED',
             'po_number' => 'PO-1', 'delivery_receipt' => 'DR-1',
-            'remarks' => 'REMARK_DELIVERY'
+            'remarks' => 'REMARK_DELIVERY',
         ]);
 
         Ledger::create([
-            'entry_date' => now(), 'type' => 'OUT', 'action' => 'DISPOSE', 'item_id' => $item->id, 
+            'entry_date' => now(), 'type' => 'OUT', 'action' => 'DISPOSE', 'item_id' => $item->id,
             'quantity' => 1.23, 'warehouse_id' => $warehouse->id, 'status' => 'APPROVED',
-            'remarks' => 'REMARK_DISPOSE'
+            'remarks' => 'REMARK_DISPOSE',
         ]);
 
         // Filter by Type: IN
@@ -478,8 +501,8 @@ class LedgerTest extends TestCase
                     'warehouse_id' => $warehouse->id,
                     'po_number' => 'PO-1',
                     'delivery_receipt' => 'DR-1',
-                ]
-            ]
+                ],
+            ],
         ], ['Accept' => 'application/json']);
 
         $response->assertStatus(422);
@@ -493,7 +516,7 @@ class LedgerTest extends TestCase
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         $response = $this->actingAs($admin)->get(route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $item->id]));
-        
+
         $response->assertStatus(200);
         $response->assertSee('Cement');
         $response->assertSee('Movement History');
@@ -506,7 +529,7 @@ class LedgerTest extends TestCase
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'North', 'status' => 'ACTIVE']);
 
         $response = $this->actingAs($admin)->get(route('ledgers.item_history.print', ['warehouse' => $warehouse->id, 'item' => $item->id]));
-        
+
         $response->assertStatus(200);
         $response->assertSee('ITEM LEDGER');
         $response->assertSee('Gravel');
@@ -529,8 +552,8 @@ class LedgerTest extends TestCase
                     'quantity' => 1,
                     'warehouse_id' => $warehouse->id,
                     'remarks' => 'Using some cement',
-                ]
-            ]
+                ],
+            ],
         ]);
         $response->assertSessionHas('error', 'UTILIZE action must be of type OUT.');
 
@@ -557,8 +580,8 @@ class LedgerTest extends TestCase
                     'quantity' => 1,
                     'warehouse_id' => $warehouse->id,
                     'remarks' => '', // Missing
-                ]
-            ]
+                ],
+            ],
         ]);
         $response->assertSessionHas('error', 'Remarks are required for UTILIZE movements.');
 
@@ -573,8 +596,8 @@ class LedgerTest extends TestCase
                     'quantity' => 1,
                     'warehouse_id' => $warehouse->id,
                     'remarks' => 'Utilizing 1 bag for floor repair',
-                ]
-            ]
+                ],
+            ],
         ]);
         $response->assertSessionHas('success', 'Ledger entries created successfully.');
         $this->assertDatabaseHas('ledgers', [

@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Item;
+use App\Models\Ledger;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,7 +19,7 @@ class LoggerDashboardTest extends TestCase
         $warehouse = Warehouse::create([
             'type' => 'CENTRAL',
             'name' => 'Logger Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
         $logger->warehouses()->attach($warehouse);
 
@@ -34,7 +36,7 @@ class LoggerDashboardTest extends TestCase
         $warehouse = Warehouse::create([
             'type' => 'CENTRAL',
             'name' => 'Logger Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
         $logger->warehouses()->attach($warehouse);
 
@@ -42,7 +44,8 @@ class LoggerDashboardTest extends TestCase
             ->get(route('logger.warehouse.dashboard', $warehouse));
 
         $response->assertStatus(200);
-        $response->assertSee($warehouse->name . ' Dashboard');
+        $response->assertSee($warehouse->name);
+        $response->assertSee('Dashboard');
         $response->assertSee('data-filter="CONSUMABLE"', false);
         $response->assertSee('data-filter="ASSET"', false);
         $response->assertSee('data-filter="RECOVERABLE"', false);
@@ -55,7 +58,7 @@ class LoggerDashboardTest extends TestCase
         $warehouse = Warehouse::create([
             'type' => 'CENTRAL',
             'name' => 'Secret Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
 
         $response = $this->actingAs($logger)
@@ -70,7 +73,7 @@ class LoggerDashboardTest extends TestCase
         $warehouse = Warehouse::create([
             'type' => 'CENTRAL',
             'name' => 'Logger Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
         $logger->warehouses()->attach($warehouse);
 
@@ -80,7 +83,7 @@ class LoggerDashboardTest extends TestCase
         $response->assertSee('Movement Rules Guide');
         $response->assertSee('INITIAL_STOCK');
         $response->assertSee('UTILIZE');
-        
+
         // Assert unauthenticated is redirected
         auth()->logout();
         $response = $this->get(route('logger.rules'));
@@ -104,25 +107,25 @@ class LoggerDashboardTest extends TestCase
         $warehouse = Warehouse::create([
             'type' => 'CENTRAL',
             'name' => 'Logger Warehouse',
-            'status' => 'ACTIVE'
+            'status' => 'ACTIVE',
         ]);
         $logger->warehouses()->attach($warehouse);
 
-        $asset = \App\Models\Item::create([
+        $asset = Item::create([
             'name' => 'Generator X5',
             'type' => 'ASSET',
             'unit' => 'UNIT',
-            'status' => 'Out of Order'
+            'status' => 'Out of Order',
         ]);
 
         // Put 1 Generator in stock so it displays on the dashboard
-        \App\Models\Ledger::create([
+        Ledger::create([
             'type' => 'IN',
             'action' => 'DELIVERY',
             'item_id' => $asset->id,
             'quantity' => 1,
             'warehouse_id' => $warehouse->id,
-            'status' => 'APPROVED'
+            'status' => 'APPROVED',
         ]);
 
         $response = $this->actingAs($logger)

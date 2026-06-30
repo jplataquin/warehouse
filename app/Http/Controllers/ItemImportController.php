@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ItemTemplateExport;
 use App\Imports\ItemImport;
 use App\Models\Item;
 use Illuminate\Http\Request;
-use App\Exports\ItemTemplateExport;
-use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ItemImportController extends Controller
 {
@@ -24,11 +24,11 @@ class ItemImportController extends Controller
     public function preview(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv'
+            'file' => 'required|mimes:xlsx,xls,csv',
         ]);
 
         $rows = Excel::toCollection(new ItemImport, $request->file('file'))->first();
-        
+
         $previewData = [];
         $fileItems = []; // Track items in the current file for internal duplicate detection
 
@@ -39,7 +39,7 @@ class ItemImportController extends Controller
                 'name' => trim($row['name'] ?? ''),
                 'specification' => trim($row['specification'] ?? ''),
                 'unit' => trim($row['unit'] ?? ''),
-                'row_number' => $index + 2 // +1 for zero-index, +1 for heading row
+                'row_number' => $index + 2, // +1 for zero-index, +1 for heading row
             ];
 
             // Validation
@@ -51,22 +51,22 @@ class ItemImportController extends Controller
             ]);
 
             $errors = $validator->errors()->all();
-            
-            $itemKey = strtolower($item['name'] . '|' . ($item['specification'] ?? '') . '|' . $item['unit']);
+
+            $itemKey = strtolower($item['name'].'|'.($item['specification'] ?? '').'|'.$item['unit']);
 
             // Check uniqueness in DB
             $existsInDb = Item::where('name', $item['name'])
                 ->where('specification', $item['specification'])
                 ->where('unit', $item['unit'])
                 ->exists();
-            
+
             if ($existsInDb) {
-                $errors[] = "Item already exists in database.";
+                $errors[] = 'Item already exists in database.';
             }
 
             // Check uniqueness in file
             if (isset($fileItems[$itemKey])) {
-                $errors[] = "Duplicate item found in this file (see row " . $fileItems[$itemKey] . ").";
+                $errors[] = 'Duplicate item found in this file (see row '.$fileItems[$itemKey].').';
             } else {
                 $fileItems[$itemKey] = $item['row_number'];
             }
@@ -86,7 +86,7 @@ class ItemImportController extends Controller
     {
         $data = session('item_import_data');
 
-        if (!$data) {
+        if (! $data) {
             return redirect()->route('items.import.form')->with('error', 'No data to import.');
         }
 
@@ -99,7 +99,7 @@ class ItemImportController extends Controller
                     ->where('unit', $row['unit'])
                     ->exists();
 
-                if (!$exists) {
+                if (! $exists) {
                     Item::create([
                         'type' => $row['type'],
                         'name' => $row['name'],
