@@ -234,11 +234,11 @@
             </div>
 
             <div class="row g-3 mt-1 assigned-plate-row">
-                <div class="col-md-6">
-                    <label class="form-label small fw-bold text-uppercase text-muted">Assigned To</label>
-                    <input type="text" name="entries[__INDEX__][assigned_to]" class="form-control shadow-sm" placeholder="Personnel Name (Optional)">
+                <div class="col-md-6 assigned-col">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Assigned To <span class="assigned-required text-danger" style="display: none;">*</span></label>
+                    <input type="text" name="entries[__INDEX__][assigned_to]" class="form-control shadow-sm assigned-input" placeholder="Personnel Name (Optional)">
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 plate-col">
                     <label class="form-label small fw-bold text-uppercase text-muted">Plate No. <span class="plate-required text-danger" style="display: none;">*</span></label>
                     <input type="text" name="entries[__INDEX__][plate_no]" class="form-control shadow-sm plate-input" placeholder="Vehicle Plate No. (Optional)">
                 </div>
@@ -619,7 +619,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 receiptRow.style.display = 'flex';
             }
             if (action === 'UTILIZE') {
-                if (assignedPlateRow) assignedPlateRow.style.display = 'none';
+                if (currentItem.type === 'ASSET') {
+                    if (assignedPlateRow) assignedPlateRow.style.display = 'flex';
+                    if (plateCol) plateCol.style.display = 'none';
+                    if (assignedInput) {
+                        assignedInput.required = true;
+                        assignedInput.placeholder = 'Personnel Name (Required)';
+                    }
+                    if (assignedAsterisk) assignedAsterisk.style.display = 'inline';
+                } else {
+                    if (assignedPlateRow) assignedPlateRow.style.display = 'none';
+                }
             }
             
             // Requirements for receipts (Shared logic for REJECT)
