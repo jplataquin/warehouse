@@ -11,22 +11,19 @@ class AssetUtilization extends Model
 
     protected $fillable = [
         'item_id',
-        'utilized_by',
-        'utilized_at',
-        'returned_at',
-        'remarks',
+        'ledger_id',
         'created_by',
         'updated_by',
-    ];
-
-    protected $casts = [
-        'utilized_at' => 'datetime',
-        'returned_at' => 'datetime',
     ];
 
     public function item()
     {
         return $this->belongsTo(Item::class);
+    }
+
+    public function ledger()
+    {
+        return $this->belongsTo(Ledger::class);
     }
 
     public function creator()

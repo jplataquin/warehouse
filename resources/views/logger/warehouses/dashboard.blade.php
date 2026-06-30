@@ -64,10 +64,7 @@
         border-top: 3px solid #198754 !important;
         color: #212529 !important;
     }
-    #item-type-tabs .nav-link[data-filter="RECOVERABLE"].active {
-        border-top: 3px solid #ffc107 !important;
-        color: #212529 !important;
-    }
+
     #item-type-tabs .nav-link[data-filter="ALL"].active {
         border-top: 3px solid #6c757d !important;
         color: #6c757d !important;
@@ -141,9 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <li class="nav-item" role="presentation">
                 <button class="nav-link filter-btn text-success fw-bold" type="button" data-filter="ASSET">Asset</button>
             </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link filter-btn text-warning fw-bold" type="button" data-filter="RECOVERABLE">Recoverable</button>
-            </li>
+            
         </ul>
     </div>
     
@@ -156,8 +151,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <h6 class="card-title fw-bold text-truncate mb-0" title="{{ $item->name }} {{ $item->specification }}">
                                 @if($item->type === 'CONSUMABLE')
                                     <span class="badge bg-danger me-1">C</span>
-                                @elseif($item->type === 'RECOVERABLE')
-                                    <span class="badge bg-warning text-dark me-1">R</span>
+                                
                                 @elseif($item->type === 'ASSET')
                                     <span class="badge bg-success me-1">A</span>
                                 @endif

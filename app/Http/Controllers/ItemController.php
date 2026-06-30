@@ -53,7 +53,7 @@ class ItemController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|in:CONSUMABLE,ASSET,RECOVERABLE',
+            'type' => 'required|in:CONSUMABLE,ASSET',
             'name' => 'required|string|max:255',
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
@@ -72,7 +72,7 @@ class ItemController extends Controller
     public function update(Request $request, Item $item)
     {
         $validated = $request->validate([
-            'type' => 'required|in:CONSUMABLE,ASSET,RECOVERABLE',
+            'type' => 'required|in:CONSUMABLE,ASSET',
             'name' => 'required|string|max:255',
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',

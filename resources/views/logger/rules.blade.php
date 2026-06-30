@@ -29,7 +29,6 @@
                         <th class="py-3">Type</th>
                         <th class="py-3 text-center">Consumable</th>
                         <th class="py-3 text-center">Asset</th>
-                        <th class="py-3 text-center">Recoverable</th>
                         <th class="py-3">Usage</th>
                     </tr>
                 </thead>
@@ -40,14 +39,12 @@
                         <td><span class="badge bg-success">IN</span></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Use this for purchased items that are going in the warehouse.</td>
                     </tr>
                     <!-- INITIAL_STOCK -->
                     <tr>
                         <td><strong>INITIAL_STOCK</strong></td>
                         <td><span class="badge bg-success">IN</span></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Use this when setting inital item stock of the warehouse.</td>
@@ -58,14 +55,12 @@
                         <td><span class="badge bg-success">IN</span></td>
                         <td class="text-center text-muted">-</td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td>Use this for Assets and Recoverables that are delivered to the warehouse.</td>
+                        <td>Use this for Assets that are delivered back to the warehouse.</td>
                     </tr>
                     <!-- TRANSFER -->
                     <tr>
                         <td><strong>TRANSFER</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Use this if the items are transfered from one warehouse to another.</td>
@@ -76,14 +71,12 @@
                         <td><span class="badge bg-danger">OUT</span></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center text-muted">-</td>
-                        <td class="text-center text-muted">-</td>
                         <td>Use this if the the item being logged out is used for a budgeted work item (Component).</td>
                     </tr>
                     <!-- UTILIZE -->
                     <tr>
                         <td><strong>UTILIZE</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Use this if the the item being logged out is utlized, but not used for any budgeted work item (Component).</td>
@@ -94,14 +87,12 @@
                         <td><span class="badge bg-danger">OUT</span></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Used for materials logged out as scrap or waste.</td>
                     </tr>
                     <!-- LOST -->
                     <tr>
                         <td><strong>LOST</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Deducts stock levels for missing or stolen items.</td>
@@ -112,7 +103,6 @@
                         <td><span class="badge bg-danger">OUT</span></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td>Used for sending/rejecting items back to supplier.</td>
                     </tr>
                     <!-- MAINTENANCE -->
@@ -121,8 +111,7 @@
                         <td><span class="badge bg-danger">OUT</span></td>
                         <td class="text-center text-muted">-</td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td>Logs out items temporarily for service.</span></td>
+                        <td>Logs out items temporarily for service.</td>
                     </tr>
                 </tbody>
             </table>
@@ -134,7 +123,7 @@
         <div class="card-body p-3">
             <h6 class="fw-bold text-warning-emphasis mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i> Crucial System Rules to Remember:</h6>
             <ul class="mb-0 text-muted small ps-3">
-                <li class="mb-1"><strong>Asset/Recoverable Quantity Constraint:</strong> Asset and Recoverable items can only be processed **one at a time** (quantity must always be **exactly 1.00** per entry).</li>
+                <li class="mb-1"><strong>Asset Quantity Constraint:</strong> Asset items can only be processed **one at a time** (quantity must always be **exactly 1.00** per entry).</li>
                 <li class="mb-1"><strong>Stock Level Check:</strong> You cannot log out (`OUT`) more quantity than what is currently available in the active warehouse.</li>
                 <li><strong>Central vs. Site Rules:</strong> Central warehouses deal with deliveries and bulk transfers; Site warehouses can allocate consumables down to specific project tasks.</li>
             </ul>

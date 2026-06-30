@@ -10,7 +10,7 @@ class Ledger extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'entry_date',
+        'from_ledger_id', 'entry_date',
         'type', 'action', 'item_id', 'quantity', 'status',
         'po_number', 'offical_receipt', 'delivery_receipt',
         'warehouse_id', 'project_id', 'destination_warehouse_id', 'source_warehouse_id',

@@ -17,7 +17,7 @@
                     <select name="type" class="form-select" required>
                         <option value="CONSUMABLE" {{ $item->type === 'CONSUMABLE' ? 'selected' : '' }}>CONSUMABLE</option>
                         <option value="ASSET" {{ $item->type === 'ASSET' ? 'selected' : '' }}>ASSET</option>
-                        <option value="RECOVERABLE" {{ $item->type === 'RECOVERABLE' ? 'selected' : '' }}>RECOVERABLE</option>
+                        
                     </select>
                 </div>
                 <div class="mb-3" id="status-group" style="display: none;">

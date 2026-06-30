@@ -35,10 +35,26 @@ class LedgerService
 
             $this->validateRules($item, $data);
 
+            // Fetch last utilize record for ASSET_RETURN linking
+            $lastUtilize = null;
+            if ($item->type === 'ASSET' && $data['type'] === 'IN' && $data['action'] === 'ASSET_RETURN') {
+                $lastUtilize = Ledger::where('item_id', $item->id)
+                    ->where('warehouse_id', $data['warehouse_id'])
+                    ->orderBy('id', 'desc')
+                    ->first();
+                if ($lastUtilize) {
+                    $data['from_ledger_id'] = $lastUtilize->id;
+                }
+            }
+
             $data['created_by'] = auth()->id();
             $data['updated_by'] = auth()->id();
 
             $entry = Ledger::create($data);
+
+            if ($lastUtilize) {
+                $lastUtilize->update(['from_ledger_id' => $entry->id]);
+            }
 
             // Update Item's current warehouse if ASSET
             if ($item->type === 'ASSET') {
@@ -46,15 +62,17 @@ class LedgerService
                     'current_warehouse_id' => $data['type'] === 'IN' ? $data['warehouse_id'] : null,
                 ]);
 
-                // Automatically track utilization when logging OUT with UTILIZE action
-                if ($data['type'] === 'OUT' && $data['action'] === 'UTILIZE') {
-                    $item->update(['is_asset_utilized' => true]);
+                // Automatically track utilization when logging OUT with UTILIZE or returning IN with ASSET_RETURN
+                if ($data['action'] === 'UTILIZE' || $data['action'] === 'ASSET_RETURN') {
+                    if ($data['action'] === 'UTILIZE') {
+                        $item->update(['is_asset_utilized' => true]);
+                    } else {
+                        $item->update(['is_asset_utilized' => false]);
+                    }
 
                     AssetUtilization::create([
                         'item_id' => $item->id,
-                        'utilized_by' => $data['assigned_to'],
-                        'utilized_at' => $data['entry_date'] ?? now(),
-                        'remarks' => $data['remarks'] ?? null,
+                        'ledger_id' => $entry->id,
                         'created_by' => auth()->id(),
                         'updated_by' => auth()->id(),
                     ]);
@@ -149,8 +167,8 @@ class LedgerService
             throw new Exception('Delivery action must be of type IN.');
         }
 
-        // Rule: Mandatory fields for DELIVERY IN (Consumable, Asset and Recoverable)
-        if ($type === 'IN' && $action === 'DELIVERY' && in_array($item->type, ['CONSUMABLE', 'ASSET', 'RECOVERABLE'])) {
+        // Rule: Mandatory fields for DELIVERY IN (Consumable and Asset)
+        if ($type === 'IN' && $action === 'DELIVERY' && in_array($item->type, ['CONSUMABLE', 'ASSET'])) {
             if (empty($data['po_number'])) {
                 throw new Exception('PO Number is required for item deliveries.');
             }
@@ -173,6 +191,20 @@ class LedgerService
             if (empty($data['remarks'])) {
                 throw new Exception('Remarks are required for asset returns.');
             }
+
+            // Check if there is an OUT > UTILIZE entry of that asset in the current warehouse
+            $lastEntry = Ledger::where('item_id', $item->id)
+                ->where('warehouse_id', $data['warehouse_id'])
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if (! $lastEntry || $lastEntry->type !== 'OUT' || $lastEntry->action !== 'UTILIZE') {
+                throw new Exception('The asset has no record of being logged out for utilization in this warehouse.');
+            }
+
+            if ($lastEntry->from_ledger_id !== null) {
+                throw new Exception('The asset has already been returned for its last utilization.');
+            }
         }
 
         // Rule: ALLOCATE is for CONSUMABLE items logged out
@@ -188,10 +220,10 @@ class LedgerService
             }
         }
 
-        // Rule: MAINTENANCE is for ASSET/RECOVERABLE items logged out
+        // Rule: MAINTENANCE is for ASSET items logged out
         if ($action === 'MAINTENANCE') {
-            if (! in_array($item->type, ['ASSET', 'RECOVERABLE'])) {
-                throw new Exception('Maintenance action can only be performed on ASSET or RECOVERABLE items.');
+            if ($item->type !== 'ASSET') {
+                throw new Exception('Maintenance action can only be performed on ASSET items.');
             }
             if ($type !== 'OUT') {
                 throw new Exception('Maintenance action must be of type OUT.');

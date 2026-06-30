@@ -39,7 +39,7 @@ class ItemTemplateExport implements FromCollection, WithEvents, WithHeadings
                 $sheet = $event->sheet->getDelegate();
 
                 // Define the options for the dropdown
-                $options = ['CONSUMABLE', 'ASSET', 'RECOVERABLE'];
+                $options = ['CONSUMABLE', 'ASSET'];
 
                 // Set the validation for the 'type' column (Column A) from row 2 to 1000
                 $validation = $sheet->getCell('A2')->getDataValidation();

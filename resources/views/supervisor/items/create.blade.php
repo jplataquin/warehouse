@@ -16,7 +16,7 @@
                     <select name="type" class="form-select" required>
                         <option value="CONSUMABLE">CONSUMABLE</option>
                         <option value="ASSET">ASSET</option>
-                        <option value="RECOVERABLE">RECOVERABLE</option>
+                        
                     </select>
                 </div>
                 <div class="mb-3" id="status-group" style="display: none;">

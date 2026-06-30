@@ -58,7 +58,7 @@
                         <option value="">All Types</option>
                         <option value="CONSUMABLE" {{ request('item_type') === 'CONSUMABLE' ? 'selected' : '' }}>Consumable</option>
                         <option value="ASSET" {{ request('item_type') === 'ASSET' ? 'selected' : '' }}>Asset</option>
-                        <option value="RECOVERABLE" {{ request('item_type') === 'RECOVERABLE' ? 'selected' : '' }}>Recoverable</option>
+                        
                     </select>
                 </div>
 
@@ -96,8 +96,7 @@
                         <h6 class="card-title fw-bold text-truncate mb-0" title="{{ $sItem->name }} {{ $sItem->specification }}">
                             @if($sItem->type === 'CONSUMABLE')
                                 <span class="badge bg-danger me-1">C</span>
-                            @elseif($sItem->type === 'RECOVERABLE')
-                                <span class="badge bg-warning text-dark me-1">R</span>
+                            
                             @elseif($sItem->type === 'ASSET')
                                 <span class="badge bg-success me-1">A</span>
                             @endif

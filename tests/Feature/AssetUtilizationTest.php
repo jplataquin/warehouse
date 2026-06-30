@@ -19,6 +19,7 @@ class AssetUtilizationTest extends TestCase
     {
         $creator = User::factory()->create(['role' => 'supervisor']);
         $updater = User::factory()->create(['role' => 'admin']);
+        $warehouse = Warehouse::create(['name' => 'Main', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
 
         $item = Item::create([
             'name' => 'Excavator X9',
@@ -27,60 +28,32 @@ class AssetUtilizationTest extends TestCase
             'is_asset_utilized' => false,
         ]);
 
-        $this->assertFalse($item->is_asset_utilized);
+        $ledger = Ledger::create([
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'po_number' => 'PO123',
+            'delivery_receipt' => 'DR123',
+            'plate_no' => 'PL-1',
+            'status' => 'APPROVED',
+        ]);
 
         $utilization = AssetUtilization::create([
             'item_id' => $item->id,
-            'utilized_by' => 'John Doe',
-            'utilized_at' => now(),
-            'remarks' => 'First usage',
+            'ledger_id' => $ledger->id,
             'created_by' => $creator->id,
             'updated_by' => $updater->id,
         ]);
 
-        $item->update(['is_asset_utilized' => true]);
-
-        $this->assertTrue($item->fresh()->is_asset_utilized);
-
-        $this->assertCount(1, $item->assetUtilizations);
-        $this->assertEquals('John Doe', $item->assetUtilizations->first()->utilized_by);
-        $this->assertEquals($creator->id, $item->assetUtilizations->first()->created_by);
-        $this->assertEquals($updater->id, $item->assetUtilizations->first()->updated_by);
-
         $this->assertEquals($item->id, $utilization->item->id);
+        $this->assertEquals($ledger->id, $utilization->ledger->id);
         $this->assertEquals($creator->id, $utilization->creator->id);
         $this->assertEquals($updater->id, $utilization->updater->id);
     }
 
-    public function test_asset_utilization_returned_at_can_be_updated()
-    {
-        $item = Item::create([
-            'name' => 'Generator G10',
-            'type' => 'ASSET',
-            'unit' => 'UNIT',
-            'is_asset_utilized' => true,
-        ]);
-
-        $utilization = AssetUtilization::create([
-            'item_id' => $item->id,
-            'utilized_by' => 'Jane Smith',
-            'utilized_at' => now()->subDays(2),
-        ]);
-
-        $this->assertNull($utilization->returned_at);
-
-        $utilization->update([
-            'returned_at' => now(),
-            'remarks' => 'Returned safely',
-        ]);
-
-        $item->update(['is_asset_utilized' => false]);
-
-        $this->assertNotNull($utilization->fresh()->returned_at);
-        $this->assertFalse($item->fresh()->is_asset_utilized);
-    }
-
-    public function test_utilize_action_automatically_tracks_asset_utilization_via_ledger_service()
+    public function test_utilize_and_asset_return_actions_automatically_link_to_asset_utilizations()
     {
         $user = User::factory()->create(['role' => 'logger']);
         $warehouse = Warehouse::create([
@@ -96,7 +69,7 @@ class AssetUtilizationTest extends TestCase
             'is_asset_utilized' => false,
         ]);
 
-        // Put asset in warehouse first (so there's stock to log OUT)
+        // 1. DELIVERY IN (valid)
         Ledger::create([
             'type' => 'IN',
             'action' => 'DELIVERY',
@@ -112,10 +85,10 @@ class AssetUtilizationTest extends TestCase
         $item->update(['current_warehouse_id' => $warehouse->id]);
 
         $service = resolve(LedgerService::class);
-
         $this->actingAs($user);
 
-        $service->createEntry([
+        // 2. OUT UTILIZE (Automatically tracks OUT in asset_utilizations)
+        $utilizeLedger = $service->createEntry([
             'type' => 'OUT',
             'action' => 'UTILIZE',
             'item_id' => $item->id,
@@ -128,14 +101,31 @@ class AssetUtilizationTest extends TestCase
 
         $item = $item->fresh();
         $this->assertTrue($item->is_asset_utilized);
-        $this->assertNull($item->current_warehouse_id); // OUT clears location
 
+        // Assert asset_utilizations contains the UTILIZE record link
         $this->assertCount(1, $item->assetUtilizations);
-        $utilization = $item->assetUtilizations->first();
-        $this->assertEquals('Bob Builder', $utilization->utilized_by);
-        $this->assertEquals('Road construction job', $utilization->remarks);
-        $this->assertEquals('2026-06-30 00:00:00', $utilization->utilized_at->toDateTimeString());
-        $this->assertEquals($user->id, $utilization->created_by);
+        $this->assertEquals($utilizeLedger->id, $item->assetUtilizations->first()->ledger_id);
+
+        // 3. IN ASSET_RETURN (Automatically tracks IN in asset_utilizations)
+        $returnLedger = $service->createEntry([
+            'type' => 'IN',
+            'action' => 'ASSET_RETURN',
+            'item_id' => $item->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'entry_date' => '2026-06-30',
+            'remarks' => 'Returning bulldozer after construction',
+        ]);
+
+        $item = $item->fresh();
+        $this->assertFalse($item->is_asset_utilized);
+
+        // Assert asset_utilizations contains both UTILIZE and ASSET_RETURN records linked
+        $this->assertCount(2, $item->assetUtilizations);
+
+        $linkedLedgerIds = $item->assetUtilizations->pluck('ledger_id')->toArray();
+        $this->assertContains($utilizeLedger->id, $linkedLedgerIds);
+        $this->assertContains($returnLedger->id, $linkedLedgerIds);
     }
 
     public function test_utilize_action_for_asset_requires_assigned_to()

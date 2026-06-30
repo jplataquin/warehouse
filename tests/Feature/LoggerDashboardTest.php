@@ -48,7 +48,6 @@ class LoggerDashboardTest extends TestCase
         $response->assertSee('Dashboard');
         $response->assertSee('data-filter="CONSUMABLE"', false);
         $response->assertSee('data-filter="ASSET"', false);
-        $response->assertSee('data-filter="RECOVERABLE"', false);
         $response->assertSee('filter-btn');
     }
 

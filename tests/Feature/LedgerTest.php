@@ -274,82 +274,6 @@ class LedgerTest extends TestCase
         $response->assertSessionHas('error', 'Asset items can only be processed one at a time (quantity must be 1).');
     }
 
-    public function test_recoverable_quantity_can_be_more_than_one()
-    {
-        $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'RECOVERABLE', 'name' => 'Scaffolding', 'unit' => 'Sets']);
-        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
-
-        $response = $this->actingAs($user)->post('/ledgers', [
-            'entries' => [
-                [
-                    'entry_date' => now()->format('Y-m-d'),
-                    'type' => 'IN',
-                    'action' => 'DELIVERY',
-                    'item_id' => $item->id,
-                    'quantity' => 50, // More than 1
-                    'warehouse_id' => $warehouse->id,
-                    'po_number' => 'PO-REC',
-                    'delivery_receipt' => 'DR-REC',
-                    'plate_no' => 'PLAT-REC',
-                ],
-            ],
-        ]);
-
-        $response->assertSessionHas('success', 'Ledger entries created successfully.');
-        $this->assertDatabaseHas('ledgers', [
-            'item_id' => $item->id,
-            'quantity' => 50,
-            'plate_no' => 'PLAT-REC',
-        ]);
-    }
-
-    public function test_recoverable_delivery_requires_receipt_fields()
-    {
-        $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'RECOVERABLE', 'name' => 'Scaffolding', 'unit' => 'Sets']);
-        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
-
-        $response = $this->actingAs($user)->post('/ledgers', [
-            'entries' => [
-                [
-                    'entry_date' => now()->format('Y-m-d'),
-                    'type' => 'IN',
-                    'action' => 'DELIVERY',
-                    'item_id' => $item->id,
-                    'quantity' => 10,
-                    'warehouse_id' => $warehouse->id,
-                    'po_number' => '', // Missing
-                ],
-            ],
-        ]);
-
-        $response->assertSessionHas('error', 'PO Number is required for item deliveries.');
-    }
-
-    public function test_asset_return_not_allowed_for_recoverable()
-    {
-        $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'RECOVERABLE', 'name' => 'Scaffolding', 'unit' => 'Sets']);
-        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
-
-        $response = $this->actingAs($user)->post('/ledgers', [
-            'entries' => [
-                [
-                    'entry_date' => now()->format('Y-m-d'),
-                    'type' => 'IN',
-                    'action' => 'ASSET_RETURN',
-                    'item_id' => $item->id,
-                    'quantity' => 10,
-                    'warehouse_id' => $warehouse->id,
-                    'remarks' => 'Test remarks',
-                ],
-            ],
-        ]);
-
-        $response->assertSessionHas('error', 'Asset Return action can only be performed on ASSET items.');
-    }
-
     public function test_asset_return_not_allowed_for_consumable()
     {
         $user = User::factory()->create(['role' => 'logger']);
@@ -607,5 +531,183 @@ class LedgerTest extends TestCase
             'quantity' => 1,
             'remarks' => 'Utilizing 1 bag for floor repair',
         ]);
+    }
+
+    public function test_asset_return_requires_last_entry_to_be_utilize_in_current_warehouse()
+    {
+        $user = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'ASSET', 'name' => 'Bulldozer B20', 'unit' => 'Units']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+
+        // Attempting to return without any previous ledger entry at all
+        $response = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'IN',
+                    'action' => 'ASSET_RETURN',
+                    'item_id' => $item->id,
+                    'quantity' => 1,
+                    'warehouse_id' => $warehouse->id,
+                    'remarks' => 'Returning asset',
+                ],
+            ],
+        ]);
+        $response->assertSessionHas('error', 'The asset has no record of being logged out for utilization in this warehouse.');
+
+        // Add a DELIVERY IN (valid)
+        Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'po_number' => 'PO-1',
+            'delivery_receipt' => 'DR-1',
+            'plate_no' => 'PL-1',
+            'status' => 'APPROVED',
+        ]);
+        $item->update(['current_warehouse_id' => $warehouse->id]);
+
+        // Log it out with LOST (valid OUT action) to clear current_warehouse_id but make the last action in warehouse LOST (not UTILIZE)
+        Ledger::create([
+            'entry_date' => now(),
+            'type' => 'OUT',
+            'action' => 'LOST',
+            'item_id' => $item->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Asset lost',
+            'status' => 'APPROVED',
+        ]);
+        $item->update(['current_warehouse_id' => null]);
+
+        // Attempting to return when the last entry in the warehouse is LOST (not OUT UTILIZE)
+        $response = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'IN',
+                    'action' => 'ASSET_RETURN',
+                    'item_id' => $item->id,
+                    'quantity' => 1,
+                    'warehouse_id' => $warehouse->id,
+                    'remarks' => 'Returning asset',
+                ],
+            ],
+        ]);
+        $response->assertSessionHas('error', 'The asset has no record of being logged out for utilization in this warehouse.');
+    }
+
+    public function test_asset_return_throws_if_already_returned()
+    {
+        $user = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'ASSET', 'name' => 'Bulldozer B20', 'unit' => 'Units']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+
+        // Create a DELIVERY IN
+        Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'po_number' => 'PO-1',
+            'delivery_receipt' => 'DR-1',
+            'plate_no' => 'PL-1',
+            'status' => 'APPROVED',
+        ]);
+
+        // Create OUT UTILIZE linked to a return (i.e. already returned)
+        Ledger::create([
+            'entry_date' => now(),
+            'type' => 'OUT',
+            'action' => 'UTILIZE',
+            'item_id' => $item->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'from_ledger_id' => 999, // Set to dummy linked ID
+            'remarks' => 'Utilized',
+            'status' => 'APPROVED',
+        ]);
+
+        // Attempt ASSET_RETURN
+        $response = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'IN',
+                    'action' => 'ASSET_RETURN',
+                    'item_id' => $item->id,
+                    'quantity' => 1,
+                    'warehouse_id' => $warehouse->id,
+                    'remarks' => 'Returning asset',
+                ],
+            ],
+        ]);
+        $response->assertSessionHas('error', 'The asset has already been returned for its last utilization.');
+    }
+
+    public function test_asset_return_mutually_links_ledger_records()
+    {
+        $user = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'ASSET', 'name' => 'Bulldozer B20', 'unit' => 'Units']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+
+        // Create a DELIVERY IN
+        Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'po_number' => 'PO-1',
+            'delivery_receipt' => 'DR-1',
+            'plate_no' => 'PL-1',
+            'status' => 'APPROVED',
+        ]);
+        $item->update(['current_warehouse_id' => $warehouse->id]);
+
+        // Create OUT UTILIZE (unlinked)
+        $utilize = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'OUT',
+            'action' => 'UTILIZE',
+            'item_id' => $item->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'assigned_to' => 'Bob',
+            'remarks' => 'Utilized',
+            'status' => 'APPROVED',
+        ]);
+        $item->update(['current_warehouse_id' => null, 'is_asset_utilized' => true]);
+
+        // Post ASSET_RETURN
+        $response = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'IN',
+                    'action' => 'ASSET_RETURN',
+                    'item_id' => $item->id,
+                    'quantity' => 1,
+                    'warehouse_id' => $warehouse->id,
+                    'remarks' => 'Returning asset after utilization',
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHas('success', 'Ledger entries created successfully.');
+
+        $returnLedger = Ledger::where('item_id', $item->id)
+            ->where('action', 'ASSET_RETURN')
+            ->first();
+
+        $this->assertNotNull($returnLedger);
+        $this->assertEquals($utilize->id, $returnLedger->from_ledger_id);
+        $this->assertEquals($returnLedger->id, $utilize->fresh()->from_ledger_id);
     }
 }

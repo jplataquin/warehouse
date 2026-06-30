@@ -44,7 +44,7 @@ class ItemImportController extends Controller
 
             // Validation
             $validator = Validator::make($item, [
-                'type' => 'required|in:CONSUMABLE,ASSET,RECOVERABLE',
+                'type' => 'required|in:CONSUMABLE,ASSET',
                 'name' => 'required|string|max:255',
                 'specification' => 'nullable|string|max:255',
                 'unit' => 'required|string|max:50',

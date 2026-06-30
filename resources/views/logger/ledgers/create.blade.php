@@ -504,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 options = options.filter(opt => opt.value !== 'MAINTENANCE');
             }
 
-            if (currentItem.type === 'ASSET' || currentItem.type === 'RECOVERABLE') {
+            if (currentItem.type === 'ASSET') {
                 options = options.filter(opt => opt.value !== 'ALLOCATE');
             }
 
@@ -571,7 +571,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Requirements for receipts and plate no
-            const isMandatory = ['CONSUMABLE', 'ASSET', 'RECOVERABLE'].includes(currentItem.type) && action === 'DELIVERY';
+            const isMandatory = ['CONSUMABLE', 'ASSET'].includes(currentItem.type) && action === 'DELIVERY';
             
             if (isMandatory) {
                 plateInput.required = true;

@@ -26,7 +26,7 @@
                             <ul class="small mb-0">
                                 <li>The first row must be the heading row.</li>
                                 <li>Required Columns: <strong>type</strong>, <strong>name</strong>, <strong>specification</strong>, <strong>unit</strong></li>
-                                <li>Valid Types: <code>CONSUMABLE</code>, <code>ASSET</code>, <code>RECOVERABLE</code></li>
+                                <li>Valid Types: <code>CONSUMABLE</code>, <code>ASSET</code></li>
                                 <li>Uniqueness: The combination of <strong>name</strong>, <strong>specification</strong>, and <strong>unit</strong> must be unique.</li>
                             </ul>
                         </div>

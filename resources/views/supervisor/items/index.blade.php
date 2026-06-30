@@ -29,7 +29,7 @@
                         <option value="">All Types</option>
                         <option value="CONSUMABLE" {{ request('type') === 'CONSUMABLE' ? 'selected' : '' }}>Consumable</option>
                         <option value="ASSET" {{ request('type') === 'ASSET' ? 'selected' : '' }}>Asset</option>
-                        <option value="RECOVERABLE" {{ request('type') === 'RECOVERABLE' ? 'selected' : '' }}>Recoverable</option>
+                        
                     </select>
                 </div>
                 <div class="col-md-2">
