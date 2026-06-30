@@ -542,6 +542,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const remarksInput = row.querySelector('.remarks-input');
         const remarksAsterisk = row.querySelector('.remarks-required');
         const assignedPlateRow = row.querySelector('.assigned-plate-row');
+        const assignedCol = row.querySelector('.assigned-col');
+        const plateCol = row.querySelector('.plate-col');
+        const assignedInput = row.querySelector('.assigned-input');
+        const assignedAsterisk = row.querySelector('.assigned-required');
         
         // Reset visibility
         inTransfer.style.display = 'none';
@@ -552,6 +556,13 @@ document.addEventListener('DOMContentLoaded', function() {
         plateInput.required = false;
         plateInput.placeholder = 'Vehicle Plate No. (Optional)';
         if (assignedPlateRow) assignedPlateRow.style.display = 'flex';
+        if (assignedCol) assignedCol.style.display = 'block';
+        if (plateCol) plateCol.style.display = 'block';
+        if (assignedInput) {
+            assignedInput.required = false;
+            assignedInput.placeholder = 'Personnel Name (Optional)';
+        }
+        if (assignedAsterisk) assignedAsterisk.style.display = 'none';
         
         if (type === 'IN') {
             // TRANSFER (IN) is now hidden from manual selection as it is handled automatically from OUT-TRANSFER
