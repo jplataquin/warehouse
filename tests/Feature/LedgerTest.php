@@ -710,4 +710,119 @@ class LedgerTest extends TestCase
         $this->assertEquals($utilize->id, $returnLedger->from_ledger_id);
         $this->assertEquals($returnLedger->id, $utilize->fresh()->from_ledger_id);
     }
+
+    public function test_admin_can_access_edit_ledger_page()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial',
+        ]);
+
+        $response = $this->actingAs($admin)->get("/ledgers/{$ledger->id}/edit");
+
+        $response->assertStatus(200);
+        $response->assertViewIs('admin.ledgers.edit');
+    }
+
+    public function test_non_admin_cannot_access_edit_ledger_page()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial',
+        ]);
+
+        $response = $this->actingAs($logger)->get("/ledgers/{$ledger->id}/edit");
+
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_update_ledger_entry_and_records_updated_by()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial',
+        ]);
+
+        $response = $this->actingAs($admin)->put("/ledgers/{$ledger->id}", [
+            'entry_date' => now()->format('Y-m-d'),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 20, // Change from 10 to 20
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Updated Remarks',
+        ]);
+
+        $response->assertRedirect(route('ledgers.show', $ledger));
+        $this->assertEquals(20, $ledger->fresh()->quantity);
+        $this->assertEquals('Updated Remarks', $ledger->fresh()->remarks);
+        $this->assertEquals($admin->id, $ledger->fresh()->updated_by);
+    }
+
+    public function test_admin_update_validates_business_rules()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        
+        // Initial stock of 10
+        $ledger1 = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial',
+        ]);
+
+        // Out movement of 8 (available stock = 2)
+        $ledger2 = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'OUT',
+            'action' => 'UTILIZE',
+            'item_id' => $item->id,
+            'quantity' => 8,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Utilize',
+        ]);
+
+        // Admin tries to update the Out movement to 15, which exceeds available stock (stock without entry is 10, requested 15)
+        $response = $this->actingAs($admin)->put("/ledgers/{$ledger2->id}", [
+            'entry_date' => now()->format('Y-m-d'),
+            'type' => 'OUT',
+            'action' => 'UTILIZE',
+            'item_id' => $item->id,
+            'quantity' => 15,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Utilize more than stock',
+        ]);
+
+        $response->assertSessionHas('error');
+        $this->assertEquals(8, $ledger2->fresh()->quantity); // Quantity should remain unchanged
+    }
 }

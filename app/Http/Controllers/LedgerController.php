@@ -383,6 +383,63 @@ class LedgerController extends Controller
         return "{$role}.ledgers.{$viewName}";
     }
 
+    public function edit($ledger)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins are allowed to edit ledger entries.');
+        }
+
+        if (! ($ledger instanceof Ledger) || ! $ledger->exists) {
+            $ledger = Ledger::findOrFail(is_numeric($ledger) ? $ledger : $ledger->id);
+        }
+
+        $items = Item::all();
+        $warehouses = Warehouse::active()->get();
+        // Get allocations for the current warehouse of the ledger
+        $allocations = Allocation::where('warehouse_id', $ledger->warehouse_id)->orderBy('name', 'asc')->get();
+        $projects = Project::all();
+
+        return view('admin.ledgers.edit', compact('ledger', 'items', 'warehouses', 'allocations', 'projects'));
+    }
+
+    public function update(Request $request, $ledger)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins are allowed to edit ledger entries.');
+        }
+
+        if (! ($ledger instanceof Ledger) || ! $ledger->exists) {
+            $ledger = Ledger::findOrFail(is_numeric($ledger) ? $ledger : $ledger->id);
+        }
+
+        $validated = $request->validate([
+            'entry_date' => 'required|date|before_or_equal:today',
+            'type' => 'required|in:IN,OUT',
+            'action' => 'required|in:TRANSFER,DELIVERY,ASSET_RETURN,ALLOCATE,DISPOSE,LOST,REJECT,MAINTENANCE,CORRECTION,INITIAL_STOCK,UTILIZE',
+            'item_id' => 'required|exists:items,id',
+            'quantity' => 'required|numeric|min:0.01',
+            'warehouse_id' => 'required|exists:warehouses,id',
+            'project_id' => 'nullable|exists:projects,id',
+            'destination_warehouse_id' => 'nullable|exists:warehouses,id',
+            'source_warehouse_id' => 'nullable|exists:warehouses,id',
+            'allocation_id' => 'nullable|exists:allocations,id',
+            'po_number' => 'nullable|string',
+            'offical_receipt' => 'nullable|string',
+            'delivery_receipt' => 'nullable|string',
+            'assigned_to' => 'nullable|string',
+            'plate_no' => 'nullable|string',
+            'remarks' => 'nullable|string',
+        ]);
+
+        try {
+            $this->ledgerService->updateEntry($ledger, $validated);
+
+            return redirect()->route('ledgers.show', $ledger)->with('success', 'Ledger entry updated successfully.');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+    }
+
     public function approve(Ledger $ledger)
     {
         $ledger->update([

@@ -13,9 +13,16 @@
             </div>
         </div>
     </div>
-    <a href="{{ route('ledgers.index', ['warehouse_id' => $ledger->warehouse_id, 'item_id' => $ledger->item_id]) }}" class="btn btn-outline-secondary shadow-sm">
-        <i class="bi bi-arrow-left"></i> Back to List
-    </a>
+    <div class="d-flex gap-2">
+        @if(auth()->user()->isAdmin())
+        <a href="{{ route('ledgers.edit', $ledger) }}" class="btn btn-warning text-white shadow-sm">
+            <i class="bi bi-pencil"></i> Edit Entry
+        </a>
+        @endif
+        <a href="{{ route('ledgers.index', ['warehouse_id' => $ledger->warehouse_id, 'item_id' => $ledger->item_id]) }}" class="btn btn-outline-secondary shadow-sm">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
 </div>
 
 <div class="row g-4">

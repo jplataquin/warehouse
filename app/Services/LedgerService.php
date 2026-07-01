@@ -108,6 +108,109 @@ class LedgerService
     }
 
     /**
+     * Update an existing ledger entry with validation.
+     */
+    public function updateEntry(Ledger $ledger, array $data)
+    {
+        return DB::transaction(function () use ($ledger, $data) {
+            $originalItemId = $ledger->item_id;
+            $newItemId = $data['item_id'] ?? $originalItemId;
+
+            $originalItem = Item::findOrFail($originalItemId);
+            $newItem = Item::findOrFail($newItemId);
+
+            // If the original item is an ASSET and the ledger was an IN entry, we temporarily reset its current warehouse
+            $originalCurrentWarehouseId = $originalItem->current_warehouse_id;
+            if ($originalItem->type === 'ASSET' && $ledger->type === 'IN') {
+                $originalItem->current_warehouse_id = null;
+                $originalItem->save();
+            }
+
+            // Temporarily soft delete the ledger so its quantities don't interfere with getBalance checks
+            $ledger->delete();
+
+            try {
+                // Auto-populate project_id if missing
+                if (empty($data['project_id'])) {
+                    if (! empty($data['allocation_id'])) {
+                        $allocation = Allocation::with('warehouse')->find($data['allocation_id']);
+                        $data['project_id'] = ($allocation && $allocation->warehouse) ? $allocation->warehouse->project_id : null;
+                    }
+
+                    if (empty($data['project_id']) && ! empty($data['warehouse_id'])) {
+                        $warehouse = Warehouse::find($data['warehouse_id']);
+                        $data['project_id'] = $warehouse ? $warehouse->project_id : null;
+                    }
+                }
+
+                // Refresh both items to make sure database state is fresh
+                $originalItem->refresh();
+                $newItem->refresh();
+
+                $this->validateRules($newItem, $data);
+            } catch (Exception $e) {
+                // Restore original state
+                $ledger->restore();
+                if ($originalItem->type === 'ASSET' && $ledger->type === 'IN') {
+                    $originalItem->current_warehouse_id = $originalCurrentWarehouseId;
+                    $originalItem->save();
+                }
+                throw $e;
+            }
+
+            // Restore the ledger so we can update it
+            $ledger->restore();
+
+            $data['updated_by'] = auth()->id();
+
+            $ledger->update($data);
+
+            // If item changed and the old item was an ASSET, we should clear its current_warehouse_id
+            if ($originalItemId != $newItemId && $originalItem->type === 'ASSET') {
+                $originalItem->update(['current_warehouse_id' => null, 'is_asset_utilized' => false]);
+                AssetUtilization::where('ledger_id', $ledger->id)->delete();
+            }
+
+            // Update New Item's current warehouse if ASSET
+            if ($newItem->type === 'ASSET') {
+                $newItem->update([
+                    'current_warehouse_id' => $data['type'] === 'IN' ? $data['warehouse_id'] : null,
+                ]);
+
+                // Automatically track utilization when logging OUT with UTILIZE or returning IN with ASSET_RETURN
+                if ($data['action'] === 'UTILIZE' || $data['action'] === 'ASSET_RETURN') {
+                    if ($data['action'] === 'UTILIZE') {
+                        $newItem->update(['is_asset_utilized' => true]);
+                    } else {
+                        $newItem->update(['is_asset_utilized' => false]);
+                    }
+
+                    // Check if there is already an asset utilization record for this ledger
+                    $utilization = AssetUtilization::where('ledger_id', $ledger->id)->first();
+                    if ($utilization) {
+                        $utilization->update([
+                            'item_id' => $newItem->id,
+                            'updated_by' => auth()->id(),
+                        ]);
+                    } else {
+                        AssetUtilization::create([
+                            'item_id' => $newItem->id,
+                            'ledger_id' => $ledger->id,
+                            'created_by' => auth()->id(),
+                            'updated_by' => auth()->id(),
+                        ]);
+                    }
+                } else {
+                    // If action is no longer UTILIZE or ASSET_RETURN, remove any existing utilization record
+                    AssetUtilization::where('ledger_id', $ledger->id)->delete();
+                }
+            }
+
+            return $ledger;
+        });
+    }
+
+    /**
      * Validate complex dynamic rules.
      */
     protected function validateRules(Item $item, array $data)
