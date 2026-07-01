@@ -139,4 +139,20 @@ class ItemRedirectionTest extends TestCase
         $response->assertSee('class="page-item', false);
         $response->assertSee('class="page-link"', false);
     }
+
+    public function test_show_route_redirects_to_edit_route()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $item = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Cement Extra',
+            'specification' => '40kg',
+            'unit' => 'Bags',
+        ]);
+
+        $response = $this->actingAs($supervisor)
+            ->get(route('items.show', $item));
+
+        $response->assertRedirect(route('items.edit', $item));
+    }
 }

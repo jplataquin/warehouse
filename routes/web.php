@@ -101,6 +101,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['admin'])->group(function () {
         Route::resource('users', UserController::class);
         Route::post('ledgers/{ledger}/approve', [LedgerController::class, 'approve'])->name('ledgers.approve');
+        Route::get('items/{item}/merge/search', [ItemController::class, 'searchMergeTargets'])->name('items.merge.search');
         Route::get('items/{item}/merge', [ItemController::class, 'mergeForm'])->name('items.merge.form');
         Route::post('items/{item}/merge', [ItemController::class, 'merge'])->name('items.merge');
     });

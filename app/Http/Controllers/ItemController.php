@@ -82,6 +82,11 @@ class ItemController extends Controller
         return view('supervisor.items.edit', compact('item'));
     }
 
+    public function show(Item $item)
+    {
+        return redirect()->route('items.edit', $item);
+    }
+
     public function update(Request $request, Item $item)
     {
         $validated = $request->validate([
@@ -143,6 +148,34 @@ class ItemController extends Controller
         return redirect()->back()->with('success', 'Asset status updated successfully.');
     }
 
+    public function searchMergeTargets(Request $request, Item $item)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins are allowed to merge items.');
+        }
+
+        $query = $request->query('q', '');
+
+        if (strlen($query) < 1) {
+            return response()->json([]);
+        }
+
+        $driver = \DB::connection()->getDriverName();
+        if ($driver === 'sqlite') {
+            $concatExpr = "name || ' ' || COALESCE(specification, '') || ' ' || unit";
+        } else {
+            $concatExpr = "CONCAT(name, ' ', COALESCE(specification, ''), ' ', unit)";
+        }
+
+        $items = Item::withTrashed()
+            ->where('id', '!=', $item->id)
+            ->whereRaw("{$concatExpr} LIKE ?", ["%{$query}%"])
+            ->limit(20)
+            ->get(['id', 'name', 'specification', 'unit', 'type']);
+
+        return response()->json($items);
+    }
+
     public function mergeForm(Item $item)
     {
         if (! auth()->user()->isAdmin()) {
@@ -150,11 +183,8 @@ class ItemController extends Controller
         }
 
         $ledgerCount = \App\Models\Ledger::where('item_id', $item->id)->count();
-        $allItems = Item::withTrashed()
-            ->where('id', '!=', $item->id)
-            ->get();
 
-        return view('supervisor.items.merge', compact('item', 'ledgerCount', 'allItems'));
+        return view('supervisor.items.merge', compact('item', 'ledgerCount'));
     }
 
     public function merge(Request $request, Item $item)

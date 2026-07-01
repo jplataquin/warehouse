@@ -75,20 +75,26 @@
                         @csrf
 
                         <!-- Target Item Search & Select -->
-                        <div class="mb-4">
+                        <div class="mb-4 position-relative" id="autocomplete-container">
                             <label class="form-label fw-bold text-dark mb-2">
                                 <i class="bi bi-box-arrow-in-left text-success me-1"></i> Select Target Item (To Keep)
                             </label>
                             
-                            <input type="text" id="target-item-search" class="form-control form-control-lg border-opacity-50" placeholder="Type name, ID, or specification to search target..." list="item-options" autocomplete="off" required>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="bi bi-search text-muted" id="search-icon"></i>
+                                    <div class="spinner-border spinner-border-sm text-primary" id="search-spinner" style="display: none;" role="status"></div>
+                                </span>
+                                <input type="text" id="target-item-search" class="form-control form-control-lg border-start-0 border-opacity-50" placeholder="Type name, ID, or specification to search target..." autocomplete="off" required>
+                            </div>
                             <input type="hidden" name="target_item_id" id="target-item-id" value="{{ old('target_item_id') }}">
                             
-                            <datalist id="item-options">
-                                @foreach($allItems as $target)
-                                    <option value="ID: {{ $target->id }} - {{ $target->name }}{{ $target->specification ? ' (' . $target->specification . ')' : '' }} - {{ $target->unit }} [{{ $target->type }}]" data-id="{{ $target->id }}"></option>
-                                @endforeach
-                            </datalist>
-                            <div class="form-text small text-muted">
+                            <!-- CUSTOM AUTOCOMPLETE DROPDOWN OVERLAY -->
+                            <div id="search-results-dropdown" class="dropdown-menu shadow-lg w-100 p-0 overflow-auto" style="max-height: 280px; display: none; position: absolute; z-index: 1050; top: 100%; left: 0; border: 1px solid rgba(0,0,0,0.15);">
+                                <!-- Results will be injected here dynamically -->
+                            </div>
+                            
+                            <div class="form-text small text-muted mt-2">
                                 Search and select the exact target item to merge into. The item ID is shown in the search list to ensure precision.
                             </div>
                         </div>
@@ -123,9 +129,13 @@
 document.addEventListener('DOMContentLoaded', function() {
     const itemSearch = document.getElementById('target-item-search');
     const itemIdHidden = document.getElementById('target-item-id');
-    const itemsDatalist = document.getElementById('item-options');
+    const resultsDropdown = document.getElementById('search-results-dropdown');
     const confirmCheckbox = document.getElementById('confirm_merge');
     const submitBtn = document.getElementById('submit-btn');
+    const searchIcon = document.getElementById('search-icon');
+    const searchSpinner = document.getElementById('search-spinner');
+
+    let debounceTimeout = null;
 
     function checkFormValidity() {
         const hasValidTarget = itemIdHidden.value !== '';
@@ -134,35 +144,79 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     itemSearch.addEventListener('input', function() {
-        const val = this.value;
-        const options = itemsDatalist.options;
-        let foundId = '';
+        const query = this.value.trim();
+        itemIdHidden.value = ''; // Reset ID on type
+        checkFormValidity();
 
-        for (let i = 0; i < options.length; i++) {
-            if (options[i].value === val) {
-                foundId = options[i].getAttribute('data-id');
-                break;
-            }
+        clearTimeout(debounceTimeout);
+
+        if (query.length < 1) {
+            resultsDropdown.innerHTML = '';
+            resultsDropdown.style.display = 'none';
+            return;
         }
 
-        itemIdHidden.value = foundId;
-        checkFormValidity();
+        searchIcon.style.display = 'none';
+        searchSpinner.style.display = 'inline-block';
+
+        debounceTimeout = setTimeout(() => {
+            fetch(`{{ route('items.merge.search', $item) }}?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    searchSpinner.style.display = 'none';
+                    searchIcon.style.display = 'inline-block';
+
+                    resultsDropdown.innerHTML = '';
+                    if (data.length === 0) {
+                        resultsDropdown.innerHTML = '<div class="p-3 text-muted text-center small"><i class="bi bi-info-circle me-1"></i>No matching items found</div>';
+                        resultsDropdown.style.display = 'block';
+                        return;
+                    }
+
+                    data.forEach(target => {
+                        const specStr = target.specification ? ` (${target.specification})` : '';
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'dropdown-item text-wrap py-2 border-bottom border-light text-start w-100';
+                        button.style.outline = 'none';
+                        button.innerHTML = `
+                            <div class="fw-bold text-dark small">${target.name}${specStr}</div>
+                            <div class="text-muted extra-small d-flex align-items-center gap-1 mt-1" style="font-size: 0.75rem;">
+                                <span>ID: <strong class="text-primary">#${target.id}</strong></span> | 
+                                <span>Unit: ${target.unit}</span> | 
+                                <span>Type: <span class="badge bg-secondary bg-opacity-10 text-dark extra-small">${target.type}</span></span>
+                            </div>
+                        `;
+                        
+                        button.addEventListener('click', function() {
+                            itemSearch.value = `ID: ${target.id} - ${target.name}${specStr} - ${target.unit}`;
+                            itemIdHidden.value = target.id;
+                            resultsDropdown.innerHTML = '';
+                            resultsDropdown.style.display = 'none';
+                            checkFormValidity();
+                        });
+
+                        resultsDropdown.appendChild(button);
+                    });
+
+                    resultsDropdown.style.display = 'block';
+                })
+                .catch(err => {
+                    searchSpinner.style.display = 'none';
+                    searchIcon.style.display = 'inline-block';
+                    console.error('Error fetching merge targets:', err);
+                });
+        }, 250); // 250ms debounce
+    });
+
+    // Close dropdown on click outside
+    document.addEventListener('click', function(e) {
+        if (!document.getElementById('autocomplete-container').contains(e.target)) {
+            resultsDropdown.style.display = 'none';
+        }
     });
 
     confirmCheckbox.addEventListener('change', checkFormValidity);
-
-    // If there is an old input value, try to find and set the search input properly
-    if (itemIdHidden.value) {
-        const oldId = itemIdHidden.value;
-        const options = itemsDatalist.options;
-        for (let i = 0; i < options.length; i++) {
-            if (options[i].getAttribute('data-id') === oldId) {
-                itemSearch.value = options[i].value;
-                break;
-            }
-        }
-        checkFormValidity();
-    }
 });
 </script>
 @endsection

@@ -174,7 +174,46 @@ class ItemTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewHas('item');
         $response->assertViewHas('ledgerCount');
-        $response->assertViewHas('allItems');
+        $response->assertViewMissing('allItems');
+    }
+
+    public function test_admin_can_search_merge_targets_via_autocomplete()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item1 = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Deformed Bar',
+            'specification' => '16mm x 6m',
+            'unit' => 'length',
+        ]);
+        $item2 = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Cement Extra',
+            'specification' => '40kg',
+            'unit' => 'Bags',
+        ]);
+
+        // Search matching "Deformed"
+        $response = $this->actingAs($admin)->get(route('items.merge.search', $item2) . '?q=Deformed');
+        $response->assertStatus(200);
+        $response->assertJsonCount(1);
+        $response->assertJsonFragment([
+            'id' => $item1->id,
+            'name' => 'Deformed Bar',
+            'specification' => '16mm x 6m',
+            'unit' => 'length',
+        ]);
+
+        // Search matching combination: "Cement Extra 40kg"
+        $response = $this->actingAs($admin)->get(route('items.merge.search', $item1) . '?q=Cement Extra 40kg');
+        $response->assertStatus(200);
+        $response->assertJsonCount(1);
+        $response->assertJsonFragment([
+            'id' => $item2->id,
+            'name' => 'Cement Extra',
+            'specification' => '40kg',
+            'unit' => 'Bags',
+        ]);
     }
 
     public function test_admin_can_merge_items()
