@@ -59,6 +59,19 @@ class ItemController extends Controller
             'unit' => 'required|string|max:50',
             'status' => 'nullable|in:Operational,Out of Order',
         ]);
+
+        $exists = Item::withTrashed()
+            ->where('name', $validated['name'])
+            ->where('specification', $validated['specification'] ?? null)
+            ->where('unit', $validated['unit'])
+            ->exists();
+
+        if ($exists) {
+            return back()->withInput()->withErrors([
+                'name' => 'An item with this exact name, specification, and unit already exists.'
+            ]);
+        }
+
         Item::create($validated);
 
         return redirect()->route('items.index')->with('success', 'Item created successfully.');
@@ -78,6 +91,20 @@ class ItemController extends Controller
             'unit' => 'required|string|max:50',
             'status' => 'nullable|in:Operational,Out of Order',
         ]);
+
+        $exists = Item::withTrashed()
+            ->where('name', $validated['name'])
+            ->where('specification', $validated['specification'] ?? null)
+            ->where('unit', $validated['unit'])
+            ->where('id', '!=', $item->id)
+            ->exists();
+
+        if ($exists) {
+            return back()->withInput()->withErrors([
+                'name' => 'An item with this exact name, specification, and unit already exists.'
+            ]);
+        }
+
         $item->update($validated);
 
         return redirect()->route('items.index', $request->query())->with('success', 'Item updated successfully.');

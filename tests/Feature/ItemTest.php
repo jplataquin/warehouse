@@ -84,4 +84,54 @@ class ItemTest extends TestCase
         $this->assertNotNull($loadedLedger->item);
         $this->assertEquals('Cement', $loadedLedger->item->name);
     }
+
+    public function test_cannot_create_duplicate_item_with_same_name_spec_unit()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Deformed Bar',
+            'specification' => '16mm x 6m',
+            'unit' => 'length',
+        ]);
+
+        $response = $this->actingAs($supervisor)->post(route('items.store'), [
+            'type' => 'CONSUMABLE',
+            'name' => 'Deformed Bar',
+            'specification' => '16mm x 6m',
+            'unit' => 'length',
+        ]);
+
+        $response->assertSessionHasErrors(['name']);
+        $this->assertEquals(1, Item::count());
+    }
+
+    public function test_cannot_update_item_to_create_duplicate_with_same_name_spec_unit()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        
+        $item1 = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Deformed Bar 1',
+            'specification' => '16mm x 6m',
+            'unit' => 'length',
+        ]);
+
+        $item2 = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Deformed Bar 2',
+            'specification' => '16mm x 6m',
+            'unit' => 'length',
+        ]);
+
+        $response = $this->actingAs($supervisor)->put(route('items.update', $item2), [
+            'type' => 'CONSUMABLE',
+            'name' => 'Deformed Bar 1', // Change name to match item1, creating a duplicate
+            'specification' => '16mm x 6m',
+            'unit' => 'length',
+        ]);
+
+        $response->assertSessionHasErrors(['name']);
+        $this->assertEquals('Deformed Bar 2', $item2->fresh()->name); // Should remain unchanged
+    }
 }
