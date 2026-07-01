@@ -131,7 +131,9 @@ class ItemTest extends TestCase
             'unit' => 'length',
         ]);
 
-        $response->assertSessionHasErrors(['name']);
+        $response->assertSessionHasErrors([
+            'name' => "An item with this exact name, specification, and unit already exists. (ID: {$item1->id}, Name: Deformed Bar 1, Specification: 16mm x 6m, Unit: length)"
+        ]);
         $this->assertEquals('Deformed Bar 2', $item2->fresh()->name); // Should remain unchanged
     }
 }

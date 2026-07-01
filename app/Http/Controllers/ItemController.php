@@ -92,16 +92,16 @@ class ItemController extends Controller
             'status' => 'nullable|in:Operational,Out of Order',
         ]);
 
-        $exists = Item::withTrashed()
+        $existingItem = Item::withTrashed()
             ->where('name', $validated['name'])
             ->where('specification', $validated['specification'] ?? null)
             ->where('unit', $validated['unit'])
             ->where('id', '!=', $item->id)
-            ->exists();
+            ->first();
 
-        if ($exists) {
+        if ($existingItem) {
             return back()->withInput()->withErrors([
-                'name' => 'An item with this exact name, specification, and unit already exists.'
+                'name' => "An item with this exact name, specification, and unit already exists. (ID: {$existingItem->id}, Name: {$existingItem->name}, Specification: " . ($existingItem->specification ?? 'N/A') . ", Unit: {$existingItem->unit})"
             ]);
         }
 

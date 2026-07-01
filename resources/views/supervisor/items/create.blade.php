@@ -5,11 +5,26 @@
     <div class="card">
         <div class="card-header">New Item</div>
         <div class="card-body">
+            @if ($errors->any())
+                <div class="alert alert-danger shadow-sm border-0 mb-4">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <form action="{{ route('items.store') }}" method="POST">
                 @csrf
                 <div class="mb-3">
                     <label class="form-label">Name</label>
-                    <input type="text" name="name" class="form-control" required>
+                    <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
+                    @error('name')
+                        <div class="invalid-feedback">
+                            {{ $message }}
+                        </div>
+                    @enderror
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Type</label>
