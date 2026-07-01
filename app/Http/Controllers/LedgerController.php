@@ -50,11 +50,8 @@ class LedgerController extends Controller
             $items = Item::whereIn('id', $itemIds)->get();
 
             foreach ($items as $item) {
-                $balance = $item->getBalance($selectedWarehouseId);
-                if ($balance > 0) {
-                    $item->balance = $balance;
-                    $itemsWithStock->push($item);
-                }
+                $item->balance = $item->getBalance($selectedWarehouseId);
+                $itemsWithStock->push($item);
             }
 
             $query = Ledger::with(['item', 'warehouse']);

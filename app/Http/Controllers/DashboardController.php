@@ -41,9 +41,6 @@ class DashboardController extends Controller
                 $item->current_stock = $item->getBalance($warehouseId);
 
                 return $item;
-            })
-            ->filter(function ($item) {
-                return $item->current_stock > 0;
             });
 
         return view('logger.warehouses.dashboard', compact('warehouse', 'items'));

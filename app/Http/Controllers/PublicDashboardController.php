@@ -22,9 +22,6 @@ class PublicDashboardController extends Controller
                 $item->current_stock = $item->getBalance($warehouse->id);
 
                 return $item;
-            })
-            ->filter(function ($item) {
-                return $item->current_stock > 0;
             });
 
         return view('public.dashboard', compact('warehouse', 'items'));
