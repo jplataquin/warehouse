@@ -59,9 +59,20 @@
                             </td>
                             <td>{{ $item->unit }}</td>
                             <td class="text-end">
-                                <a href="{{ route('items.edit', array_merge(['item' => $item->id], request()->query())) }}" class="btn btn-sm btn-outline-secondary">
-                                    <i class="bi bi-pencil me-1"></i> Edit
-                                </a>
+                                <div class="d-inline-flex gap-1">
+                                    <a href="{{ route('items.edit', array_merge(['item' => $item->id], request()->query())) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil me-1"></i> Edit
+                                    </a>
+                                    @if(auth()->user()->isAdmin())
+                                    <form action="{{ route('items.destroy', $item) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this item? This action will hide the item from future logs, though historical ledger movements will remain intact.');" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash me-1"></i> Delete
+                                        </button>
+                                    </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                         @empty

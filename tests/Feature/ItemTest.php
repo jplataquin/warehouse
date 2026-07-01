@@ -1,0 +1,87 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Item;
+use App\Models\Ledger;
+use App\Models\User;
+use App\Models\Warehouse;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class ItemTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_admin_can_delete_an_item_soft_delete()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'To Be Deleted',
+            'specification' => 'Spec',
+            'unit' => 'Pcs',
+        ]);
+
+        $response = $this->actingAs($admin)->delete(route('items.destroy', $item));
+
+        $response->assertRedirect(route('items.index'));
+        $this->assertSoftDeleted('items', [
+            'id' => $item->id,
+        ]);
+    }
+
+    public function test_non_admin_cannot_delete_an_item()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $item = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Should Not Be Deleted',
+            'specification' => 'Spec',
+            'unit' => 'Pcs',
+        ]);
+
+        $response = $this->actingAs($supervisor)->delete(route('items.destroy', $item));
+
+        $response->assertStatus(403);
+        $this->assertDatabaseHas('items', [
+            'id' => $item->id,
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_soft_deleted_item_does_not_break_ledger()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Cement',
+            'unit' => 'Bags',
+        ]);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+
+        // Create a ledger entry referencing the item
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial stock',
+        ]);
+
+        // Delete the item
+        $item->delete();
+
+        // Ensure the item is soft-deleted
+        $this->assertSoftDeleted('items', ['id' => $item->id]);
+
+        // Load ledger with item and make sure it does not crash or return null
+        $loadedLedger = Ledger::with('item')->find($ledger->id);
+        
+        $this->assertNotNull($loadedLedger);
+        $this->assertNotNull($loadedLedger->item);
+        $this->assertEquals('Cement', $loadedLedger->item->name);
+    }
+}

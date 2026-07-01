@@ -85,6 +85,10 @@ class ItemController extends Controller
 
     public function destroy(Item $item)
     {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins are allowed to delete items.');
+        }
+
         $item->delete();
 
         return redirect()->route('items.index')->with('success', 'Item deleted successfully.');
