@@ -142,4 +142,51 @@ class ItemController extends Controller
 
         return redirect()->back()->with('success', 'Asset status updated successfully.');
     }
+
+    public function mergeForm(Item $item)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins are allowed to merge items.');
+        }
+
+        $ledgerCount = \App\Models\Ledger::where('item_id', $item->id)->count();
+        $allItems = Item::withTrashed()
+            ->where('id', '!=', $item->id)
+            ->get();
+
+        return view('supervisor.items.merge', compact('item', 'ledgerCount', 'allItems'));
+    }
+
+    public function merge(Request $request, Item $item)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins are allowed to merge items.');
+        }
+
+        $validated = $request->validate([
+            'target_item_id' => 'required|exists:items,id|not_in:' . $item->id,
+            'confirm_merge' => 'required|accepted',
+        ], [
+            'target_item_id.required' => 'You must select a target item to merge into.',
+            'target_item_id.exists' => 'The selected target item does not exist.',
+            'target_item_id.not_in' => 'Cannot merge an item with itself.',
+            'confirm_merge.accepted' => 'You must check the confirmation box to proceed.',
+            'confirm_merge.required' => 'You must check the confirmation box to proceed.',
+        ]);
+
+        $targetItemId = $validated['target_item_id'];
+
+        \DB::transaction(function () use ($item, $targetItemId) {
+            // Reassign ledger records
+            \App\Models\Ledger::where('item_id', $item->id)->update(['item_id' => $targetItemId]);
+
+            // Reassign asset utilization records
+            \App\Models\AssetUtilization::where('item_id', $item->id)->update(['item_id' => $targetItemId]);
+
+            // Soft-delete the source item
+            $item->delete();
+        });
+
+        return redirect()->route('items.index')->with('success', 'Items consolidated successfully.');
+    }
 }

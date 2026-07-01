@@ -136,4 +136,87 @@ class ItemTest extends TestCase
         ]);
         $this->assertEquals('Deformed Bar 2', $item2->fresh()->name); // Should remain unchanged
     }
+
+    public function test_non_admin_cannot_access_merge_routes()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $item1 = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Item 1',
+            'unit' => 'Pcs',
+        ]);
+        $item2 = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Item 2',
+            'unit' => 'Pcs',
+        ]);
+
+        $response = $this->actingAs($supervisor)->get(route('items.merge.form', $item1));
+        $response->assertStatus(403);
+
+        $response = $this->actingAs($supervisor)->post(route('items.merge', $item1), [
+            'target_item_id' => $item2->id,
+            'confirm_merge' => 1,
+        ]);
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_access_merge_form()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item1 = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Item 1',
+            'unit' => 'Pcs',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('items.merge.form', $item1));
+        $response->assertStatus(200);
+        $response->assertViewHas('item');
+        $response->assertViewHas('ledgerCount');
+        $response->assertViewHas('allItems');
+    }
+
+    public function test_admin_can_merge_items()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item1 = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Item 1 (Wrong)',
+            'unit' => 'Pcs',
+        ]);
+        $item2 = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Item 2 (Correct)',
+            'unit' => 'Pcs',
+        ]);
+
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+
+        // Create a ledger entry referencing the wrong item
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item1->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial stock',
+        ]);
+
+        // Merge item1 (wrong) into item2 (correct)
+        $response = $this->actingAs($admin)->post(route('items.merge', $item1), [
+            'target_item_id' => $item2->id,
+            'confirm_merge' => '1',
+        ]);
+
+        $response->assertRedirect(route('items.index'));
+        $response->assertSessionHas('success');
+
+        // Verify ledger has been updated to the correct item
+        $this->assertEquals($item2->id, $ledger->fresh()->item_id);
+
+        // Verify the source item is soft-deleted
+        $this->assertSoftDeleted('items', ['id' => $item1->id]);
+    }
 }

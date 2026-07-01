@@ -64,6 +64,9 @@
                                         <i class="bi bi-pencil me-1"></i> Edit
                                     </a>
                                     @if(auth()->user()->isAdmin())
+                                    <a href="{{ route('items.merge.form', $item) }}" class="btn btn-sm btn-outline-warning">
+                                        <i class="bi bi-arrow-left-right me-1"></i> Merge
+                                    </a>
                                     <form action="{{ route('items.destroy', $item) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this item? This action will hide the item from future logs, though historical ledger movements will remain intact.');" class="d-inline">
                                         @csrf
                                         @method('DELETE')
