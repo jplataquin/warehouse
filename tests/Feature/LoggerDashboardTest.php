@@ -162,4 +162,29 @@ class LoggerDashboardTest extends TestCase
         $response->assertSee('Central Depot');
         $response->assertSee('Site Depot');
     }
+
+    public function test_logger_sidebar_accordion_active_and_close_all_elements()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $wh1 = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Central Depot',
+            'status' => 'ACTIVE',
+        ]);
+        $wh2 = Warehouse::create([
+            'type' => 'SITE',
+            'name' => 'Site Depot',
+            'status' => 'ACTIVE',
+        ]);
+        $logger->warehouses()->attach([$wh1->id, $wh2->id]);
+
+        // When accessing the dashboard of $wh1, it is the active warehouse
+        $response = $this->actingAs($logger)->get(route('logger.warehouse.dashboard', $wh1));
+
+        $response->assertStatus(200);
+        $response->assertSee('id="btn-close-all-warehouses"', false);
+        $response->assertSee('data-has-active="true"', false);
+        $response->assertSee('data-has-active="false"', false);
+        $response->assertSee('bi-pin-angle-fill', false); // Active badge icon
+    }
 }
