@@ -26,7 +26,7 @@
                             <ul class="small mb-0">
                                 <li>The first row must be the heading row.</li>
                                 <li>Required Columns: <strong>name</strong>, <strong>type</strong></li>
-                                <li>Valid Types: <code>SITE</code>, <code>CENTRAL</code></li>
+                                <li>Valid Types: <code>SITE</code>, <code>CENTRAL</code>, <code>EQUIPMENT/VEHICLE</code>, <code>OFFICE/FACILITY</code></li>
                                 <li>Status: All imported warehouses will be set to <code>ACTIVE</code> by default.</li>
                             </ul>
                         </div>

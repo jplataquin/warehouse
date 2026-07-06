@@ -45,7 +45,7 @@ class WarehouseImportController extends Controller
 
             $validator = Validator::make($warehouse, [
                 'name' => 'required|string|max:255',
-                'type' => 'required|in:SITE,CENTRAL',
+                'type' => 'required|in:SITE,CENTRAL,EQUIPMENT/VEHICLE,OFFICE/FACILITY',
             ]);
 
             $errors = $validator->errors()->all();

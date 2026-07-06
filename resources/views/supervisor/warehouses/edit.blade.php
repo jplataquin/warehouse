@@ -17,12 +17,14 @@
                     <select name="type" class="form-select" required>
                         <option value="SITE" {{ $warehouse->type === 'SITE' ? 'selected' : '' }}>SITE</option>
                         <option value="CENTRAL" {{ $warehouse->type === 'CENTRAL' ? 'selected' : '' }}>CENTRAL</option>
+                        <option value="EQUIPMENT/VEHICLE" {{ $warehouse->type === 'EQUIPMENT/VEHICLE' ? 'selected' : '' }}>EQUIPMENT/VEHICLE</option>
+                        <option value="OFFICE/FACILITY" {{ $warehouse->type === 'OFFICE/FACILITY' ? 'selected' : '' }}>OFFICE/FACILITY</option>
                     </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Project (Required for Site)</label>
                     <select name="project_id" class="form-select">
-                        <option value="">N/A (Central)</option>
+                        <option value="">N/A (Non-Site)</option>
                         @foreach($projects as $project)
                             <option value="{{ $project->id }}" {{ $warehouse->project_id == $project->id ? 'selected' : '' }}>{{ $project->name }}</option>
                         @endforeach

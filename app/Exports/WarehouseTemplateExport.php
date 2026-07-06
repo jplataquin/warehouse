@@ -38,10 +38,10 @@ class WarehouseTemplateExport implements FromCollection, WithEvents, WithHeading
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
 
-                // Type Validation (SITE, CENTRAL)
+                // Type Validation (SITE, CENTRAL, EQUIPMENT/VEHICLE, OFFICE/FACILITY)
                 $typeValidation = $sheet->getCell('B2')->getDataValidation();
                 $typeValidation->setType(DataValidation::TYPE_LIST);
-                $typeValidation->setFormula1('"SITE,CENTRAL"');
+                $typeValidation->setFormula1('"SITE,CENTRAL,EQUIPMENT/VEHICLE,OFFICE/FACILITY"');
                 $typeValidation->setAllowBlank(false);
                 $typeValidation->setShowDropDown(true);
 

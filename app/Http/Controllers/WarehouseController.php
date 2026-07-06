@@ -86,7 +86,7 @@ class WarehouseController extends Controller
     {
         $validated = $request->validate([
             'project_id' => 'nullable|exists:projects,id',
-            'type' => 'required|in:SITE,CENTRAL',
+            'type' => 'required|in:SITE,CENTRAL,EQUIPMENT/VEHICLE,OFFICE/FACILITY',
             'name' => 'required|string|max:255',
             'status' => 'required|in:Active,Deactivated,ACTIVE,DEACTIVATED',
             'logger_ids' => 'nullable|array',
@@ -121,7 +121,7 @@ class WarehouseController extends Controller
         }
         $validated = $request->validate([
             'project_id' => 'nullable|exists:projects,id',
-            'type' => 'required|in:SITE,CENTRAL',
+            'type' => 'required|in:SITE,CENTRAL,EQUIPMENT/VEHICLE,OFFICE/FACILITY',
             'name' => 'required|string|max:255',
             'status' => 'required|in:Active,Deactivated,ACTIVE,DEACTIVATED',
             'logger_ids' => 'nullable|array',

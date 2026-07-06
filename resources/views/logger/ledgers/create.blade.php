@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const isAdmin = @json(Auth::check() && Auth::user()->isAdmin());
     const currentWarehouseId = @json($selectedWarehouseId);
     const selectedItemId = @json($selectedItemId);
-    const isCentral = @json($warehouse && $warehouse->type === 'CENTRAL');
+    const isCentral = @json($warehouse && $warehouse->type !== 'SITE');
     
     let entryIndex = 0;
     let currentItem = { id: null, type: null, name: null };

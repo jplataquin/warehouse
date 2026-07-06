@@ -186,4 +186,43 @@ class WarehouseTest extends TestCase
             'status' => 'DEACTIVATED',
         ]);
     }
+
+    public function test_supervisor_can_create_new_warehouse_types_without_project()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        // 1. Create EQUIPMENT/VEHICLE
+        $response1 = $this->actingAs($supervisor)
+            ->post(route('warehouses.store'), [
+                'name' => 'Fleet Garage',
+                'type' => 'EQUIPMENT/VEHICLE',
+                'project_id' => null,
+                'status' => 'ACTIVE',
+            ]);
+
+        $response1->assertRedirect(route('warehouses.index'));
+        $this->assertDatabaseHas('warehouses', [
+            'name' => 'Fleet Garage',
+            'type' => 'EQUIPMENT/VEHICLE',
+            'project_id' => null,
+            'status' => 'ACTIVE',
+        ]);
+
+        // 2. Create OFFICE/FACILITY
+        $response2 = $this->actingAs($supervisor)
+            ->post(route('warehouses.store'), [
+                'name' => 'HQ Depot',
+                'type' => 'OFFICE/FACILITY',
+                'project_id' => null,
+                'status' => 'ACTIVE',
+            ]);
+
+        $response2->assertRedirect(route('warehouses.index'));
+        $this->assertDatabaseHas('warehouses', [
+            'name' => 'HQ Depot',
+            'type' => 'OFFICE/FACILITY',
+            'project_id' => null,
+            'status' => 'ACTIVE',
+        ]);
+    }
 }

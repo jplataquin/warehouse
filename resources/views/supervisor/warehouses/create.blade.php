@@ -16,12 +16,14 @@
                     <select name="type" class="form-select" required>
                         <option value="SITE">SITE</option>
                         <option value="CENTRAL">CENTRAL</option>
+                        <option value="EQUIPMENT/VEHICLE">EQUIPMENT/VEHICLE</option>
+                        <option value="OFFICE/FACILITY">OFFICE/FACILITY</option>
                     </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Project (Required for Site)</label>
                     <select name="project_id" class="form-select">
-                        <option value="">N/A (Central)</option>
+                        <option value="">N/A (Non-Site)</option>
                         @foreach($projects as $project)
                             <option value="{{ $project->id }}">{{ $project->name }}</option>
                         @endforeach
