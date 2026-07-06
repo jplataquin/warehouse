@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Item;
+use App\Models\Ledger;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,5 +28,71 @@ class LedgerViewTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Consumable Item Test Units (CONSUMABLE)');
+    }
+
+    public function test_admin_can_search_items_in_ledger_after_selecting_warehouse()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $warehouse = Warehouse::create(['name' => 'Main Warehouse', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+
+        $item1 = Item::create([
+            'name' => 'Heavy Excavator',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+        ]);
+
+        $item2 = Item::create([
+            'name' => 'Safety Gloves',
+            'type' => 'CONSUMABLE',
+            'unit' => 'PAIR',
+        ]);
+
+        // Put both items in the warehouse using ledger entries
+        Ledger::create([
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item1->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+            'po_number' => 'PO1',
+            'delivery_receipt' => 'DR1',
+        ]);
+
+        Ledger::create([
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item2->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+            'po_number' => 'PO2',
+            'delivery_receipt' => 'DR2',
+        ]);
+
+        // 1. Visit without search
+        $response = $this->actingAs($admin)->get(route('ledgers.index', ['warehouse_id' => $warehouse->id]));
+        $response->assertStatus(200);
+        $response->assertSee('Heavy Excavator');
+        $response->assertSee('Safety Gloves');
+        $response->assertSee('Search Item');
+
+        // 2. Visit with search for 'Excavator'
+        $response = $this->actingAs($admin)->get(route('ledgers.index', [
+            'warehouse_id' => $warehouse->id,
+            'item_search' => 'Excavator',
+        ]));
+        $response->assertStatus(200);
+        $response->assertSee('Heavy Excavator');
+        $response->assertDontSee('Safety Gloves');
+
+        // 3. Visit with search for 'Gloves'
+        $response = $this->actingAs($admin)->get(route('ledgers.index', [
+            'warehouse_id' => $warehouse->id,
+            'item_search' => 'Gloves',
+        ]));
+        $response->assertStatus(200);
+        $response->assertDontSee('Heavy Excavator');
+        $response->assertSee('Safety Gloves');
     }
 }

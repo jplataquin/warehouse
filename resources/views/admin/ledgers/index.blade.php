@@ -40,7 +40,7 @@
     <div class="card-body p-4">
         <form action="{{ route('ledgers.index') }}" method="GET">
             <div class="row g-3 align-items-end">
-                <div class="col-md-5">
+                <div class="{{ $selectedWarehouse ? 'col-md-4' : 'col-md-5' }}">
                     <label class="form-label small fw-bold text-muted text-uppercase">Select Warehouse</label>
                     <select name="warehouse_id" class="form-select border-primary shadow-sm" onchange="this.form.submit()">
                         <option value="">-- Choose Warehouse --</option>
@@ -52,7 +52,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-4">
+                <div class="{{ $selectedWarehouse ? 'col-md-3' : 'col-md-4' }}">
                     <label class="form-label small fw-bold text-muted text-uppercase">Item Type</label>
                     <select name="item_type" class="form-select" onchange="this.form.submit()">
                         <option value="">All Types</option>
@@ -62,7 +62,14 @@
                     </select>
                 </div>
 
-                <div class="col-md-3 d-flex gap-2">
+                @if($selectedWarehouse)
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Search Item</label>
+                    <input type="text" name="item_search" class="form-control" placeholder="Search item or spec..." value="{{ request('item_search') }}">
+                </div>
+                @endif
+
+                <div class="{{ $selectedWarehouse ? 'col-md-2' : 'col-md-3' }} d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1">
                         <i class="bi bi-filter"></i> Apply
                     </button>

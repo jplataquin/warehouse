@@ -57,6 +57,22 @@
                                     </div>
                                     <span class="badge bg-white text-dark border small">N/A</span>
                                 @endif
+
+                                @if($asset->is_asset_utilized && $asset->latestUtilizeLedger)
+                                    <hr class="my-2">
+                                    <div class="mt-2">
+                                        <label class="small text-muted text-uppercase fw-bold d-block mb-1">Assigned To</label>
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="bi bi-person-fill text-warning me-2"></i>
+                                            <span class="fw-bold text-dark text-truncate" title="{{ $asset->latestUtilizeLedger->assigned_to }}">{{ $asset->latestUtilizeLedger->assigned_to }}</span>
+                                        </div>
+                                        <label class="small text-muted text-uppercase fw-bold d-block mb-1">Assignment Date</label>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-calendar-event text-secondary me-2"></i>
+                                            <span class="small text-dark">{{ $asset->latestUtilizeLedger->entry_date?->format('M d, Y') ?: 'N/A' }}</span>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                         

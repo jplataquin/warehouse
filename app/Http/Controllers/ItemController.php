@@ -30,7 +30,7 @@ class ItemController extends Controller
 
     public function assets(Request $request)
     {
-        $query = Item::where('type', 'ASSET')->with('currentWarehouse');
+        $query = Item::where('type', 'ASSET')->with(['currentWarehouse', 'latestUtilizeLedger']);
 
         if ($request->filled('search')) {
             $search = $request->search;

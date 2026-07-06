@@ -34,6 +34,14 @@ class Item extends Model
         return $this->belongsTo(Warehouse::class, 'current_warehouse_id');
     }
 
+    public function latestUtilizeLedger()
+    {
+        return $this->hasOne(Ledger::class)
+            ->where('type', 'OUT')
+            ->where('action', 'UTILIZE')
+            ->latest('id');
+    }
+
     public function getBalance($warehouseId = null)
     {
         $query = $this->ledgers();

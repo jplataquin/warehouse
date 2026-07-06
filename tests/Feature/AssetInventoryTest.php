@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Item;
+use App\Models\Ledger;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -151,5 +152,40 @@ class AssetInventoryTest extends TestCase
             ->get(route('items.assets'));
         $response->assertStatus(200);
         $response->assertSee('Out of Order');
+    }
+
+    public function test_supervisor_sees_assignment_details_on_utilized_asset()
+    {
+        $warehouse = Warehouse::create([
+            'name' => 'Main Warehouse',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+
+        $asset = Item::create([
+            'name' => 'Excavator X1',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'is_asset_utilized' => true,
+        ]);
+
+        $ledger = Ledger::create([
+            'type' => 'OUT',
+            'action' => 'UTILIZE',
+            'item_id' => $asset->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'assigned_to' => 'John Doe',
+            'entry_date' => '2026-07-06',
+            'remarks' => 'Road work',
+            'status' => 'APPROVED',
+        ]);
+
+        $response = $this->actingAs($this->supervisor)
+            ->get(route('items.assets'));
+
+        $response->assertStatus(200);
+        $response->assertSee('John Doe');
+        $response->assertSee('Jul 06, 2026');
     }
 }

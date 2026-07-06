@@ -47,7 +47,17 @@ class LedgerController extends Controller
 
             $itemIds = $itemIdsQuery->distinct()->pluck('item_id');
 
-            $items = Item::whereIn('id', $itemIds)->get();
+            $itemsQuery = Item::whereIn('id', $itemIds);
+
+            if ($request->filled('item_search')) {
+                $itemSearch = $request->item_search;
+                $itemsQuery->where(function ($q) use ($itemSearch) {
+                    $q->where('name', 'LIKE', "%{$itemSearch}%")
+                        ->orWhere('specification', 'LIKE', "%{$itemSearch}%");
+                });
+            }
+
+            $items = $itemsQuery->get();
 
             foreach ($items as $item) {
                 $item->balance = $item->getBalance($selectedWarehouseId);
