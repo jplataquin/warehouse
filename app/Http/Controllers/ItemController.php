@@ -40,9 +40,22 @@ class ItemController extends Controller
             });
         }
 
-        $assets = $query->get();
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
 
-        return view('supervisor.items.assets', compact('assets'));
+        if ($request->filled('warehouse_id')) {
+            if ($request->warehouse_id === 'none') {
+                $query->whereNull('current_warehouse_id');
+            } else {
+                $query->where('current_warehouse_id', $request->warehouse_id);
+            }
+        }
+
+        $assets = $query->get();
+        $warehouses = \App\Models\Warehouse::active()->get();
+
+        return view('supervisor.items.assets', compact('assets', 'warehouses'));
     }
 
     public function create()

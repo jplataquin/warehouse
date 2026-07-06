@@ -188,4 +188,86 @@ class AssetInventoryTest extends TestCase
         $response->assertSee('John Doe');
         $response->assertSee('Jul 06, 2026');
     }
+
+    public function test_asset_inventory_can_filter_by_status()
+    {
+        $opAsset = Item::create([
+            'name' => 'Operational Excavator',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'status' => 'Operational',
+        ]);
+
+        $oooAsset = Item::create([
+            'name' => 'Broken Drill',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'status' => 'Out of Order',
+        ]);
+
+        // 1. Filter by Operational
+        $response = $this->actingAs($this->supervisor)
+            ->get(route('items.assets', ['status' => 'Operational']));
+        $response->assertStatus(200);
+        $response->assertSee('Operational Excavator');
+        $response->assertDontSee('Broken Drill');
+
+        // 2. Filter by Out of Order
+        $response = $this->actingAs($this->supervisor)
+            ->get(route('items.assets', ['status' => 'Out of Order']));
+        $response->assertStatus(200);
+        $response->assertDontSee('Operational Excavator');
+        $response->assertSee('Broken Drill');
+    }
+
+    public function test_asset_inventory_can_filter_by_warehouse()
+    {
+        $wh1 = Warehouse::create(['name' => 'North Depot', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $wh2 = Warehouse::create(['name' => 'South Depot', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+
+        $asset1 = Item::create([
+            'name' => 'North Loader',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'current_warehouse_id' => $wh1->id,
+        ]);
+
+        $asset2 = Item::create([
+            'name' => 'South Grader',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'current_warehouse_id' => $wh2->id,
+        ]);
+
+        $asset3 = Item::create([
+            'name' => 'Unstored Truck',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'current_warehouse_id' => null,
+        ]);
+
+        // 1. Filter by North Depot
+        $response = $this->actingAs($this->supervisor)
+            ->get(route('items.assets', ['warehouse_id' => $wh1->id]));
+        $response->assertStatus(200);
+        $response->assertSee('North Loader');
+        $response->assertDontSee('South Grader');
+        $response->assertDontSee('Unstored Truck');
+
+        // 2. Filter by South Depot
+        $response = $this->actingAs($this->supervisor)
+            ->get(route('items.assets', ['warehouse_id' => $wh2->id]));
+        $response->assertStatus(200);
+        $response->assertDontSee('North Loader');
+        $response->assertSee('South Grader');
+        $response->assertDontSee('Unstored Truck');
+
+        // 3. Filter by Not in storage
+        $response = $this->actingAs($this->supervisor)
+            ->get(route('items.assets', ['warehouse_id' => 'none']));
+        $response->assertStatus(200);
+        $response->assertDontSee('North Loader');
+        $response->assertDontSee('South Grader');
+        $response->assertSee('Unstored Truck');
+    }
 }

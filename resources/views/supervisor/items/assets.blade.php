@@ -4,19 +4,57 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary"><i class="bi bi-truck me-2"></i> Asset Inventory</h2>
-        <form action="{{ route('items.assets') }}" method="GET" class="d-flex" style="max-width: 400px;">
-            <div class="input-group">
-                <input type="text" name="search" class="form-control" placeholder="Search asset name or spec..." value="{{ request('search') }}">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-search"></i>
-                </button>
-                @if(request('search'))
-                    <a href="{{ route('items.assets') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-lg"></i>
-                    </a>
-                @endif
-            </div>
-        </form>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body p-3">
+            <form action="{{ route('items.assets') }}" method="GET" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Search Keyword</label>
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="Search asset name or spec..." value="{{ request('search') }}">
+                        @if(request('search'))
+                            <a href="{{ route('items.assets', request()->except('search')) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg"></i>
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Status</label>
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Statuses</option>
+                        <option value="Operational" {{ request('status') === 'Operational' ? 'selected' : '' }}>Operational</option>
+                        <option value="Out of Order" {{ request('status') === 'Out of Order' ? 'selected' : '' }}>Out of Order</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Warehouse</label>
+                    <select name="warehouse_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Locations</option>
+                        <option value="none" {{ request('warehouse_id') === 'none' ? 'selected' : '' }}>Not in storage</option>
+                        @foreach($warehouses as $wh)
+                            <option value="{{ $wh->id }}" {{ request('warehouse_id') == $wh->id ? 'selected' : '' }}>
+                                {{ $wh->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-filter"></i> Apply
+                    </button>
+                    @if(request('search') || request('status') || request('warehouse_id'))
+                        <a href="{{ route('items.assets') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+                    @endif
+                </div>
+            </form>
+        </div>
     </div>
 
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4">
