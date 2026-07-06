@@ -20,7 +20,17 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Assign Warehouses</label>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label mb-0">Assign Warehouses</label>
+                        @if(!$warehouses->isEmpty())
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="select-all-warehouses">
+                            <label class="form-check-label small fw-bold text-muted text-uppercase" for="select-all-warehouses">
+                                Select / Deselect All
+                            </label>
+                        </div>
+                        @endif
+                    </div>
                     <div class="row">
                         @foreach($warehouses as $warehouse)
                             <div class="col-md-4 mb-2">
@@ -78,11 +88,25 @@
     document.addEventListener('DOMContentLoaded', function() {
         const loggerSelect = document.getElementById('logger-select');
         const checkboxes = document.querySelectorAll('.warehouse-checkbox');
+        const selectAllCheckbox = document.getElementById('select-all-warehouses');
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                checkboxes.forEach(cb => cb.checked = this.checked);
+            });
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    updateSelectAllState();
+                });
+            });
+        }
 
         loggerSelect.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             if (!selectedOption.value) {
                 checkboxes.forEach(cb => cb.checked = false);
+                updateSelectAllState();
                 return;
             }
 
@@ -90,7 +114,24 @@
             checkboxes.forEach(cb => {
                 cb.checked = assignedIds.includes(parseInt(cb.value));
             });
+            updateSelectAllState();
         });
+
+        function updateSelectAllState() {
+            if (!selectAllCheckbox) return;
+            const allChecked = Array.from(checkboxes).every(c => c.checked);
+            const allUnchecked = Array.from(checkboxes).every(c => !c.checked);
+            if (allChecked && checkboxes.length > 0) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else if (allUnchecked) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
     });
 </script>
 @endsection
