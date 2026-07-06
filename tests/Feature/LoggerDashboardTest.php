@@ -136,4 +136,30 @@ class LoggerDashboardTest extends TestCase
         $response->assertSee('Item Count');
         $response->assertSee('class="fw-bold text-primary mb-0 fs-5">1</p>', false);
     }
+
+    public function test_logger_sidebar_groups_warehouses_by_type_and_shows_search_field()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $wh1 = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Central Depot',
+            'status' => 'ACTIVE',
+        ]);
+        $wh2 = Warehouse::create([
+            'type' => 'SITE',
+            'name' => 'Site Depot',
+            'status' => 'ACTIVE',
+        ]);
+        $logger->warehouses()->attach([$wh1->id, $wh2->id]);
+
+        $response = $this->actingAs($logger)->get(route('home'));
+
+        $response->assertStatus(200);
+        $response->assertSee('My Warehouses');
+        $response->assertSee('warehouse-sidebar-search');
+        $response->assertSee('CENTRAL');
+        $response->assertSee('SITE');
+        $response->assertSee('Central Depot');
+        $response->assertSee('Site Depot');
+    }
 }
