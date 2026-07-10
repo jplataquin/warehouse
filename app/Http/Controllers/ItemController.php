@@ -123,6 +123,7 @@ class ItemController extends Controller
             ]);
         }
 
+        $validated['is_approved'] = $request->has('is_approved');
         $item->update($validated);
 
         return redirect()->route('items.index', $request->query())->with('success', 'Item updated successfully.');
@@ -231,5 +232,79 @@ class ItemController extends Controller
         });
 
         return redirect()->route('items.index')->with('success', 'Items consolidated successfully.');
+    }
+
+    public function approve(Item $item)
+    {
+        $item->update(['is_approved' => true]);
+
+        return redirect()->back()->with('success', 'Item "' . $item->name . '" has been approved.');
+    }
+
+    public function loggerCreate(Request $request)
+    {
+        $warehouseId = $request->query('warehouse_id');
+        return view('logger.items.create', compact('warehouseId'));
+    }
+
+    public function loggerStore(Request $request)
+    {
+        $validated = $request->validate([
+            'type' => 'required|in:CONSUMABLE,ASSET',
+            'name' => 'required|string|max:255',
+            'specification' => 'nullable|string|max:255',
+            'unit' => 'required|string|max:50',
+            'status' => 'nullable|in:Operational,Out of Order',
+        ]);
+
+        $exists = Item::withTrashed()
+            ->where('name', $validated['name'])
+            ->where('specification', $validated['specification'] ?? null)
+            ->where('unit', $validated['unit'])
+            ->exists();
+
+        if ($exists) {
+            return back()->withInput()->withErrors([
+                'name' => 'An item with this exact name, specification, and unit already exists.'
+            ]);
+        }
+
+        $warehouseId = $request->input('warehouse_id');
+
+        if (!$request->has('confirm')) {
+            $nameSpecUnit = trim($validated['name'] . ' ' . ($validated['specification'] ?? '') . ' ' . $validated['unit']);
+            
+            $driver = \DB::connection()->getDriverName();
+            if ($driver === 'sqlite') {
+                $concatExpr = "name || ' ' || COALESCE(specification, '') || ' ' || unit";
+            } else {
+                $concatExpr = "CONCAT(name, ' ', COALESCE(specification, ''), ' ', unit)";
+            }
+
+            $similarItems = Item::withTrashed()
+                ->where(function($q) use ($validated, $nameSpecUnit, $concatExpr) {
+                    $q->where('name', 'LIKE', '%' . $validated['name'] . '%')
+                      ->orWhereRaw("{$concatExpr} LIKE ?", ["%{$nameSpecUnit}%"]);
+                    if (!empty($validated['specification'])) {
+                        $q->orWhere('specification', 'LIKE', '%' . $validated['specification'] . '%');
+                    }
+                })
+                ->get();
+
+            if ($similarItems->isNotEmpty()) {
+                return view('logger.items.confirm', compact('validated', 'similarItems', 'warehouseId'));
+            }
+        }
+
+        $validated['is_approved'] = false;
+        $item = Item::create($validated);
+
+        if ($warehouseId) {
+            return redirect()->route('logger.warehouse.dashboard', $warehouseId)
+                ->with('success', 'Item "' . $item->name . '" created successfully and flagged for review.');
+        }
+
+        return redirect()->route('home')
+            ->with('success', 'Item "' . $item->name . '" created successfully and flagged for review.');
     }
 }

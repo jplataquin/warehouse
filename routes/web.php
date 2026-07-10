@@ -42,6 +42,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/logger/rules', [DashboardController::class, 'loggerRules'])
         ->name('logger.rules')
         ->middleware('logger');
+    Route::get('/logger/items/create', [ItemController::class, 'loggerCreate'])
+        ->name('logger.items.create')
+        ->middleware('logger');
+    Route::post('/logger/items', [ItemController::class, 'loggerStore'])
+        ->name('logger.items.store')
+        ->middleware('logger');
 
     Route::get('items/assets', [ItemController::class, 'assets'])->name('items.assets');
     Route::patch('items/{item}/status', [ItemController::class, 'updateStatus'])->name('items.update-status');
@@ -91,6 +97,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('items/bulk-import/store', [ItemImportController::class, 'store'])->name('items.import.store');
 
         Route::resource('items', ItemController::class);
+        Route::post('items/{item}/approve', [ItemController::class, 'approve'])->name('items.approve');
         Route::resource('allocations', AllocationController::class)->except(['index', 'create']);
 
         Route::get('assignments', [LoggerAssignmentController::class, 'index'])->name('assignments.index');

@@ -50,6 +50,11 @@
                     <label class="form-label">Unit</label>
                     <input type="text" name="unit" class="form-control" value="{{ $item->unit }}" required>
                 </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="is_approved" class="form-check-input" id="is_approved" value="1" {{ old('is_approved', $item->is_approved) ? 'checked' : '' }}>
+                    <label class="form-check-label fw-bold text-success" for="is_approved">Approve/Verify Item</label>
+                    <div class="form-text">Check this to mark this item as approved and verified.</div>
+                </div>
                 <button type="submit" class="btn btn-primary">Update Item</button>
                 <a href="{{ route('items.index', request()->query()) }}" class="btn btn-secondary">Cancel</a>
             </form>

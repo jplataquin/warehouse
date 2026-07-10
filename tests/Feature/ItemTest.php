@@ -258,4 +258,113 @@ class ItemTest extends TestCase
         // Verify the source item is soft-deleted
         $this->assertSoftDeleted('items', ['id' => $item1->id]);
     }
+
+    public function test_logger_can_access_item_creation_page()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $response = $this->actingAs($logger)->get(route('logger.items.create'));
+        $response->assertStatus(200);
+        $response->assertViewIs('logger.items.create');
+    }
+
+    public function test_logger_can_create_item_without_similar()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $response = $this->actingAs($logger)->post(route('logger.items.store'), [
+            'type' => 'CONSUMABLE',
+            'name' => 'Brand New Rare Item',
+            'specification' => 'None',
+            'unit' => 'Boxes',
+        ]);
+
+        $response->assertRedirect(route('home'));
+        $this->assertDatabaseHas('items', [
+            'name' => 'Brand New Rare Item',
+            'is_approved' => false,
+        ]);
+    }
+
+    public function test_logger_cannot_create_item_if_exact_match_exists()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Exact Item Match',
+            'specification' => '100g',
+            'unit' => 'g',
+        ]);
+
+        $response = $this->actingAs($logger)->post(route('logger.items.store'), [
+            'type' => 'CONSUMABLE',
+            'name' => 'Exact Item Match',
+            'specification' => '100g',
+            'unit' => 'g',
+        ]);
+
+        $response->assertSessionHasErrors(['name']);
+    }
+
+    public function test_logger_prompted_for_similar_items_if_like_match_exists()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Super Steel Pipe 10m',
+            'specification' => 'Heavy',
+            'unit' => 'Meters',
+        ]);
+
+        $response = $this->actingAs($logger)->post(route('logger.items.store'), [
+            'type' => 'CONSUMABLE',
+            'name' => 'Super Steel Pipe 10m',
+            'specification' => 'Light', // similar but not exact
+            'unit' => 'Meters',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertViewIs('logger.items.confirm');
+        $response->assertViewHas('similarItems');
+    }
+
+    public function test_logger_can_proceed_and_create_item_from_confirmation()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Super Steel Pipe 10m',
+            'specification' => 'Heavy',
+            'unit' => 'Meters',
+        ]);
+
+        $response = $this->actingAs($logger)->post(route('logger.items.store'), [
+            'type' => 'CONSUMABLE',
+            'name' => 'Super Steel Pipe 10m',
+            'specification' => 'Light',
+            'unit' => 'Meters',
+            'confirm' => '1',
+        ]);
+
+        $response->assertRedirect(route('home'));
+        $this->assertDatabaseHas('items', [
+            'name' => 'Super Steel Pipe 10m',
+            'specification' => 'Light',
+            'is_approved' => false,
+        ]);
+    }
+
+    public function test_supervisor_can_approve_unapproved_item()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $item = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Logger Item',
+            'unit' => 'Pcs',
+            'is_approved' => false,
+        ]);
+
+        $response = $this->actingAs($supervisor)->post(route('items.approve', $item));
+
+        $response->assertRedirect();
+        $this->assertTrue($item->fresh()->is_approved);
+    }
 }

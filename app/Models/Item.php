@@ -9,7 +9,7 @@ class Item extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['type', 'name', 'specification', 'unit', 'current_warehouse_id', 'status', 'is_asset_utilized'];
+    protected $fillable = ['type', 'name', 'specification', 'unit', 'current_warehouse_id', 'status', 'is_asset_utilized', 'is_approved'];
 
     protected $attributes = [
         'status' => 'Operational',
@@ -17,6 +17,7 @@ class Item extends Model
 
     protected $casts = [
         'is_asset_utilized' => 'boolean',
+        'is_approved' => 'boolean',
     ];
 
     public function ledgers()

@@ -51,7 +51,12 @@
                         @forelse($items as $item)
                         <tr>
                             <td>
-                                <div class="fw-bold">{{ $item->name }}</div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="fw-bold text-dark">{{ $item->name }}</div>
+                                    @if(!$item->is_approved)
+                                        <span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-exclamation-circle me-1"></i> Pending Review</span>
+                                    @endif
+                                </div>
                                 <div class="small text-muted">{{ $item->specification }}</div>
                             </td>
                             <td>
@@ -60,6 +65,14 @@
                             <td>{{ $item->unit }}</td>
                             <td class="text-end">
                                 <div class="d-inline-flex gap-1">
+                                    @if(!$item->is_approved)
+                                    <form action="{{ route('items.approve', $item) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Approve Item">
+                                            <i class="bi bi-check-circle me-1"></i> Approve
+                                        </button>
+                                    </form>
+                                    @endif
                                     <a href="{{ route('items.edit', array_merge(['item' => $item->id], request()->query())) }}" class="btn btn-sm btn-outline-secondary">
                                         <i class="bi bi-pencil me-1"></i> Edit
                                     </a>

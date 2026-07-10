@@ -18,7 +18,14 @@
             </div>
             <div class="col-md-2 mb-2">
                 <h5 class="text-muted small text-uppercase fw-bold">Quick Actions</h5>
-                <a href="{{ route('ledgers.create', ['warehouse_id' => $warehouse->id]) }}" class="btn btn-sm btn-outline-primary">New Entry</a>
+                <div class="d-flex flex-column gap-2">
+                    <a href="{{ route('ledgers.create', ['warehouse_id' => $warehouse->id]) }}" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-plus-lg me-1"></i> New Entry
+                    </a>
+                    <a href="{{ route('logger.items.create', ['warehouse_id' => $warehouse->id]) }}" class="btn btn-sm btn-outline-secondary w-100">
+                        <i class="bi bi-box-seam me-1"></i> Add New Item
+                    </a>
+                </div>
             </div>
         </div>
     </div>
