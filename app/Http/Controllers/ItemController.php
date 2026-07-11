@@ -241,6 +241,31 @@ class ItemController extends Controller
         return redirect()->back()->with('success', 'Item "' . $item->name . '" has been approved.');
     }
 
+    public function review(Request $request)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins are allowed to review items.');
+        }
+
+        $query = Item::where('is_approved', false);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('specification', 'LIKE', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        $items = $query->latest()->paginate(50)->withQueryString();
+
+        return view('admin.items.review', compact('items'));
+    }
+
     public function loggerCreate(Request $request)
     {
         $warehouseId = $request->query('warehouse_id');

@@ -60,6 +60,17 @@
                             @endif
                             @if(Auth::user()->isAdmin())
                                 <li class="nav-item">
+                                    <a class="nav-link d-flex align-items-center gap-1" href="{{ route('admin.items.review') }}">
+                                        Pending Items
+                                        @php
+                                            $pendingCount = \App\Models\Item::where('is_approved', false)->count();
+                                        @endphp
+                                        @if($pendingCount > 0)
+                                            <span class="badge bg-danger rounded-pill" style="font-size: 0.75rem; padding: 0.25em 0.5em;">{{ $pendingCount }}</span>
+                                        @endif
+                                    </a>
+                                </li>
+                                <li class="nav-item">
                                     <a class="nav-link" href="{{ route('users.index') }}">Users</a>
                                 </li>
                             @endif

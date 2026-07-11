@@ -106,6 +106,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Admin only routes
     Route::middleware(['admin'])->group(function () {
+        Route::get('admin/items/review', [ItemController::class, 'review'])->name('admin.items.review');
         Route::resource('users', UserController::class);
         Route::post('ledgers/{ledger}/approve', [LedgerController::class, 'approve'])->name('ledgers.approve');
         Route::get('items/{item}/merge/search', [ItemController::class, 'searchMergeTargets'])->name('items.merge.search');
