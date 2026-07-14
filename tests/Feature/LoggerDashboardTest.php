@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Item;
 use App\Models\Ledger;
+use App\Models\Project;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -186,5 +187,110 @@ class LoggerDashboardTest extends TestCase
         $response->assertSee('data-has-active="true"', false);
         $response->assertSee('data-has-active="false"', false);
         $response->assertSee('bi-pin-angle-fill', false); // Active badge icon
+    }
+
+    public function test_logger_can_create_sub_warehouse_under_assigned_central_warehouse()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $project = Project::create(['name' => 'Test Project']);
+        $warehouse = Warehouse::create([
+            'project_id' => $project->id,
+            'type' => 'CENTRAL',
+            'name' => 'Assigned Central Warehouse',
+            'status' => 'ACTIVE',
+        ]);
+        $logger->warehouses()->attach($warehouse);
+
+        $response = $this->actingAs($logger)
+            ->get(route('logger.sub-warehouses.create', $warehouse));
+
+        $response->assertStatus(200);
+        $response->assertSee('Create Sub-Warehouse');
+        $response->assertSee($warehouse->name);
+
+        $responsePost = $this->actingAs($logger)
+            ->post(route('logger.sub-warehouses.store', $warehouse), [
+                'name' => 'Rack A Shelf 3',
+            ]);
+
+        $responsePost->assertRedirect(route('logger.warehouse.dashboard', $warehouse));
+        $this->assertDatabaseHas('warehouses', [
+            'name' => 'Rack A Shelf 3',
+            'parent_id' => $warehouse->id,
+            'project_id' => $project->id,
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+
+        $subWh = Warehouse::where('name', 'Rack A Shelf 3')->first();
+        $this->assertTrue($logger->warehouses->contains($subWh));
+    }
+
+    public function test_logger_cannot_create_sub_warehouse_under_unassigned_warehouse()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $warehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Secret Central Warehouse',
+            'status' => 'ACTIVE',
+        ]);
+
+        $responseGet = $this->actingAs($logger)
+            ->get(route('logger.sub-warehouses.create', $warehouse));
+        $responseGet->assertStatus(404);
+
+        $responsePost = $this->actingAs($logger)
+            ->post(route('logger.sub-warehouses.store', $warehouse), [
+                'name' => 'Intruder Location',
+            ]);
+        $responsePost->assertStatus(404);
+    }
+
+    public function test_logger_cannot_create_sub_warehouse_under_site_warehouse()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $warehouse = Warehouse::create([
+            'type' => 'SITE',
+            'name' => 'Assigned Site Warehouse',
+            'status' => 'ACTIVE',
+        ]);
+        $logger->warehouses()->attach($warehouse);
+
+        $responseGet = $this->actingAs($logger)
+            ->get(route('logger.sub-warehouses.create', $warehouse));
+        $responseGet->assertStatus(404);
+
+        $responsePost = $this->actingAs($logger)
+            ->post(route('logger.sub-warehouses.store', $warehouse), [
+                'name' => 'Invalid Site Sub',
+            ]);
+        $responsePost->assertStatus(404);
+    }
+
+    public function test_logger_cannot_create_sub_warehouse_under_another_sub_warehouse()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $parent = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Main Warehouse',
+            'status' => 'ACTIVE',
+        ]);
+        $subWh = Warehouse::create([
+            'parent_id' => $parent->id,
+            'type' => 'CENTRAL',
+            'name' => 'Rack A',
+            'status' => 'ACTIVE',
+        ]);
+        $logger->warehouses()->attach($subWh);
+
+        $responseGet = $this->actingAs($logger)
+            ->get(route('logger.sub-warehouses.create', $subWh));
+        $responseGet->assertStatus(404);
+
+        $responsePost = $this->actingAs($logger)
+            ->post(route('logger.sub-warehouses.store', $subWh), [
+                'name' => 'Invalid Double Sub',
+            ]);
+        $responsePost->assertStatus(404);
     }
 }

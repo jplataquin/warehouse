@@ -24,6 +24,31 @@
                         <div class="col-sm-3 fw-bold">Status:</div>
                         <div class="col-sm-9">{{ $warehouse->status }}</div>
                     </div>
+                    @if($warehouse->parent)
+                    <div class="row mb-3">
+                        <div class="col-sm-3 fw-bold">Parent Warehouse:</div>
+                        <div class="col-sm-9">
+                            <a href="{{ route('warehouses.show', $warehouse->parent) }}" class="text-decoration-none fw-bold">
+                                <i class="bi bi-arrow-up-circle-fill me-1"></i> {{ $warehouse->parent->name }}
+                            </a>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if($warehouse->children->isNotEmpty())
+                    <div class="row mb-3">
+                        <div class="col-sm-3 fw-bold">Sub-Warehouses:</div>
+                        <div class="col-sm-9">
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach($warehouse->children as $child)
+                                    <a href="{{ route('warehouses.show', $child) }}" class="badge bg-light text-dark border p-2 text-decoration-none hover-shadow-sm">
+                                        <i class="bi bi-diagram-3-fill me-1 text-primary"></i> {{ $child->name }}
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
 

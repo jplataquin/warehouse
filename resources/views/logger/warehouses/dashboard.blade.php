@@ -10,7 +10,29 @@
         <div class="row">
             <div class="col-md-8 border-end mb-2">
                 <h5 class="text-muted small text-uppercase fw-bold">Project</h5>
-                <p class="text-dark mb-0 text-truncate" title="{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}">{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}</p>
+                <p class="text-dark mb-2 text-truncate" title="{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}">{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}</p>
+
+                @if($warehouse->parent)
+                    <div class="mt-3">
+                        <h5 class="text-muted small text-uppercase fw-bold">Parent Warehouse</h5>
+                        <p class="mb-0">
+                            <a href="{{ route('logger.warehouse.dashboard', $warehouse->parent->id) }}" class="text-decoration-none fw-bold">
+                                <i class="bi bi-arrow-up-circle-fill me-1"></i> {{ $warehouse->parent->name }}
+                            </a>
+                        </p>
+                    </div>
+                @elseif($warehouse->children->isNotEmpty())
+                    <div class="mt-3">
+                        <h5 class="text-muted small text-uppercase fw-bold">Sub-Warehouses</h5>
+                        <div class="d-flex flex-wrap gap-2 mt-1">
+                            @foreach($warehouse->children as $child)
+                                <a href="{{ route('logger.warehouse.dashboard', $child->id) }}" class="badge bg-light text-dark border p-2 text-decoration-none hover-shadow-sm">
+                                    <i class="bi bi-diagram-3-fill me-1 text-primary"></i> {{ $child->name }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </div>
             <div class="col-md-2 border-end mb-2">
                 <h5 class="text-muted small text-uppercase fw-bold">Item Count</h5>
@@ -25,6 +47,11 @@
                     <a href="{{ route('logger.items.create', ['warehouse_id' => $warehouse->id]) }}" class="btn btn-sm btn-outline-secondary w-100">
                         <i class="bi bi-box-seam me-1"></i> Add New Item
                     </a>
+                    @if($warehouse->type === 'CENTRAL' && is_null($warehouse->parent_id))
+                        <a href="{{ route('logger.sub-warehouses.create', $warehouse->id) }}" class="btn btn-sm btn-outline-success w-100">
+                            <i class="bi bi-diagram-3 me-1"></i> Create Sub-Wh
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>

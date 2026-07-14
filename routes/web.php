@@ -48,6 +48,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/logger/items', [ItemController::class, 'loggerStore'])
         ->name('logger.items.store')
         ->middleware('logger');
+    Route::get('/logger/warehouses/{parentWarehouse}/sub-warehouses/create', [DashboardController::class, 'createSubWarehouse'])
+        ->name('logger.sub-warehouses.create')
+        ->middleware('logger');
+    Route::post('/logger/warehouses/{parentWarehouse}/sub-warehouses', [DashboardController::class, 'storeSubWarehouse'])
+        ->name('logger.sub-warehouses.store')
+        ->middleware('logger');
 
     Route::get('items/assets', [ItemController::class, 'assets'])->name('items.assets');
     Route::patch('items/{item}/status', [ItemController::class, 'updateStatus'])->name('items.update-status');

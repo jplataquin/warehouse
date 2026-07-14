@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Item;
 use App\Models\Warehouse;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -26,9 +27,9 @@ class DashboardController extends Controller
         $user = auth()->user();
 
         if ($user->role === 'logger') {
-            $warehouse = $user->warehouses()->active()->findOrFail($warehouseId);
+            $warehouse = $user->warehouses()->active()->with('children')->findOrFail($warehouseId);
         } else {
-            $warehouse = Warehouse::active()->findOrFail($warehouseId);
+            $warehouse = Warehouse::active()->with('children')->findOrFail($warehouseId);
         }
 
         // Efficiently fetch only items that have movements in this warehouse
@@ -56,5 +57,49 @@ class DashboardController extends Controller
         }
 
         return view('logger.rules', compact('warehouses'));
+    }
+
+    public function createSubWarehouse($parentWarehouseId)
+    {
+        $user = auth()->user();
+
+        // Ensure the logger is assigned to this warehouse and it's a top-level CENTRAL warehouse
+        $parentWarehouse = $user->warehouses()
+            ->active()
+            ->where('type', 'CENTRAL')
+            ->whereNull('parent_id')
+            ->findOrFail($parentWarehouseId);
+
+        return view('logger.warehouses.create_sub', compact('parentWarehouse'));
+    }
+
+    public function storeSubWarehouse(Request $request, $parentWarehouseId)
+    {
+        $user = auth()->user();
+
+        // Ensure the logger is assigned to this warehouse and it's a top-level CENTRAL warehouse
+        $parentWarehouse = $user->warehouses()
+            ->active()
+            ->where('type', 'CENTRAL')
+            ->whereNull('parent_id')
+            ->findOrFail($parentWarehouseId);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $subWarehouse = Warehouse::create([
+            'project_id' => $parentWarehouse->project_id,
+            'parent_id' => $parentWarehouse->id,
+            'type' => $parentWarehouse->type, // inherit type (CENTRAL)
+            'name' => $validated['name'],
+            'status' => 'ACTIVE',
+        ]);
+
+        // Automatically assign the current logger to this newly created sub-warehouse
+        $subWarehouse->loggers()->attach($user->id);
+
+        return redirect()->route('logger.warehouse.dashboard', $parentWarehouseId)
+            ->with('success', 'Sub-warehouse created successfully.');
     }
 }

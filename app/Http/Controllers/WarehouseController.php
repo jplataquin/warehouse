@@ -14,7 +14,7 @@ class WarehouseController extends Controller
     {
         $search = $request->input('search');
 
-        $query = Warehouse::with(['project', 'loggers']);
+        $query = Warehouse::with(['project', 'loggers', 'parent']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -37,7 +37,7 @@ class WarehouseController extends Controller
             $warehouse = Warehouse::findOrFail($warehouse);
         }
 
-        $warehouse->load(['project', 'loggers', 'allocations']);
+        $warehouse->load(['project', 'loggers', 'allocations', 'parent', 'children']);
         $availableLoggers = User::where('role', 'logger')
             ->whereDoesntHave('warehouses', function ($query) use ($warehouse) {
                 $query->where('warehouses.id', $warehouse->id);
@@ -78,20 +78,31 @@ class WarehouseController extends Controller
     {
         $projects = Project::all();
         $loggers = User::where('role', 'logger')->get();
+        $parentWarehouses = Warehouse::where('type', 'CENTRAL')
+            ->whereNull('parent_id')
+            ->active()
+            ->get();
 
-        return view('supervisor.warehouses.create', compact('projects', 'loggers'));
+        return view('supervisor.warehouses.create', compact('projects', 'loggers', 'parentWarehouses'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'project_id' => 'nullable|exists:projects,id',
+            'parent_id' => 'nullable|exists:warehouses,id',
             'type' => 'required|in:SITE,CENTRAL,EQUIPMENT/VEHICLE,OFFICE/FACILITY',
             'name' => 'required|string|max:255',
             'status' => 'required|in:Active,Deactivated,ACTIVE,DEACTIVATED',
             'logger_ids' => 'nullable|array',
             'logger_ids.*' => 'exists:users,id',
         ]);
+
+        if (!empty($validated['parent_id'])) {
+            $parent = Warehouse::findOrFail($validated['parent_id']);
+            $validated['project_id'] = $parent->project_id;
+            $validated['type'] = 'CENTRAL';
+        }
 
         $validated['status'] = strtoupper($validated['status']);
         $warehouse = Warehouse::create($validated);
@@ -110,8 +121,13 @@ class WarehouseController extends Controller
         }
         $projects = Project::all();
         $loggers = User::where('role', 'logger')->get();
+        $parentWarehouses = Warehouse::where('type', 'CENTRAL')
+            ->whereNull('parent_id')
+            ->where('id', '!=', $warehouse->id)
+            ->active()
+            ->get();
 
-        return view('supervisor.warehouses.edit', compact('warehouse', 'projects', 'loggers'));
+        return view('supervisor.warehouses.edit', compact('warehouse', 'projects', 'loggers', 'parentWarehouses'));
     }
 
     public function update(Request $request, $warehouse)
@@ -121,12 +137,24 @@ class WarehouseController extends Controller
         }
         $validated = $request->validate([
             'project_id' => 'nullable|exists:projects,id',
+            'parent_id' => 'nullable|exists:warehouses,id',
             'type' => 'required|in:SITE,CENTRAL,EQUIPMENT/VEHICLE,OFFICE/FACILITY',
             'name' => 'required|string|max:255',
             'status' => 'required|in:Active,Deactivated,ACTIVE,DEACTIVATED',
             'logger_ids' => 'nullable|array',
             'logger_ids.*' => 'exists:users,id',
         ]);
+
+        if (!empty($validated['parent_id'])) {
+            if ($validated['parent_id'] == $warehouse->id) {
+                return back()->withErrors(['parent_id' => 'A warehouse cannot be its own parent.'])->withInput();
+            }
+            $parent = Warehouse::findOrFail($validated['parent_id']);
+            $validated['project_id'] = $parent->project_id;
+            $validated['type'] = 'CENTRAL';
+        } else {
+            // If parent is removed, keep original fields or let user set them
+        }
 
         $validated['status'] = strtoupper($validated['status']);
         $warehouse->update($validated);

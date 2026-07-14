@@ -9,7 +9,7 @@ class Warehouse extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['project_id', 'type', 'name', 'status', 'public_token'];
+    protected $fillable = ['project_id', 'parent_id', 'type', 'name', 'status', 'public_token'];
 
     public function scopeActive($query)
     {
@@ -23,6 +23,16 @@ class Warehouse extends Model
                 'name' => 'No Allocation',
             ]);
         });
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Warehouse::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Warehouse::class, 'parent_id');
     }
 
     public function project()

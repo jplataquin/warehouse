@@ -41,7 +41,14 @@
                 <tbody>
                     @foreach($warehouses as $warehouse)
                     <tr class="clickable-row" onclick="window.location='{{ route('warehouses.show', $warehouse) }}'">
-                        <td>{{ $warehouse->name }}</td>
+                        <td>
+                            @if($warehouse->parent)
+                                <span class="ps-3 text-muted"><i class="bi bi-arrow-return-right me-1"></i> {{ $warehouse->name }}</span>
+                                <small class="text-muted d-block ps-4 ms-2">Sub of: {{ $warehouse->parent->name }}</small>
+                            @else
+                                <span class="fw-bold">{{ $warehouse->name }}</span>
+                            @endif
+                        </td>
                         <td>{{ $warehouse->type }}</td>
                         <td>{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}</td>
                         <td>{{ $warehouse->status }}</td>

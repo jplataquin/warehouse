@@ -31,6 +31,16 @@
                     </select>
                 </div>
                 <div class="mb-3">
+                    <label class="form-label">Parent Warehouse (For Sub-Warehouses)</label>
+                    <select name="parent_id" class="form-select">
+                        <option value="">None (Top Level)</option>
+                        @foreach($parentWarehouses as $parent)
+                            <option value="{{ $parent->id }}" {{ $warehouse->parent_id == $parent->id ? 'selected' : '' }}>{{ $parent->name }}</option>
+                        @endforeach
+                    </select>
+                    <div class="form-text text-muted">Sub-warehouses inherit their parent's project and are set to CENTRAL type automatically.</div>
+                </div>
+                <div class="mb-3">
                     <label class="form-label">Status</label>
                     <select name="status" class="form-select" required>
                         <option value="ACTIVE" {{ $warehouse->status === 'Active' || $warehouse->status === 'ACTIVE' ? 'selected' : '' }}>ACTIVE</option>
