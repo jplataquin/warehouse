@@ -65,6 +65,17 @@ class CloneProduction extends Command
             return 1;
         }
 
+        $sourceConfig = config("database.connections.{$sourceConnection}");
+        $sourceDbName = $sourceConfig['database'] ?? 'unknown';
+        $sourceDriverName = $sourceConfig['driver'] ?? 'unknown';
+
+        $targetDbName = $targetConfig['database'] ?? 'unknown';
+        $targetDriverName = $targetConfig['driver'] ?? 'unknown';
+
+        $this->info("Source Database: {$sourceDbName} (driver: {$sourceDriverName})");
+        $this->info("Target Database: {$targetDbName} (driver: {$targetDriverName})");
+        $this->line('');
+
         $this->info('The following production tables will be cloned:');
         if (empty($sourceTables)) {
             $this->warn('  (No tables found in production database)');
