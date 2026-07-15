@@ -443,6 +443,12 @@ class CloneProduction extends Command
             }
         }
 
-        return array_values(array_unique($tables));
+        $ignoredTables = ['cache', 'cache_locks', 'failed_jobs', 'migrations'];
+
+        $filteredTables = array_filter($tables, function ($table) use ($ignoredTables) {
+            return !in_array(strtolower($table), $ignoredTables);
+        });
+
+        return array_values(array_unique($filteredTables));
     }
 }

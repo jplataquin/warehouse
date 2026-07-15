@@ -193,6 +193,16 @@ class CloneProductionCommandTest extends TestCase
             ['title' => 'Item B'],
         ]);
 
+        // Create an ignored table in source SQLite database
+        Schema::connection('source_sqlite_test')->create('cache', function ($table) {
+            $table->string('key')->unique();
+            $table->text('value');
+        });
+
+        DB::connection('source_sqlite_test')->table('cache')->insert([
+            ['key' => 'test_key', 'value' => 'test_value'],
+        ]);
+
         // Run command targeting the in-memory SQLite connection
         $this->artisan('db:clone-production', [
             '--prod-conn' => 'sqlite',
@@ -207,5 +217,8 @@ class CloneProductionCommandTest extends TestCase
         $this->assertCount(2, $targetRows);
         $this->assertEquals('Item A', $targetRows[0]->title);
         $this->assertEquals('Item B', $targetRows[1]->title);
+
+        // Assert ignored tables (like cache) are NOT copied/created on target connection
+        $this->assertFalse(Schema::connection('target_memory_test')->hasTable('cache'));
     }
 }
