@@ -53,7 +53,29 @@ class CloneProduction extends Command
             $this->warn('Warning: The target database is configured as ":memory:". Cloned data will be lost as soon as this command finishes.');
         }
 
-        // 3. Confirm operation
+        // 3. Retrieve and display production tables to be cloned
+        $sourceTables = [];
+        try {
+            $sourceTablesInfo = Schema::connection($sourceConnection)->getTables();
+            foreach ($sourceTablesInfo as $tableInfo) {
+                $sourceTables[] = is_array($tableInfo) ? ($tableInfo['name'] ?? reset($tableInfo)) : (is_object($tableInfo) ? ($tableInfo->name ?? $tableInfo->Name) : $tableInfo);
+            }
+        } catch (\Exception $e) {
+            $this->error('Failed to retrieve list of production tables: ' . $e->getMessage());
+            return 1;
+        }
+
+        $this->info('The following production tables will be cloned:');
+        if (empty($sourceTables)) {
+            $this->warn('  (No tables found in production database)');
+        } else {
+            foreach ($sourceTables as $table) {
+                $this->line("  - {$table}");
+            }
+        }
+        $this->line('');
+
+        // 4. Confirm operation
         if (!$this->option('force')) {
             $confirmed = $this->confirm(
                 "This will TRUNCATE the current database on connection '{$targetConnection}' and DELETE target storage files at '{$targetStorage}'. Are you sure you want to clone production?",
@@ -66,9 +88,9 @@ class CloneProduction extends Command
             }
         }
 
-        // 4. Clone Database
+        // 5. Clone Database
         $this->info('Cloning production database...');
-        $dbCloned = $this->cloneDatabase($sourceConnection, $targetConnection);
+        $dbCloned = $this->cloneDatabase($sourceConnection, $targetConnection, $sourceTables);
         if (!$dbCloned) {
             $this->error('Failed to clone database.');
             return 1;
@@ -156,7 +178,7 @@ class CloneProduction extends Command
     /**
      * Execute database cloning logic.
      */
-    protected function cloneDatabase(string $sourceConnection, string $targetConnection): bool
+    protected function cloneDatabase(string $sourceConnection, string $targetConnection, ?array $sourceTables = null): bool
     {
         $sourceDriver = config("database.connections.{$sourceConnection}.driver");
         $targetDriver = config("database.connections.{$targetConnection}.driver");
@@ -188,11 +210,13 @@ class CloneProduction extends Command
         // Strategy 2/3: Table-by-table schema & data copy
         $this->info('Cloning database table-by-table...');
 
-        // Retrieve list of tables from source
-        $sourceTablesInfo = Schema::connection($sourceConnection)->getTables();
-        $sourceTables = [];
-        foreach ($sourceTablesInfo as $tableInfo) {
-            $sourceTables[] = is_array($tableInfo) ? ($tableInfo['name'] ?? reset($tableInfo)) : (is_object($tableInfo) ? ($tableInfo->name ?? $tableInfo->Name) : $tableInfo);
+        // Retrieve list of tables from source if not already provided
+        if ($sourceTables === null) {
+            $sourceTablesInfo = Schema::connection($sourceConnection)->getTables();
+            $sourceTables = [];
+            foreach ($sourceTablesInfo as $tableInfo) {
+                $sourceTables[] = is_array($tableInfo) ? ($tableInfo['name'] ?? reset($tableInfo)) : (is_object($tableInfo) ? ($tableInfo->name ?? $tableInfo->Name) : $tableInfo);
+            }
         }
 
         // Retrieve and drop all tables on the target first (clean/truncate)
@@ -219,24 +243,29 @@ class CloneProduction extends Command
                 }
 
                 $this->line("Recreating structure for table: {$table}");
-                $createSql = null;
+                
+                try {
+                    $createSql = null;
 
-                if ($sourceDriver === 'mysql') {
-                    $result = DB::connection($sourceConnection)->select("SHOW CREATE TABLE `{$table}`");
-                    if (!empty($result)) {
-                        $row = (array) $result[0];
-                        $createSql = $row['Create Table'] ?? $row['create table'] ?? null;
+                    if ($sourceDriver === 'mysql') {
+                        $result = DB::connection($sourceConnection)->select("SHOW CREATE TABLE `{$table}`");
+                        if (!empty($result)) {
+                            $row = (array) $result[0];
+                            $createSql = $row['Create Table'] ?? $row['create table'] ?? null;
+                        }
+                    } elseif ($sourceDriver === 'sqlite') {
+                        $result = DB::connection($sourceConnection)->select("SELECT sql FROM sqlite_master WHERE type='table' AND name = ?", [$table]);
+                        if (!empty($result)) {
+                            $row = (array) $result[0];
+                            $createSql = $row['sql'] ?? null;
+                        }
                     }
-                } elseif ($sourceDriver === 'sqlite') {
-                    $result = DB::connection($sourceConnection)->select("SELECT sql FROM sqlite_master WHERE type='table' AND name = ?", [$table]);
-                    if (!empty($result)) {
-                        $row = (array) $result[0];
-                        $createSql = $row['sql'] ?? null;
-                    }
-                }
 
-                if ($createSql) {
-                    DB::connection($targetConnection)->statement($createSql);
+                    if ($createSql) {
+                        DB::connection($targetConnection)->statement($createSql);
+                    }
+                } catch (\Throwable $e) {
+                    $this->warn("  -> Skipping table structure copy for '{$table}' due to error: " . $e->getMessage());
                 }
             }
         } else {
@@ -265,32 +294,36 @@ class CloneProduction extends Command
                 continue;
             }
 
-            // Ensure table is clean on target
-            DB::connection($targetConnection)->table($table)->truncate();
-
             $this->line("Copying data for table: {$table}");
 
-            $offset = 0;
-            $limit = 1000;
-            $totalCopied = 0;
+            try {
+                // Ensure table is clean on target
+                DB::connection($targetConnection)->table($table)->truncate();
 
-            while (true) {
-                $rows = DB::connection($sourceConnection)->table($table)->offset($offset)->limit($limit)->get();
-                if ($rows->isEmpty()) {
-                    break;
+                $offset = 0;
+                $limit = 1000;
+                $totalCopied = 0;
+
+                while (true) {
+                    $rows = DB::connection($sourceConnection)->table($table)->offset($offset)->limit($limit)->get();
+                    if ($rows->isEmpty()) {
+                        break;
+                    }
+
+                    $insertData = [];
+                    foreach ($rows as $row) {
+                        $insertData[] = (array) $row;
+                    }
+
+                    DB::connection($targetConnection)->table($table)->insert($insertData);
+                    $totalCopied += count($insertData);
+                    $offset += $limit;
                 }
 
-                $insertData = [];
-                foreach ($rows as $row) {
-                    $insertData[] = (array) $row;
-                }
-
-                DB::connection($targetConnection)->table($table)->insert($insertData);
-                $totalCopied += count($insertData);
-                $offset += $limit;
+                $this->line("  -> Copied {$totalCopied} rows.");
+            } catch (\Throwable $e) {
+                $this->warn("  -> Skipping data copy for '{$table}' due to error: " . $e->getMessage());
             }
-
-            $this->line("  -> Copied {$totalCopied} rows.");
         }
 
         Schema::connection($targetConnection)->enableForeignKeyConstraints();
