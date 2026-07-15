@@ -54,12 +54,8 @@ class CloneProduction extends Command
         }
 
         // 3. Retrieve and display production tables to be cloned
-        $sourceTables = [];
         try {
-            $sourceTablesInfo = Schema::connection($sourceConnection)->getTables();
-            foreach ($sourceTablesInfo as $tableInfo) {
-                $sourceTables[] = is_array($tableInfo) ? ($tableInfo['name'] ?? reset($tableInfo)) : (is_object($tableInfo) ? ($tableInfo->name ?? $tableInfo->Name) : $tableInfo);
-            }
+            $sourceTables = $this->getSourceTables($sourceConnection);
         } catch (\Exception $e) {
             $this->error('Failed to retrieve list of production tables: ' . $e->getMessage());
             return 1;
@@ -223,11 +219,7 @@ class CloneProduction extends Command
 
         // Retrieve list of tables from source if not already provided
         if ($sourceTables === null) {
-            $sourceTablesInfo = Schema::connection($sourceConnection)->getTables();
-            $sourceTables = [];
-            foreach ($sourceTablesInfo as $tableInfo) {
-                $sourceTables[] = is_array($tableInfo) ? ($tableInfo['name'] ?? reset($tableInfo)) : (is_object($tableInfo) ? ($tableInfo->name ?? $tableInfo->Name) : $tableInfo);
-            }
+            $sourceTables = $this->getSourceTables($sourceConnection);
         }
 
         // Retrieve and drop all tables on the target first (clean/truncate)
@@ -397,5 +389,60 @@ class CloneProduction extends Command
         }
 
         closedir($dir);
+    }
+
+    /**
+     * Retrieve list of tables from the source connection, isolated to the configured database.
+     */
+    protected function getSourceTables(string $sourceConnection): array
+    {
+        $driver = config("database.connections.{$sourceConnection}.driver");
+        $databaseName = config("database.connections.{$sourceConnection}.database");
+        $tables = [];
+
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            try {
+                $results = DB::connection($sourceConnection)->select(
+                    "SELECT table_name AS name FROM information_schema.tables WHERE table_schema = ? AND table_type IN ('BASE TABLE', 'VIEW')",
+                    [$databaseName]
+                );
+                foreach ($results as $row) {
+                    $row = (array) $row;
+                    $tables[] = $row['name'] ?? $row['NAME'] ?? null;
+                }
+                $tables = array_filter($tables);
+            } catch (\Exception $e) {
+                // Fallback to standard schema if custom query fails
+            }
+        }
+
+        if (empty($tables)) {
+            $tablesInfo = Schema::connection($sourceConnection)->getTables();
+            foreach ($tablesInfo as $tableInfo) {
+                $tableName = null;
+                $tableSchema = null;
+
+                if (is_array($tableInfo)) {
+                    $tableName = $tableInfo['name'] ?? reset($tableInfo);
+                    $tableSchema = $tableInfo['schema'] ?? null;
+                } elseif (is_object($tableInfo)) {
+                    $tableName = $tableInfo->name ?? $tableInfo->Name ?? (string)$tableInfo;
+                    $tableSchema = $tableInfo->schema ?? $tableInfo->Schema ?? null;
+                } else {
+                    $tableName = (string)$tableInfo;
+                }
+
+                // Isolate to the configured database name if schema details are available (skip for SQLite)
+                if ($driver !== 'sqlite' && $tableSchema !== null && strtolower($tableSchema) !== strtolower($databaseName)) {
+                    continue;
+                }
+
+                if ($tableName) {
+                    $tables[] = $tableName;
+                }
+            }
+        }
+
+        return array_values(array_unique($tables));
     }
 }
