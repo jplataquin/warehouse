@@ -48,17 +48,43 @@ class DashboardController extends Controller
             $warehouse = Warehouse::active()->with('children')->findOrFail($warehouseId);
         }
 
-        // Efficiently fetch only items that have movements in this warehouse
-        // and calculate their balance using a group by query
-        $items = Item::whereHas('ledgers', function ($query) use ($warehouseId) {
-            $query->where('warehouse_id', $warehouseId);
-        })
-            ->get()
-            ->map(function ($item) use ($warehouseId) {
-                $item->current_stock = $item->getBalance($warehouseId);
+        // 1. Determine the target warehouses we want to include
+        // If the current warehouse is a top-level parent (parent_id is null),
+        // we include both itself and all of its active child/sub-warehouses.
+        // Otherwise, if a sub-warehouse is selected, we only include that specific warehouse.
+        if ($warehouse->parent_id === null) {
+            $targetWarehouseIds = array_merge([$warehouse->id], $warehouse->children->pluck('id')->toArray());
+        } else {
+            $targetWarehouseIds = [$warehouse->id];
+        }
 
-                return $item;
-            });
+        $targetWarehouses = Warehouse::whereIn('id', $targetWarehouseIds)->get()->keyBy('id');
+
+        // 2. Fetch all combinations of item_id and warehouse_id that have movements in these warehouses
+        $itemWarehousePairs = \DB::table('ledgers')
+            ->select('item_id', 'warehouse_id')
+            ->whereIn('warehouse_id', $targetWarehouseIds)
+            ->groupBy('item_id', 'warehouse_id')
+            ->get();
+
+        // 3. Load all unique items involved in these combinations
+        $itemIds = $itemWarehousePairs->pluck('item_id')->unique()->toArray();
+        $itemsMap = Item::whereIn('id', $itemIds)->get()->keyBy('id');
+
+        // 4. Construct a collection of cloned items, with specific warehouse contexts and stock levels
+        $items = collect();
+
+        foreach ($itemWarehousePairs as $pair) {
+            $item = $itemsMap->get($pair->item_id);
+            $wh = $targetWarehouses->get($pair->warehouse_id);
+
+            if ($item && $wh) {
+                $newItem = clone $item;
+                $newItem->current_stock = $item->getBalance($wh->id);
+                $newItem->warehouse_context = $wh; // Attached specific warehouse context
+                $items->push($newItem);
+            }
+        }
 
         return view('logger.warehouses.dashboard', compact('warehouse', 'items'));
     }

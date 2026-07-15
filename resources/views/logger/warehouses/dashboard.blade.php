@@ -207,6 +207,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 {{ $item->name }} {{ $item->specification }}
                             </h6>
                         </div>
+                        @if(isset($item->warehouse_context) && $item->warehouse_context->parent_id)
+                            <div class="mb-2">
+                                <span class="badge bg-light text-dark border small">
+                                    <i class="bi bi-diagram-3-fill text-primary me-1"></i>{{ $item->warehouse_context->name }}
+                                </span>
+                            </div>
+                        @endif
                         <div class="mt-2">
                             <div class="small text-muted text-uppercase fw-bold">Stock Level</div>
                             <div class="h4 mb-0 fw-bold text-primary">
@@ -231,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         @endif
                     </div>
                     <div class="card-footer bg-transparent border-top-0 pt-0 pb-3">
-                        <a href="{{ route('ledgers.index', ['warehouse_id' => $warehouse->id, 'item_id' => $item->id]) }}" class="btn btn-sm btn-link p-0 text-decoration-none small">
+                        <a href="{{ route('ledgers.index', ['warehouse_id' => $item->warehouse_context->id ?? $warehouse->id, 'item_id' => $item->id]) }}" class="btn btn-sm btn-link p-0 text-decoration-none small">
                             <i class="bi bi-clock-history me-1"></i> View Ledger
                         </a>
                     </div>

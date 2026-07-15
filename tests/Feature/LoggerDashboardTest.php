@@ -341,4 +341,49 @@ class LoggerDashboardTest extends TestCase
 
         $response->assertStatus(404);
     }
+
+    public function test_parent_dashboard_shows_sub_warehouse_item_cards_and_names_when_no_sub_warehouse_is_selected()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $parent = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Parent Warehouse',
+            'status' => 'ACTIVE',
+        ]);
+        $logger->warehouses()->attach($parent);
+
+        $subWh = Warehouse::create([
+            'parent_id' => $parent->id,
+            'type' => 'CENTRAL',
+            'name' => 'Sub Warehouse A',
+            'status' => 'ACTIVE',
+        ]);
+
+        $item = Item::create([
+            'name' => 'Sub-Wh Specific Item',
+            'type' => 'CONSUMABLE',
+            'unit' => 'pcs',
+        ]);
+
+        // Place a movement/ledger entry specifically in the sub-warehouse
+        Ledger::create([
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 15,
+            'warehouse_id' => $subWh->id,
+            'status' => 'APPROVED',
+        ]);
+
+        // Access the parent warehouse dashboard (where no sub-warehouse is selected)
+        $response = $this->actingAs($logger)
+            ->get(route('logger.warehouse.dashboard', $parent));
+
+        $response->assertStatus(200);
+        
+        // Assert that the sub-warehouse item card is visible and displays its name
+        $response->assertSee('Sub-Wh Specific Item');
+        $response->assertSee('Sub Warehouse A');
+        $response->assertSee('15');
+    }
 }
