@@ -98,12 +98,12 @@ class CloneProductionCommandTest extends TestCase
             ->assertExitCode(1);
     }
 
-    public function test_it_clones_sqlite_database_via_direct_file_copy()
+    public function test_it_truncates_and_clones_rows_to_target_leaving_migrations_untouched()
     {
         // Mock environment as local
         $this->app['env'] = 'local';
 
-        // 1. Setup Source Connection and Table
+        // 1. Setup Source and Target Connections
         config(['database.connections.source_sqlite_test' => [
             'driver' => 'sqlite',
             'database' => $this->sourceDbFile,
@@ -116,24 +116,44 @@ class CloneProductionCommandTest extends TestCase
             'prefix' => '',
         ]]);
 
-        Schema::connection('source_sqlite_test')->create('users_temp', function ($table) {
-            $table->id();
-            $table->string('name');
-        });
+        // 2. Create tables on BOTH Source and Target (since we only truncate and copy rows)
+        foreach (['source_sqlite_test', 'target_sqlite_test'] as $conn) {
+            Schema::connection($conn)->create('users_temp', function ($table) {
+                $table->id();
+                $table->string('name');
+            });
 
+            Schema::connection($conn)->create('migrations', function ($table) {
+                $table->string('migration');
+                $table->integer('batch');
+            });
+        }
+
+        // 3. Populate Target with "old" data
+        DB::connection('target_sqlite_test')->table('users_temp')->insert([
+            ['name' => 'Old Developer'],
+        ]);
+        DB::connection('target_sqlite_test')->table('migrations')->insert([
+            ['migration' => '0001_01_01_000000_create_users_table', 'batch' => 1],
+        ]);
+
+        // 4. Populate Source with "production/new" data
         DB::connection('source_sqlite_test')->table('users_temp')->insert([
             ['name' => 'John Doe'],
             ['name' => 'Jane Doe'],
         ]);
+        DB::connection('source_sqlite_test')->table('migrations')->insert([
+            ['migration' => '2026_05_21_171622_add_role_to_users_table', 'batch' => 2],
+        ]);
 
-        // 2. Setup storage files
+        // 5. Setup storage files
         file_put_contents($this->sourceStorageDir . '/test.txt', 'source-file-content');
         mkdir($this->sourceStorageDir . '/subfolder');
         file_put_contents($this->sourceStorageDir . '/subfolder/nested.txt', 'nested-content');
 
         file_put_contents($this->targetStorageDir . '/old.txt', 'old-file-content');
 
-        // 3. Run Command
+        // 6. Run Command
         $this->artisan('db:clone-production', [
             '--prod-conn' => 'sqlite',
             '--prod-db' => $this->sourceDbFile,
@@ -144,13 +164,18 @@ class CloneProductionCommandTest extends TestCase
             '--force' => true,
         ])->assertExitCode(0);
 
-        // 4. Assert Database is Cloned
-        $targetRows = DB::connection('target_sqlite_test')->table('users_temp')->get();
-        $this->assertCount(2, $targetRows);
-        $this->assertEquals('John Doe', $targetRows[0]->name);
-        $this->assertEquals('Jane Doe', $targetRows[1]->name);
+        // 7. Assert target users_temp was truncated and production rows were copied
+        $targetUsers = DB::connection('target_sqlite_test')->table('users_temp')->get();
+        $this->assertCount(2, $targetUsers);
+        $this->assertEquals('John Doe', $targetUsers[0]->name);
+        $this->assertEquals('Jane Doe', $targetUsers[1]->name);
 
-        // 5. Assert Storage is Cloned
+        // 8. Assert target migrations table remains completely untouched
+        $targetMigrations = DB::connection('target_sqlite_test')->table('migrations')->get();
+        $this->assertCount(1, $targetMigrations);
+        $this->assertEquals('0001_01_01_000000_create_users_table', $targetMigrations[0]->migration);
+
+        // 9. Assert Storage is Cloned
         $this->assertTrue(file_exists($this->targetStorageDir . '/test.txt'));
         $this->assertEquals('source-file-content', file_get_contents($this->targetStorageDir . '/test.txt'));
         $this->assertTrue(file_exists($this->targetStorageDir . '/subfolder/nested.txt'));
@@ -158,67 +183,43 @@ class CloneProductionCommandTest extends TestCase
         $this->assertFalse(file_exists($this->targetStorageDir . '/old.txt'));
     }
 
-    public function test_it_clones_database_table_by_table()
+    public function test_it_warns_when_table_is_missing_from_target_database()
     {
         // Mock environment as local
         $this->app['env'] = 'local';
 
-        // To force table-by-table copy (Strategy 2/3), we configure different connection drivers,
-        // or trigger the table-by-table branch.
-        // We can force it by having different drivers or by setting one connection database to :memory:,
-        // which prevents Strategy 1 from executing file copy and defaults to Strategy 2/3 table-by-table copy.
-
-        // Setup Source SQLite file
+        // Setup Source and Target Connections
         config(['database.connections.source_sqlite_test' => [
             'driver' => 'sqlite',
             'database' => $this->sourceDbFile,
             'prefix' => '',
         ]]);
 
-        // Target connection is an in-memory database
-        config(['database.connections.target_memory_test' => [
+        config(['database.connections.target_sqlite_test' => [
             'driver' => 'sqlite',
-            'database' => ':memory:',
+            'database' => $this->targetDbFile,
             'prefix' => '',
         ]]);
 
-        // Create table in source SQLite database
-        Schema::connection('source_sqlite_test')->create('items_temp', function ($table) {
+        // Create table ONLY on Source, NOT on Target
+        Schema::connection('source_sqlite_test')->create('missing_on_target', function ($table) {
             $table->id();
             $table->string('title');
         });
 
-        DB::connection('source_sqlite_test')->table('items_temp')->insert([
-            ['title' => 'Item A'],
-            ['title' => 'Item B'],
+        DB::connection('source_sqlite_test')->table('missing_on_target')->insert([
+            ['title' => 'Some Production Item'],
         ]);
 
-        // Create an ignored table in source SQLite database
-        Schema::connection('source_sqlite_test')->create('cache', function ($table) {
-            $table->string('key')->unique();
-            $table->text('value');
-        });
-
-        DB::connection('source_sqlite_test')->table('cache')->insert([
-            ['key' => 'test_key', 'value' => 'test_value'],
-        ]);
-
-        // Run command targeting the in-memory SQLite connection
+        // Run Command
         $this->artisan('db:clone-production', [
             '--prod-conn' => 'sqlite',
             '--prod-db' => $this->sourceDbFile,
-            '--target-conn' => 'target_memory_test',
-            '--target-db' => ':memory:',
+            '--target-conn' => 'target_sqlite_test',
+            '--target-db' => $this->targetDbFile,
             '--force' => true,
-        ])->assertExitCode(0);
-
-        // Assert table-by-table successfully copied to target (which is in-memory target_memory_test connection)
-        $targetRows = DB::connection('target_memory_test')->table('items_temp')->get();
-        $this->assertCount(2, $targetRows);
-        $this->assertEquals('Item A', $targetRows[0]->title);
-        $this->assertEquals('Item B', $targetRows[1]->title);
-
-        // Assert ignored tables (like cache) are NOT copied/created on target connection
-        $this->assertFalse(Schema::connection('target_memory_test')->hasTable('cache'));
+        ])
+            ->expectsOutput("Table 'missing_on_target' is missing from the target database. Skipping.")
+            ->assertExitCode(0);
     }
 }

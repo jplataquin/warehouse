@@ -187,117 +187,31 @@ class CloneProduction extends Command
      */
     protected function cloneDatabase(string $sourceConnection, string $targetConnection, ?array $sourceTables = null): bool
     {
-        $sourceDriver = config("database.connections.{$sourceConnection}.driver");
-        $targetDriver = config("database.connections.{$targetConnection}.driver");
-
-        // Strategy 1: SQLite to SQLite (Direct File Copy)
-        if ($sourceDriver === 'sqlite' && $targetDriver === 'sqlite') {
-            $sourceDb = config("database.connections.{$sourceConnection}.database");
-            $targetDb = config("database.connections.{$targetConnection}.database");
-
-            if ($sourceDb !== ':memory:' && $targetDb !== ':memory:') {
-                $this->info('Cloning SQLite database via file copy...');
-                if (!file_exists($sourceDb)) {
-                    $this->error("Source SQLite database file not found at: {$sourceDb}");
-                    return false;
-                }
-
-                @mkdir(dirname($targetDb), 0755, true);
-
-                if (copy($sourceDb, $targetDb)) {
-                    $this->info('Database cloned successfully via file copy.');
-                    return true;
-                } else {
-                    $this->error('Failed to copy SQLite database file.');
-                    return false;
-                }
-            }
-        }
-
-        // Strategy 2/3: Table-by-table schema & data copy
-        $this->info('Cloning database table-by-table...');
+        $this->info('Cloning database by truncating tables and copying rows...');
 
         // Retrieve list of tables from source if not already provided
         if ($sourceTables === null) {
             $sourceTables = $this->getSourceTables($sourceConnection);
         }
 
-        // Retrieve and drop all tables on the target first (clean/truncate)
+        // Retrieve existing target tables
         $targetTablesInfo = Schema::connection($targetConnection)->getTables();
         $targetTables = [];
         foreach ($targetTablesInfo as $tableInfo) {
             $targetTables[] = is_array($tableInfo) ? ($tableInfo['name'] ?? reset($tableInfo)) : (is_object($tableInfo) ? ($tableInfo->name ?? $tableInfo->Name) : $tableInfo);
         }
 
-        Schema::connection($targetConnection)->disableForeignKeyConstraints();
-
-        foreach ($targetTables as $table) {
-            Schema::connection($targetConnection)->dropIfExists($table);
-        }
-
-        $sameDriver = ($sourceDriver === $targetDriver);
-
-        if ($sameDriver && ($sourceDriver === 'mysql' || $sourceDriver === 'sqlite')) {
-            // Recreate structures for exact schema copy
-            foreach ($sourceTables as $table) {
-                // Skip sqlite internal tables
-                if ($sourceDriver === 'sqlite' && in_array($table, ['sqlite_sequence', 'sqlite_stat1', 'sqlite_stat2', 'sqlite_stat3', 'sqlite_stat4'])) {
-                    continue;
-                }
-
-                $this->line("Recreating structure for table: {$table}");
-                
-                try {
-                    $createSql = null;
-
-                    if ($sourceDriver === 'mysql') {
-                        $result = DB::connection($sourceConnection)->select("SHOW CREATE TABLE `{$table}`");
-                        if (!empty($result)) {
-                            $row = (array) $result[0];
-                            $createSql = $row['Create Table'] ?? $row['create table'] ?? null;
-                        }
-                    } elseif ($sourceDriver === 'sqlite') {
-                        $result = DB::connection($sourceConnection)->select("SELECT sql FROM sqlite_master WHERE type='table' AND name = ?", [$table]);
-                        if (!empty($result)) {
-                            $row = (array) $result[0];
-                            $createSql = $row['sql'] ?? null;
-                        }
-                    }
-
-                    if ($createSql) {
-                        DB::connection($targetConnection)->statement($createSql);
-                    }
-                } catch (\Throwable $e) {
-                    $this->warn("  -> Skipping table structure copy for '{$table}' due to error: " . $e->getMessage());
-                }
-            }
-        } else {
-            // Cross-driver or other drivers: Use Laravel migrations to construct schema
-            $this->info('Running migrations on target connection to construct schema...');
-            Artisan::call('migrate:fresh', [
-                '--database' => $targetConnection,
-                '--force' => true,
-            ]);
-        }
-
-        // Verify and get final target tables list
-        $newTargetTablesInfo = Schema::connection($targetConnection)->getTables();
-        $newTargetTables = [];
-        foreach ($newTargetTablesInfo as $tableInfo) {
-            $newTargetTables[] = is_array($tableInfo) ? ($tableInfo['name'] ?? reset($tableInfo)) : (is_object($tableInfo) ? ($tableInfo->name ?? $tableInfo->Name) : $tableInfo);
-        }
-
-        // Re-disable foreign key constraints (as migrate:fresh might reset them)
+        // Disable foreign key constraints on target first
         Schema::connection($targetConnection)->disableForeignKeyConstraints();
 
         // Copy records
         foreach ($sourceTables as $table) {
-            if (!in_array($table, $newTargetTables)) {
-                $this->warn("Table '{$table}' is missing from the target schema. Skipping data copy.");
+            if (!in_array($table, $targetTables)) {
+                $this->warn("Table '{$table}' is missing from the target database. Skipping.");
                 continue;
             }
 
-            $this->line("Copying data for table: {$table}");
+            $this->line("Truncating and copying data for table: {$table}");
 
             try {
                 // Ensure table is clean on target
@@ -443,12 +357,12 @@ class CloneProduction extends Command
             }
         }
 
-        $ignoredTables = ['cache', 'cache_locks', 'failed_jobs', 'migrations'];
-
-        $filteredTables = array_filter($tables, function ($table) use ($ignoredTables) {
+        // Filter out ignored tables (e.g., migrations)
+        $ignoredTables = ['migrations'];
+        $tables = array_filter($tables, function ($table) use ($ignoredTables) {
             return !in_array(strtolower($table), $ignoredTables);
         });
 
-        return array_values(array_unique($filteredTables));
+        return array_values(array_unique($tables));
     }
 }
