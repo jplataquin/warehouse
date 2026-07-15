@@ -136,6 +136,15 @@
                     @php
                         $isSearch = request()->routeIs('global.search');
                         $activeId = !$isSearch ? ($warehouse->id ?? $selectedWarehouseId ?? request('warehouse_id') ?? ($ledger->warehouse_id ?? null)) : null;
+                        
+                        // If the active warehouse is a sub-warehouse, resolve its parent ID to keep parent active in sidebar
+                        if ($activeId) {
+                            $whModel = \App\Models\Warehouse::find($activeId);
+                            if ($whModel && $whModel->parent_id) {
+                                $activeId = $whModel->parent_id;
+                            }
+                        }
+                        
                         $activeWarehouse = $activeId ? (object)['id' => (int)$activeId] : null;
                     @endphp
                     @include('logger.partials.sidebar', ['warehouse' => $activeWarehouse])

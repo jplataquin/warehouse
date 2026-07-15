@@ -386,4 +386,32 @@ class LoggerDashboardTest extends TestCase
         $response->assertSee('Sub Warehouse A');
         $response->assertSee('15');
     }
+
+    public function test_sidebar_remains_active_for_parent_when_sub_warehouse_is_selected()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $parent = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Active Parent Warehouse',
+            'status' => 'ACTIVE',
+        ]);
+        $logger->warehouses()->attach($parent);
+
+        $subWh = Warehouse::create([
+            'parent_id' => $parent->id,
+            'type' => 'CENTRAL',
+            'name' => 'Sub Warehouse C',
+            'status' => 'ACTIVE',
+        ]);
+
+        // Access the sub-warehouse dashboard
+        $response = $this->actingAs($logger)
+            ->get(route('logger.warehouse.dashboard', $subWh));
+
+        $response->assertStatus(200);
+        
+        // Assert that the parent warehouse "Active Parent Warehouse" is active in the sidebar
+        $response->assertSee('Active Parent Warehouse');
+        $response->assertSee('active bg-primary-subtle border-start border-primary border-4 text-primary fw-bold', false);
+    }
 }
