@@ -24,7 +24,7 @@ class LedgerController extends Controller
 
     public function index(Request $request)
     {
-        $warehouses = Warehouse::active()->get();
+        $warehouses = Warehouse::active()->with('parent')->get();
         $selectedWarehouseId = $request->warehouse_id;
         $selectedWarehouse = null;
         $itemsWithStock = collect();
@@ -165,7 +165,7 @@ class LedgerController extends Controller
         $selectedWarehouseId = $request->warehouse_id;
         $selectedItemId = $request->item_id;
         $items = Item::all();
-        $warehouses = Warehouse::active()->get();
+        $warehouses = Warehouse::active()->with('parent')->get();
         $allocations = Allocation::orderBy('name', 'asc')->get();
         $projects = Project::all();
 
@@ -401,7 +401,7 @@ class LedgerController extends Controller
         }
 
         $items = Item::all();
-        $warehouses = Warehouse::active()->get();
+        $warehouses = Warehouse::active()->with('parent')->get();
         // Get allocations for the current warehouse of the ledger
         $allocations = Allocation::where('warehouse_id', $ledger->warehouse_id)->orderBy('name', 'asc')->get();
         $projects = Project::all();

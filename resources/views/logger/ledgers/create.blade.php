@@ -1,5 +1,11 @@
 @extends('layouts.logger')
 
+@push('styles')
+    <!-- Tom Select CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+@endpush
+
 @section('inner_content')
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
@@ -175,7 +181,13 @@
                         <option value="">Select Source Warehouse...</option>
                         @foreach($warehouses as $wh)
                             @if($wh->id != $selectedWarehouseId)
-                                <option value="{{ $wh->id }}">{{ $wh->name }}</option>
+                                <option value="{{ $wh->id }}">
+                                    @if($wh->parent)
+                                        {{ $wh->parent->name }} &gt; {{ $wh->name }} (Sub WH)
+                                    @else
+                                        {{ $wh->name }}
+                                    @endif
+                                </option>
                             @endif
                         @endforeach
                     </select>
@@ -185,11 +197,17 @@
                 {{-- OUT TRANSFER: Destination --}}
                 <div class="col-md-6 out-transfer-fields" style="display: none;">
                     <label class="form-label small fw-bold text-uppercase text-muted">Transfer Destination (TO)</label>
-                    <select name="entries[__INDEX__][destination_warehouse_id]" class="form-select shadow-sm border-danger border-opacity-25">
+                    <select name="entries[__INDEX__][destination_warehouse_id]" class="form-select shadow-sm border-danger border-opacity-25 dest-warehouse-select">
                         <option value="">Select Destination Warehouse...</option>
                         @foreach($warehouses as $wh)
                             @if($wh->id != $selectedWarehouseId)
-                                <option value="{{ $wh->id }}">{{ $wh->name }}</option>
+                                <option value="{{ $wh->id }}">
+                                    @if($wh->parent)
+                                        {{ $wh->parent->name }} &gt; {{ $wh->name }} (Sub WH)
+                                    @else
+                                        {{ $wh->name }}
+                                    @endif
+                                </option>
                             @endif
                         @endforeach
                     </select>
@@ -466,6 +484,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         container.appendChild(element);
+
+        // Initialize Tom Select for Destination select tag to be searchable
+        const destSelect = element.querySelector('.dest-warehouse-select');
+        if (destSelect) {
+            new TomSelect(destSelect, {
+                create: false,
+                sortField: {
+                    field: "text",
+                    direction: "asc"
+                }
+            });
+        }
+
         updateActionOptions(element);
         updateRowStyle(element);
         updateIndices();
