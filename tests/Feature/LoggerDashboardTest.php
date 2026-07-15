@@ -293,4 +293,52 @@ class LoggerDashboardTest extends TestCase
             ]);
         $responsePost->assertStatus(404);
     }
+
+    public function test_logger_can_access_sub_warehouse_dashboard_if_assigned_to_parent()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $parent = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Parent Warehouse',
+            'status' => 'ACTIVE',
+        ]);
+        $logger->warehouses()->attach($parent);
+
+        $subWh = Warehouse::create([
+            'parent_id' => $parent->id,
+            'type' => 'CENTRAL',
+            'name' => 'Sub Warehouse A',
+            'status' => 'ACTIVE',
+        ]);
+
+        // Logger can access sub-warehouse dashboard even if not explicitly assigned,
+        // because they are assigned to the parent warehouse.
+        $response = $this->actingAs($logger)
+            ->get(route('logger.warehouse.dashboard', $subWh));
+
+        $response->assertStatus(200);
+        $response->assertSee('Sub Warehouse A');
+    }
+
+    public function test_logger_cannot_access_sub_warehouse_dashboard_if_not_assigned_to_parent()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $parent = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Unassigned Parent Warehouse',
+            'status' => 'ACTIVE',
+        ]);
+
+        $subWh = Warehouse::create([
+            'parent_id' => $parent->id,
+            'type' => 'CENTRAL',
+            'name' => 'Sub Warehouse B',
+            'status' => 'ACTIVE',
+        ]);
+
+        $response = $this->actingAs($logger)
+            ->get(route('logger.warehouse.dashboard', $subWh));
+
+        $response->assertStatus(404);
+    }
 }

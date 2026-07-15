@@ -27,7 +27,23 @@ class DashboardController extends Controller
         $user = auth()->user();
 
         if ($user->role === 'logger') {
-            $warehouse = $user->warehouses()->active()->with('children')->findOrFail($warehouseId);
+            // Loggers can access a warehouse if they are explicitly assigned to it,
+            // or if they are assigned to its parent warehouse.
+            $isAssigned = $user->warehouses()->where('warehouses.id', $warehouseId)->active()->exists();
+
+            if (!$isAssigned) {
+                $warehouse = Warehouse::active()->with('children')->findOrFail($warehouseId);
+                if ($warehouse->parent_id) {
+                    $isAssignedToParent = $user->warehouses()->where('warehouses.id', $warehouse->parent_id)->active()->exists();
+                    if (!$isAssignedToParent) {
+                        abort(404);
+                    }
+                } else {
+                    abort(404);
+                }
+            } else {
+                $warehouse = $user->warehouses()->active()->with('children')->findOrFail($warehouseId);
+            }
         } else {
             $warehouse = Warehouse::active()->with('children')->findOrFail($warehouseId);
         }
