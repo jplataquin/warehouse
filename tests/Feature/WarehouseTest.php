@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Models\Item;
+use App\Models\Ledger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -224,5 +226,189 @@ class WarehouseTest extends TestCase
             'project_id' => null,
             'status' => 'ACTIVE',
         ]);
+    }
+
+    public function test_sub_warehouses_are_filtered_out_of_warehouses_index()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $parentWarehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Parent Warehouse',
+            'status' => 'ACTIVE',
+        ]);
+        $subWarehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Sub Warehouse Under Parent',
+            'status' => 'ACTIVE',
+            'parent_id' => $parentWarehouse->id,
+        ]);
+
+        $response = $this->actingAs($supervisor)
+            ->get(route('warehouses.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Parent Warehouse');
+        $response->assertDontSee('Sub Warehouse Under Parent');
+    }
+
+    public function test_sub_warehouses_section_shown_only_on_central_warehouse_detail_page()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        
+        // 1. Central warehouse with a sub-warehouse
+        $centralWarehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Central Warehouse Parent',
+            'status' => 'ACTIVE',
+        ]);
+        $subWarehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Central Sub Warehouse',
+            'status' => 'ACTIVE',
+            'parent_id' => $centralWarehouse->id,
+        ]);
+
+        $response = $this->actingAs($supervisor)
+            ->get(route('warehouses.show', $centralWarehouse));
+
+        $response->assertStatus(200);
+        $response->assertSee('Sub-Warehouses');
+        $response->assertSee('Central Sub Warehouse');
+
+        // 2. Site warehouse with a sub-warehouse (to test the condition)
+        $siteWarehouse = Warehouse::create([
+            'type' => 'SITE',
+            'name' => 'Site Warehouse Parent',
+            'status' => 'ACTIVE',
+        ]);
+        $siteSubWarehouse = Warehouse::create([
+            'type' => 'SITE',
+            'name' => 'Site Sub Warehouse',
+            'status' => 'ACTIVE',
+            'parent_id' => $siteWarehouse->id,
+        ]);
+
+        $response2 = $this->actingAs($supervisor)
+            ->get(route('warehouses.show', $siteWarehouse));
+
+        $response2->assertStatus(200);
+        $response2->assertDontSee('Sub-Warehouses');
+        $response2->assertDontSee('Site Sub Warehouse');
+    }
+
+    public function test_cannot_delete_warehouse_with_non_zero_quantity_items()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $warehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Test WH with Items',
+            'status' => 'ACTIVE',
+        ]);
+        $item = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Steel Rebar',
+            'unit' => 'Pcs',
+        ]);
+
+        // Add 10 items
+        Ledger::create([
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+            'remarks' => 'Initial count',
+        ]);
+
+        $response = $this->actingAs($supervisor)
+            ->delete(route('warehouses.destroy', $warehouse));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error', 'Cannot delete warehouse because it still contains items with non-zero quantity.');
+        $this->assertDatabaseHas('warehouses', ['id' => $warehouse->id]);
+    }
+
+    public function test_can_delete_warehouse_with_zero_quantity_items()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $warehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Test WH with Zero Items',
+            'status' => 'ACTIVE',
+        ]);
+        $item = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Steel Rebar',
+            'unit' => 'Pcs',
+        ]);
+
+        // Add 10 items
+        Ledger::create([
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+            'remarks' => 'Initial count',
+        ]);
+
+        // Remove 10 items (balanced to 0)
+        Ledger::create([
+            'type' => 'OUT',
+            'action' => 'DISPOSE',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        $response = $this->actingAs($supervisor)
+            ->delete(route('warehouses.destroy', $warehouse));
+
+        $response->assertRedirect(route('warehouses.index'));
+        $response->assertSessionHas('success', 'Warehouse deleted successfully.');
+        $this->assertSoftDeleted('warehouses', ['id' => $warehouse->id]);
+    }
+
+    public function test_cannot_delete_parent_warehouse_if_sub_warehouse_has_non_zero_quantity_items()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $parentWarehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Parent WH',
+            'status' => 'ACTIVE',
+        ]);
+        $subWarehouse = Warehouse::create([
+            'type' => 'CENTRAL',
+            'name' => 'Sub WH',
+            'status' => 'ACTIVE',
+            'parent_id' => $parentWarehouse->id,
+        ]);
+        $item = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Sand',
+            'unit' => 'm3',
+        ]);
+
+        // Log non-zero quantity in the sub-warehouse
+        Ledger::create([
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 5,
+            'warehouse_id' => $subWarehouse->id,
+            'status' => 'APPROVED',
+            'remarks' => 'Initial count',
+        ]);
+
+        $response = $this->actingAs($supervisor)
+            ->delete(route('warehouses.destroy', $parentWarehouse));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error', 'Cannot delete warehouse because it still contains items with non-zero quantity.');
+        $this->assertDatabaseHas('warehouses', ['id' => $parentWarehouse->id]);
+        $this->assertDatabaseHas('warehouses', ['id' => $subWarehouse->id]);
     }
 }

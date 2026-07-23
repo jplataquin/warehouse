@@ -137,7 +137,13 @@
         <h5 class="fw-bold text-secondary text-uppercase mb-0 fs-6">
             <i class="bi bi-list-ul me-1"></i> Movement Records {{ $item ? ' - ' . $item->name : '' }}
         </h5>
-        <div>
+        <div class="d-flex gap-2">
+            @if($item)
+                <a href="{{ route('ledgers.item_history.print', ['warehouse' => $selectedWarehouse->id, 'item' => $item->id] + request()->query()) }}" 
+                   target="_blank" class="btn btn-outline-dark btn-sm shadow-sm">
+                    <i class="bi bi-printer me-1"></i> Print Ledger
+                </a>
+            @endif
             <a href="{{ route('ledgers.create', ['warehouse_id' => request('warehouse_id'), 'item_id' => request('item_id')]) }}" class="btn btn-primary btn-sm shadow-sm">
                 <i class="bi bi-plus-circle me-1"></i> Add Entry
             </a>

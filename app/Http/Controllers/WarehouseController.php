@@ -14,7 +14,7 @@ class WarehouseController extends Controller
     {
         $search = $request->input('search');
 
-        $query = Warehouse::with(['project', 'loggers', 'parent']);
+        $query = Warehouse::with(['project', 'loggers', 'parent'])->whereNull('parent_id');
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -169,6 +169,20 @@ class WarehouseController extends Controller
         if (! $warehouse instanceof Warehouse) {
             $warehouse = Warehouse::findOrFail($warehouse);
         }
+
+        $warehouseIds = array_merge([$warehouse->id], \DB::table('warehouses')->where('parent_id', $warehouse->id)->pluck('id')->toArray());
+
+        $hasItemsWithStock = \DB::table('ledgers')
+            ->select('item_id')
+            ->whereIn('warehouse_id', $warehouseIds)
+            ->groupBy('item_id')
+            ->havingRaw("SUM(CASE WHEN type = 'IN' THEN quantity ELSE -quantity END) <> 0")
+            ->exists();
+
+        if ($hasItemsWithStock) {
+            return back()->with('error', 'Cannot delete warehouse because it still contains items with non-zero quantity.');
+        }
+
         $warehouse->delete();
 
         return redirect()->route('warehouses.index')->with('success', 'Warehouse deleted successfully.');

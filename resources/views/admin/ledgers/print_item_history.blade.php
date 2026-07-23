@@ -147,7 +147,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="text-center py-4">No records found.</td>
+                    <td colspan="8" class="text-center py-4">No records found.</td>
                 </tr>
                 @endforelse
             </tbody>

@@ -825,4 +825,18 @@ class LedgerTest extends TestCase
         $response->assertSessionHas('error');
         $this->assertEquals(8, $ledger2->fresh()->quantity); // Quantity should remain unchanged
     }
+
+    public function test_logger_can_access_item_history_print_page()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'South', 'status' => 'ACTIVE']);
+
+        $response = $this->actingAs($logger)->get(route('ledgers.item_history.print', ['warehouse' => $warehouse->id, 'item' => $item->id]));
+
+        $response->assertStatus(200);
+        $response->assertSee('ITEM LEDGER');
+        $response->assertSee('Cement');
+        $response->assertSee('Generated on');
+    }
 }

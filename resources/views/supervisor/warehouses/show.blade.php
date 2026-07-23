@@ -34,23 +34,40 @@
                         </div>
                     </div>
                     @endif
+                </div>
+            </div>
 
-                    @if($warehouse->children->isNotEmpty())
-                    <div class="row mb-3">
-                        <div class="col-sm-3 fw-bold">Sub-Warehouses:</div>
-                        <div class="col-sm-9">
-                            <div class="d-flex flex-wrap gap-2">
-                                @foreach($warehouse->children as $child)
-                                    <a href="{{ route('warehouses.show', $child) }}" class="badge bg-light text-dark border p-2 text-decoration-none hover-shadow-sm">
-                                        <i class="bi bi-diagram-3-fill me-1 text-primary"></i> {{ $child->name }}
-                                    </a>
-                                @endforeach
-                            </div>
+            <!-- Subwarehouses Section (Only for CENTRAL type) -->
+            @if($warehouse->type === 'CENTRAL')
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-diagram-3-fill text-primary me-2"></i> Sub-Warehouses</h5>
+                </div>
+                <div class="card-body">
+                    @if($warehouse->children->isEmpty())
+                        <p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i> No sub-warehouses created for this warehouse.</p>
+                    @else
+                        <div class="row row-cols-1 row-cols-sm-2 g-3">
+                            @foreach($warehouse->children as $child)
+                                <div class="col">
+                                    <div class="card h-100 border-0 bg-light">
+                                        <div class="card-body d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1 fw-bold">{{ $child->name }}</h6>
+                                                <small class="text-muted">{{ $child->status }}</small>
+                                            </div>
+                                            <a href="{{ route('warehouses.show', $child) }}" class="btn btn-sm btn-outline-primary">
+                                                View <i class="bi bi-arrow-right ms-1"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
-                    </div>
                     @endif
                 </div>
             </div>
+            @endif
 
             <!-- List of Assigned Loggers Section -->
             <div class="card mb-4">
