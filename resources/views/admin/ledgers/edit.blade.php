@@ -62,7 +62,11 @@
                                 <select name="warehouse_id" id="warehouse_id" class="form-select shadow-sm" required>
                                     @foreach($warehouses as $wh)
                                         <option value="{{ $wh->id }}" data-is-central="{{ $wh->type !== 'SITE' ? 'true' : 'false' }}" {{ $ledger->warehouse_id == $wh->id ? 'selected' : '' }}>
-                                            {{ $wh->name }}
+                                            @if($wh->parent)
+                                                {{ $wh->parent->name }} &gt; {{ $wh->name }}
+                                            @else
+                                                {{ $wh->name }}
+                                            @endif
                                         </option>
                                     @endforeach
                                 </select>

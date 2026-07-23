@@ -38,7 +38,7 @@ class WarehouseController extends Controller
         }
 
         $warehouse->load(['project', 'loggers', 'allocations', 'parent', 'children']);
-        $availableLoggers = User::where('role', 'logger')
+        $availableLoggers = User::whereIn('role', ['logger', 'viewer'])
             ->whereDoesntHave('warehouses', function ($query) use ($warehouse) {
                 $query->where('warehouses.id', $warehouse->id);
             })->get();
@@ -77,7 +77,7 @@ class WarehouseController extends Controller
     public function create()
     {
         $projects = Project::all();
-        $loggers = User::where('role', 'logger')->get();
+        $loggers = User::whereIn('role', ['logger', 'viewer'])->get();
         $parentWarehouses = Warehouse::where('type', 'CENTRAL')
             ->whereNull('parent_id')
             ->active()
@@ -120,7 +120,7 @@ class WarehouseController extends Controller
             $warehouse = Warehouse::findOrFail($warehouse);
         }
         $projects = Project::all();
-        $loggers = User::where('role', 'logger')->get();
+        $loggers = User::whereIn('role', ['logger', 'viewer'])->get();
         $parentWarehouses = Warehouse::where('type', 'CENTRAL')
             ->whereNull('parent_id')
             ->where('id', '!=', $warehouse->id)

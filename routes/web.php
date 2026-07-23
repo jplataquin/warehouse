@@ -38,10 +38,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/search', [SearchController::class, 'index'])->name('global.search');
     Route::get('/warehouses/{warehouse}/dashboard', [DashboardController::class, 'warehouseDashboard'])
         ->name('logger.warehouse.dashboard')
-        ->middleware('logger');
+        ->middleware('viewer_access');
     Route::get('/logger/rules', [DashboardController::class, 'loggerRules'])
         ->name('logger.rules')
-        ->middleware('logger');
+        ->middleware('viewer_access');
     Route::get('/logger/items/create', [ItemController::class, 'loggerCreate'])
         ->name('logger.items.create')
         ->middleware('logger');

@@ -19,6 +19,7 @@
                     <label class="form-label">Role</label>
                     <select name="role" class="form-select" required>
                         <option value="logger">Logger</option>
+                        <option value="viewer">Viewer</option>
                         <option value="supervisor">Supervisor</option>
                         <option value="admin">Admin</option>
                     </select>

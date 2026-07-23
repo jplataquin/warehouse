@@ -17,6 +17,8 @@
                 
                 @if(Auth::user()->isLogger())
                     <p>Select a warehouse from the sidebar to view its dashboard and manage entries.</p>
+                @elseif(Auth::user()->isViewer())
+                    <p>Select a warehouse from the sidebar to view its dashboard.</p>
                 @else
                     <p>You are logged in as <strong>{{ ucfirst(Auth::user()->role) }}</strong>.</p>
                     <p>Use the navigation menu to manage projects, warehouses, and items.</p>

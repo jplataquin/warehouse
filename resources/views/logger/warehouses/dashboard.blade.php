@@ -8,7 +8,7 @@
     </div>
     <div class="card-body">
         <div class="row">
-            <div class="col-md-8 border-end mb-2">
+            <div class="@if(Auth::user()->isViewer()) col-md-10 @else col-md-8 @endif border-end mb-2">
                 <h5 class="text-muted small text-uppercase fw-bold">Project</h5>
                 <p class="text-dark mb-2 text-truncate" title="{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}">{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}</p>
 
@@ -49,10 +49,11 @@
                     </div>
                 @endif
             </div>
-            <div class="col-md-2 border-end mb-2">
+            <div class="col-md-2 @unless(Auth::user()->isViewer()) border-end @endunless mb-2">
                 <h5 class="text-muted small text-uppercase fw-bold">Item Count</h5>
                 <p class="fw-bold text-primary mb-0 fs-5">{{ $items->count() }}</p>
             </div>
+            @unless(Auth::user()->isViewer())
             <div class="col-md-2 mb-2">
                 <h5 class="text-muted small text-uppercase fw-bold">Quick Actions</h5>
                 <div class="d-flex flex-column gap-2">
@@ -69,6 +70,7 @@
                     @endif
                 </div>
             </div>
+            @endunless
         </div>
     </div>
 </div>

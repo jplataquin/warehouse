@@ -28,6 +28,8 @@
                     ADMIN CONSOLE
                 @elseif(Auth::user()->isSupervisor())
                     SUPERVISOR CONSOLE
+                @elseif(Auth::user()->isViewer())
+                    VIEWER CONSOLE
                 @else
                     LOGGER CONSOLE
                 @endif
@@ -92,7 +94,7 @@
                         </li>
                     @endif
                 @endif
-                @if(Auth::user()->isLogger())
+                @if(Auth::user()->isLogger() || Auth::user()->isViewer())
                     <li class="nav-item">
                         <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('items.assets') }}">Assets</a>
                     </li>
@@ -101,7 +103,7 @@
 
             <!-- Right Side User & Badges -->
             <div class="navbar-nav ms-auto align-items-lg-center gap-2">
-                @if(isset($warehouse) && Auth::user()->isLogger())
+                @if(isset($warehouse) && (Auth::user()->isLogger() || Auth::user()->isViewer()))
                     <a href="{{ route('logger.warehouse.dashboard', $warehouse) }}" class="badge bg-primary py-2 px-3 text-decoration-none hover-opacity text-white">
                         <i class="bi bi-geo-alt-fill me-1"></i> {{ $warehouse->name }}
                     </a>
@@ -130,7 +132,7 @@
 
 <div class="container-fluid px-4" style="margin-top: 80px;">
     <div class="row">
-        @if(Auth::check() && Auth::user()->role === 'logger')
+        @if(Auth::check() && (Auth::user()->role === 'logger' || Auth::user()->role === 'viewer'))
             <div class="col-md-3 mb-4">
                 <div class="sticky-top" style="top: 80px; max-height: calc(100vh - 100px); overflow-y: auto;">
                     @php

@@ -36,9 +36,9 @@
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
                         @auth
-                            @if(Auth::user()->isLogger())
+                            @if(Auth::user()->isLogger() || Auth::user()->isViewer())
                                 <li class="nav-item">
-                                    <a class="nav-link fw-bold text-primary" href="{{ route('home') }}"><i class="bi bi-person-badge me-1"></i> Logger Console</a>
+                                    <a class="nav-link fw-bold text-primary" href="{{ route('home') }}"><i class="bi bi-person-badge me-1"></i> {{ Auth::user()->isViewer() ? 'Viewer Console' : 'Logger Console' }}</a>
                                 </li>
                             @endif
                             <li class="nav-item">

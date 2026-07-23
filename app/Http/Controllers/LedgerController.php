@@ -158,8 +158,8 @@ class LedgerController extends Controller
 
     public function create(Request $request)
     {
-        if (auth()->user()->isSupervisor()) {
-            abort(403, 'Supervisors are not allowed to add entries.');
+        if (auth()->user()->isSupervisor() || auth()->user()->isViewer()) {
+            abort(403, 'Unauthorized action.');
         }
 
         $selectedWarehouseId = $request->warehouse_id;
@@ -187,8 +187,8 @@ class LedgerController extends Controller
 
     public function store(Request $request)
     {
-        if (auth()->user()->isSupervisor()) {
-            abort(403, 'Supervisors are not allowed to add entries.');
+        if (auth()->user()->isSupervisor() || auth()->user()->isViewer()) {
+            abort(403, 'Unauthorized action.');
         }
 
         $validated = $request->validate([
@@ -386,6 +386,9 @@ class LedgerController extends Controller
     private function getRoleView($viewName)
     {
         $role = auth()->user()->role;
+        if ($role === 'viewer') {
+            $role = 'logger';
+        }
 
         return "{$role}.ledgers.{$viewName}";
     }

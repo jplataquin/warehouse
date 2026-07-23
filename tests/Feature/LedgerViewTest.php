@@ -95,4 +95,22 @@ class LedgerViewTest extends TestCase
         $response->assertDontSee('Heavy Excavator');
         $response->assertSee('Safety Gloves');
     }
+
+    public function test_sub_warehouse_text_format_in_ledger_warehouse_select()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $parent = Warehouse::create(['name' => 'Parent Warehouse', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $sub = Warehouse::create([
+            'name' => 'Sub Warehouse',
+            'type' => 'SITE',
+            'status' => 'ACTIVE',
+            'parent_id' => $parent->id,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('ledgers.index'));
+
+        $response->assertStatus(200);
+        // It should display Parent Warehouse > Sub Warehouse for the sub warehouse
+        $response->assertSee('Parent Warehouse &gt; Sub Warehouse', false);
+    }
 }

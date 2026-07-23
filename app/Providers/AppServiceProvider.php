@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
         Paginator::useBootstrapFive();
 
         View::composer('logger.partials.sidebar', function ($view) {
-            if (Auth::check() && Auth::user()->role === 'logger') {
+            if (Auth::check() && (Auth::user()->role === 'logger' || Auth::user()->role === 'viewer')) {
                 $view->with('warehouses', Auth::user()->warehouses()->active()->get());
             }
         });

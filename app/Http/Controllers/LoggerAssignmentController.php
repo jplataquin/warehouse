@@ -10,7 +10,7 @@ class LoggerAssignmentController extends Controller
 {
     public function index()
     {
-        $loggers = User::where('role', 'logger')->with('warehouses')->get();
+        $loggers = User::whereIn('role', ['logger', 'viewer'])->with('warehouses')->get();
         $warehouses = Warehouse::all();
 
         return view('supervisor.assignments.index', compact('loggers', 'warehouses'));
@@ -26,8 +26,8 @@ class LoggerAssignmentController extends Controller
 
         $user = User::findOrFail($validated['user_id']);
 
-        if ($user->role !== 'logger') {
-            return back()->with('error', 'Assignments can only be made to users with the logger role.');
+        if (!in_array($user->role, ['logger', 'viewer'])) {
+            return back()->with('error', 'Assignments can only be made to users with logger or viewer roles.');
         }
 
         $user->warehouses()->sync($validated['warehouse_ids'] ?? []);

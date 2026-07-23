@@ -50,4 +50,9 @@ class User extends Authenticatable
     {
         return $this->role === 'logger';
     }
+
+    public function isViewer()
+    {
+        return $this->role === 'viewer';
+    }
 }

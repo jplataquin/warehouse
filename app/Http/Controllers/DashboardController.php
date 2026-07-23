@@ -13,7 +13,7 @@ class DashboardController extends Controller
         $user = auth()->user();
         $warehouses = [];
 
-        if ($user->role === 'logger') {
+        if ($user->role === 'logger' || $user->role === 'viewer') {
             $warehouses = $user->warehouses;
 
             return view('home', compact('warehouses'));
@@ -26,8 +26,8 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->role === 'logger') {
-            // Loggers can access a warehouse if they are explicitly assigned to it,
+        if ($user->role === 'logger' || $user->role === 'viewer') {
+            // Loggers and Viewers can access a warehouse if they are explicitly assigned to it,
             // or if they are assigned to its parent warehouse.
             $isAssigned = $user->warehouses()->where('warehouses.id', $warehouseId)->active()->exists();
 
@@ -94,7 +94,7 @@ class DashboardController extends Controller
         $user = auth()->user();
         $warehouses = [];
 
-        if ($user->role === 'logger') {
+        if ($user->role === 'logger' || $user->role === 'viewer') {
             $warehouses = $user->warehouses;
         }
 

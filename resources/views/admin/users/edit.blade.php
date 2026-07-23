@@ -20,6 +20,7 @@
                     <label class="form-label">Role</label>
                     <select name="role" class="form-select" required>
                         <option value="logger" {{ $user->role === 'logger' ? 'selected' : '' }}>Logger</option>
+                        <option value="viewer" {{ $user->role === 'viewer' ? 'selected' : '' }}>Viewer</option>
                         <option value="supervisor" {{ $user->role === 'supervisor' ? 'selected' : '' }}>Supervisor</option>
                         <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin</option>
                     </select>

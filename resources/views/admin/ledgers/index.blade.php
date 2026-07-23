@@ -46,7 +46,11 @@
                         <option value="">-- Choose Warehouse --</option>
                         @foreach($warehouses as $wh)
                             <option value="{{ $wh->id }}" {{ request('warehouse_id') == $wh->id ? 'selected' : '' }}>
-                                {{ $wh->name }}
+                                @if($wh->parent)
+                                    {{ $wh->parent->name }} &gt; {{ $wh->name }}
+                                @else
+                                    {{ $wh->name }}
+                                @endif
                             </option>
                         @endforeach
                     </select>
