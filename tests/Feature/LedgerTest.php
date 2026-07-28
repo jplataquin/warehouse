@@ -446,6 +446,48 @@ class LedgerTest extends TestCase
         $response->assertSee('Movement History');
     }
 
+    public function test_admin_can_see_edit_links_on_item_history_page()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $item->id]));
+
+        $response->assertStatus(200);
+        $response->assertSee(route('ledgers.edit', $ledger));
+    }
+
+    public function test_logger_cannot_see_edit_links_on_item_history_page()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial',
+        ]);
+
+        $response = $this->actingAs($logger)->get(route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $item->id]));
+
+        $response->assertStatus(200);
+        $response->assertDontSee(route('ledgers.edit', $ledger));
+    }
+
     public function test_item_history_print_page_is_accessible()
     {
         $admin = User::factory()->create(['role' => 'admin']);

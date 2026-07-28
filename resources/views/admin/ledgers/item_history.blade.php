@@ -119,7 +119,8 @@
                         <th>Qty</th>
                         <th>Running Balance</th>
                         <th>Reference Nos.</th>
-                        <th class="pe-4">Remarks</th>
+                        <th>Remarks</th>
+                        <th class="pe-4 text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -164,15 +165,20 @@
                                 <div class="small"><span class="text-muted">OR:</span> <span class="fw-bold">{{ $ledger->offical_receipt }}</span></div>
                             @endif
                         </td>
-                        <td class="pe-4 small text-muted">
+                        <td class="small text-muted">
                             <div class="text-truncate" style="max-width: 150px;" title="{{ $ledger->remarks }}">
                                 {{ $ledger->remarks ?? 'N/A' }}
                             </div>
                         </td>
+                        <td class="pe-4 text-end">
+                            <a href="{{ route('ledgers.edit', $ledger) }}" class="btn btn-outline-warning btn-sm shadow-sm" onclick="event.stopPropagation();">
+                                <i class="bi bi-pencil text-warning"></i> Edit
+                            </a>
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">
+                        <td colspan="9" class="text-center py-5 text-muted">
                             <i class="bi bi-search fs-2 d-block mb-3"></i>
                             No movements found for this item in this warehouse.
                         </td>
