@@ -465,6 +465,7 @@ class LedgerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee(route('ledgers.edit', $ledger));
+        $response->assertSee("#{$ledger->id}");
     }
 
     public function test_logger_cannot_see_edit_links_on_item_history_page()
@@ -493,12 +494,22 @@ class LedgerTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Gravel', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'North', 'status' => 'ACTIVE']);
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial',
+        ]);
 
         $response = $this->actingAs($admin)->get(route('ledgers.item_history.print', ['warehouse' => $warehouse->id, 'item' => $item->id]));
 
         $response->assertStatus(200);
         $response->assertSee('ITEM LEDGER');
         $response->assertSee('Gravel');
+        $response->assertSee("#{$ledger->id}");
     }
 
     public function test_utilize_action_rules()

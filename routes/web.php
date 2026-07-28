@@ -56,6 +56,7 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('logger');
 
     Route::get('items/assets', [ItemController::class, 'assets'])->name('items.assets');
+    Route::get('items/search-images', [ItemController::class, 'searchGoogleImages'])->name('items.search-images');
     Route::patch('items/{item}/status', [ItemController::class, 'updateStatus'])->name('items.update-status');
     Route::get('items/{item}/stock', [ItemController::class, 'getStock'])->name('items.stock');
 

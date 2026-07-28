@@ -106,13 +106,14 @@
             <thead class="table-dark">
                 <tr>
                     <th style="width: 10%;">Date</th>
+                    <th style="width: 6%;">ID</th>
                     <th style="width: 6%;">Type</th>
                     <th style="width: 10%;">Action</th>
-                    <th style="width: 15%;">Allocation</th>
+                    <th style="width: 13%;">Allocation</th>
                     <th style="width: 8%;">Qty</th>
                     <th style="width: 8%;">Run. Bal.</th>
-                    <th style="width: 21%;">Reference Nos.</th>
-                    <th style="width: 22%;">Remarks</th>
+                    <th style="width: 19%;">Reference Nos.</th>
+                    <th style="width: 20%;">Remarks</th>
                 </tr>
             </thead>
             <tbody>
@@ -129,6 +130,7 @@
                     <td>
                         <div class="fw-bold">{{ $ledger->entry_date ? $ledger->entry_date->format('Y-m-d') : 'N/A' }}</div>
                     </td>
+                    <td>#{{ $ledger->id }}</td>
                     <td class="text-center">
                         <span class="badge {{ $ledger->type === 'IN' ? 'badge-in' : 'badge-out' }}">
                             {{ $ledger->type }}
@@ -147,7 +149,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="8" class="text-center py-4">No records found.</td>
+                    <td colspan="9" class="text-center py-4">No records found.</td>
                 </tr>
                 @endforelse
             </tbody>

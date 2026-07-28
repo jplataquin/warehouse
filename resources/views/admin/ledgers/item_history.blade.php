@@ -113,6 +113,7 @@
                 <thead class="bg-light">
                     <tr>
                         <th class="ps-4">Date</th>
+                        <th>ID</th>
                         <th>Type</th>
                         <th>Action</th>
                         <th>Allocation</th>
@@ -136,6 +137,9 @@
                     <tr onclick="window.location='{{ route('ledgers.show', $ledger) }}'" style="cursor: pointer;" class="hover-bg-light">
                         <td class="ps-4">
                             <div class="fw-bold">{{ $ledger->entry_date ? $ledger->entry_date->format('M d, Y') : 'N/A' }}</div>
+                        </td>
+                        <td class="small text-muted">
+                            #{{ $ledger->id }}
                         </td>
                         <td>
                             <span class="badge {{ $ledger->type === 'IN' ? 'bg-success' : 'bg-danger' }} rounded-pill px-3">
@@ -178,7 +182,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="text-center py-5 text-muted">
+                        <td colspan="10" class="text-center py-5 text-muted">
                             <i class="bi bi-search fs-2 d-block mb-3"></i>
                             No movements found for this item in this warehouse.
                         </td>

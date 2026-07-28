@@ -71,6 +71,8 @@ class ItemController extends Controller
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
             'status' => 'nullable|in:Operational,Out of Order',
+            'photo_file' => 'nullable|image|max:5120',
+            'photo_url' => 'nullable|url',
         ]);
 
         $exists = Item::withTrashed()
@@ -84,6 +86,9 @@ class ItemController extends Controller
                 'name' => 'An item with this exact name, specification, and unit already exists.'
             ]);
         }
+
+        $photoPath = $this->processPhoto($request);
+        $validated['photo'] = $photoPath;
 
         Item::create($validated);
 
@@ -108,6 +113,8 @@ class ItemController extends Controller
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
             'status' => 'nullable|in:Operational,Out of Order',
+            'photo_file' => 'nullable|image|max:5120',
+            'photo_url' => 'nullable|url',
         ]);
 
         $existingItem = Item::withTrashed()
@@ -124,6 +131,10 @@ class ItemController extends Controller
         }
 
         $validated['is_approved'] = $request->has('is_approved');
+
+        $photoPath = $this->processPhoto($request, $item->photo);
+        $validated['photo'] = $photoPath;
+
         $item->update($validated);
 
         return redirect()->route('items.index', $request->query())->with('success', 'Item updated successfully.');
@@ -280,6 +291,9 @@ class ItemController extends Controller
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
             'status' => 'nullable|in:Operational,Out of Order',
+            'photo_file' => 'nullable|image|max:5120',
+            'photo_url' => 'nullable|url',
+            'photo' => 'nullable|string',
         ]);
 
         $exists = Item::withTrashed()
@@ -295,6 +309,12 @@ class ItemController extends Controller
         }
 
         $warehouseId = $request->input('warehouse_id');
+
+        $photoPath = $request->input('photo');
+        if (!$photoPath) {
+            $photoPath = $this->processPhoto($request);
+        }
+        $validated['photo'] = $photoPath;
 
         if (!$request->has('confirm')) {
             $nameSpecUnit = trim($validated['name'] . ' ' . ($validated['specification'] ?? '') . ' ' . $validated['unit']);
@@ -331,5 +351,95 @@ class ItemController extends Controller
 
         return redirect()->route('home')
             ->with('success', 'Item "' . $item->name . '" created successfully and flagged for review.');
+    }
+
+    private function processPhoto(Request $request, $currentPhoto = null)
+    {
+        if ($request->hasFile('photo_file')) {
+            if ($currentPhoto) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($currentPhoto);
+            }
+            return $request->file('photo_file')->store('items', 'public');
+        }
+
+        if ($request->filled('photo_url')) {
+            try {
+                $url = $request->input('photo_url');
+                $response = \Illuminate\Support\Facades\Http::timeout(10)->get($url);
+                if ($response->successful()) {
+                    $imageData = $response->body();
+                    $extension = 'jpg';
+                    $contentType = $response->header('Content-Type');
+                    if (str_contains($contentType, 'png')) {
+                        $extension = 'png';
+                    } elseif (str_contains($contentType, 'gif')) {
+                        $extension = 'gif';
+                    } elseif (str_contains($contentType, 'webp')) {
+                        $extension = 'webp';
+                    }
+                    $filename = 'items/' . uniqid() . '.' . $extension;
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $imageData);
+                    if ($currentPhoto) {
+                        \Illuminate\Support\Facades\Storage::disk('public')->delete($currentPhoto);
+                    }
+                    return $filename;
+                }
+            } catch (\Exception $e) {
+                \Log::error('Failed to download item photo from URL: ' . $e->getMessage());
+            }
+        }
+
+        return $currentPhoto;
+    }
+
+    public function searchGoogleImages(Request $request)
+    {
+        $request->validate([
+            'query' => 'required|string|max:100',
+        ]);
+
+        $query = $request->input('query');
+        $apiKey = config('services.google_search.api_key');
+        $cx = config('services.google_search.search_engine_id');
+
+        if (!$apiKey || !$cx) {
+            return response()->json([
+                'error' => 'Google Custom Search is not configured. Please add GOOGLE_SEARCH_API_KEY and GOOGLE_SEARCH_ENGINE_ID to your .env file.'
+            ], 400);
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::get('https://www.googleapis.com/customsearch/v1', [
+                'key' => $apiKey,
+                'cx' => $cx,
+                'q' => $query,
+                'searchType' => 'image',
+                'num' => 8,
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $items = $data['items'] ?? [];
+                
+                $results = array_map(function ($item) {
+                    return [
+                        'title' => $item['title'] ?? '',
+                        'link' => $item['link'] ?? '',
+                        'thumbnail' => $item['image']['thumbnailLink'] ?? ($item['link'] ?? ''),
+                    ];
+                }, $items);
+
+                return response()->json($results);
+            }
+
+            return response()->json([
+                'error' => 'Failed to retrieve images from Google Custom Search API: ' . $response->body()
+            ], 500);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'An error occurred while connecting to the image search service: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

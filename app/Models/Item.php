@@ -9,7 +9,7 @@ class Item extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['type', 'name', 'specification', 'unit', 'current_warehouse_id', 'status', 'is_asset_utilized', 'is_approved'];
+    protected $fillable = ['type', 'name', 'specification', 'unit', 'current_warehouse_id', 'status', 'is_asset_utilized', 'is_approved', 'photo'];
 
     protected $attributes = [
         'status' => 'Operational',

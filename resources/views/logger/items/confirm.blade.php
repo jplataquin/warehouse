@@ -79,6 +79,9 @@
                 @if($warehouseId)
                     <input type="hidden" name="warehouse_id" value="{{ $warehouseId }}">
                 @endif
+                @if(!empty($validated['photo']))
+                    <input type="hidden" name="photo" value="{{ $validated['photo'] }}">
+                @endif
 
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-warning px-4 fw-bold">

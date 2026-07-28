@@ -469,4 +469,88 @@ class ItemTest extends TestCase
         $response->assertSee('Pending Items');
         $response->assertSee('1'); // badge count
     }
+
+    public function test_supervisor_can_create_item_with_photo_file()
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        
+        $file = \Illuminate\Http\UploadedFile::fake()->create('item.jpg', 100);
+
+        $response = $this->actingAs($supervisor)->post(route('items.store'), [
+            'type' => 'CONSUMABLE',
+            'name' => 'Drill DCD771',
+            'specification' => '20V Max',
+            'unit' => 'Pcs',
+            'photo_file' => $file,
+        ]);
+
+        $response->assertRedirect(route('items.index'));
+        $item = Item::where('name', 'Drill DCD771')->first();
+        $this->assertNotNull($item);
+        $this->assertNotNull($item->photo);
+        
+        // Assert file exists in storage
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($item->photo);
+    }
+
+    public function test_supervisor_can_create_item_with_photo_url_download()
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        \Illuminate\Support\Facades\Http::fake([
+            'https://example.com/test-drill.jpg' => \Illuminate\Support\Facades\Http::response('fake_image_binary', 200, [
+                'Content-Type' => 'image/jpeg',
+            ])
+        ]);
+
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        $response = $this->actingAs($supervisor)->post(route('items.store'), [
+            'type' => 'CONSUMABLE',
+            'name' => 'Drill DCD771',
+            'specification' => '20V Max',
+            'unit' => 'Pcs',
+            'photo_url' => 'https://example.com/test-drill.jpg',
+        ]);
+
+        $response->assertRedirect(route('items.index'));
+        $item = Item::where('name', 'Drill DCD771')->first();
+        $this->assertNotNull($item);
+        $this->assertNotNull($item->photo);
+        
+        // Assert file was downloaded and saved
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($item->photo);
+        $this->assertEquals('fake_image_binary', \Illuminate\Support\Facades\Storage::disk('public')->get($item->photo));
+    }
+
+    public function test_image_search_endpoint_returns_json_results()
+    {
+        \Illuminate\Support\Facades\Http::fake([
+            'https://www.googleapis.com/customsearch/v1*' => \Illuminate\Support\Facades\Http::response([
+                'items' => [
+                    [
+                        'title' => 'Test Image',
+                        'link' => 'https://example.com/test.jpg',
+                        'image' => [
+                            'thumbnailLink' => 'https://example.com/thumb.jpg',
+                        ]
+                    ]
+                ]
+            ], 200)
+        ]);
+
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        $response = $this->actingAs($supervisor)->get(route('items.search-images', ['query' => 'Drill']));
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            [
+                'title' => 'Test Image',
+                'link' => 'https://example.com/test.jpg',
+                'thumbnail' => 'https://example.com/thumb.jpg',
+            ]
+        ]);
+    }
 }
