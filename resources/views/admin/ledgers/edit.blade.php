@@ -233,6 +233,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const unitDisplay = document.getElementById('unit-display');
     const allocationSelect = document.getElementById('allocation_id');
 
+    let allocationTomSelect = null;
+    if (allocationSelect) {
+        allocationTomSelect = new TomSelect(allocationSelect, {
+            create: false,
+            placeholder: "Select Target Allocation...",
+            sortField: {
+                field: "text",
+                direction: "asc"
+            }
+        });
+    }
+
     const initialAction = @json($ledger->action);
 
     // Event listeners
@@ -474,16 +486,35 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`/ledgers/allocations-by-warehouse?warehouse_id=${warehouseId}`);
             if (response.ok) {
                 const allocations = await response.json();
-                allocationSelect.innerHTML = '<option value="">Select Target Allocation...</option>';
-                allocations.forEach(allocation => {
-                    const el = document.createElement('option');
-                    el.value = allocation.id;
-                    el.textContent = allocation.name;
-                    if (allocation.id == @json($ledger->allocation_id)) {
-                        el.selected = true;
+                
+                if (allocationTomSelect) {
+                    allocationTomSelect.clear();
+                    allocationTomSelect.clearOptions();
+                    
+                    const options = allocations.map(allocation => ({
+                        value: allocation.id,
+                        text: allocation.name
+                    }));
+                    allocationTomSelect.addOptions(options);
+                    
+                    const selectedId = @json($ledger->allocation_id);
+                    if (selectedId && allocations.some(a => a.id == selectedId)) {
+                        allocationTomSelect.setValue(selectedId);
+                    } else {
+                        allocationTomSelect.setValue('');
                     }
-                    allocationSelect.appendChild(el);
-                });
+                } else {
+                    allocationSelect.innerHTML = '<option value="">Select Target Allocation...</option>';
+                    allocations.forEach(allocation => {
+                        const el = document.createElement('option');
+                        el.value = allocation.id;
+                        el.textContent = allocation.name;
+                        if (allocation.id == @json($ledger->allocation_id)) {
+                            el.selected = true;
+                        }
+                        allocationSelect.appendChild(el);
+                    });
+                }
             }
         } catch (error) {
             console.error('Error fetching allocations:', error);

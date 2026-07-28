@@ -881,4 +881,33 @@ class LedgerTest extends TestCase
         $response->assertSee('Cement');
         $response->assertSee('Generated on');
     }
+
+    public function test_back_to_list_button_redirects_to_item_history_on_show_page()
+    {
+        $this->withMiddleware();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $logger = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial',
+        ]);
+
+        // Assert for Admin role
+        $response = $this->actingAs($admin)->get(route('ledgers.show', $ledger));
+        $response->assertStatus(200);
+        $response->assertSee(route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $item->id]));
+
+        // Assert for Logger role
+        $response = $this->actingAs($logger)->get(route('ledgers.show', $ledger));
+        $response->assertStatus(200);
+        $response->assertSee(route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $item->id]));
+    }
 }

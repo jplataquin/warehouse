@@ -17,7 +17,7 @@
         <a href="{{ route('logger.warehouse.dashboard', $ledger->warehouse_id) }}" class="btn btn-outline-primary shadow-sm">
             <i class="bi bi-speedometer2 me-1"></i> Dashboard
         </a>
-        <a href="{{ route('ledgers.index', ['warehouse_id' => $ledger->warehouse_id, 'item_id' => $ledger->item_id]) }}" class="btn btn-outline-secondary shadow-sm">
+        <a href="{{ route('ledgers.item_history', ['warehouse' => $ledger->warehouse_id, 'item' => $ledger->item_id]) }}" class="btn btn-outline-secondary shadow-sm">
             <i class="bi bi-arrow-left"></i> Back to List
         </a>
     </div>
