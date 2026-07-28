@@ -202,10 +202,49 @@
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-end gap-2 mb-5">
-                    <a href="{{ route('ledgers.show', $ledger) }}" class="btn btn-outline-secondary px-4">Cancel</a>
-                    <button type="submit" class="btn btn-primary px-5 shadow-sm">
-                        <i class="bi bi-check-circle"></i> Update Ledger Entry
+                <div class="d-flex justify-content-between align-items-center mb-5">
+                    <div>
+                        <button type="button" class="btn btn-danger px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#deleteLedgerModal">
+                            <i class="bi bi-trash"></i> Delete Entry
+                        </button>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('ledgers.show', $ledger) }}" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                            <i class="bi bi-check-circle"></i> Update Ledger Entry
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Ledger Modal -->
+<div class="modal fade" id="deleteLedgerModal" tabindex="-1" aria-labelledby="deleteLedgerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold" id="deleteLedgerModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('ledgers.destroy', $ledger) }}" method="POST">
+                @csrf
+                @method('DELETE')
+                <div class="modal-body p-4">
+                    <p class="text-dark">Are you sure you want to soft delete this ledger entry? This action will adjust the stock balance accordingly.</p>
+                    
+                    <div class="mb-3">
+                        <label for="delete_reason" class="form-label small fw-bold text-uppercase text-muted">Reason for Deletion <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="delete_reason" name="delete_reason" rows="3" required minlength="5" placeholder="Please provide a valid reason (minimum 5 characters)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-outline-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger px-4">
+                        <i class="bi bi-trash"></i> Yes, Delete Entry
                     </button>
                 </div>
             </form>

@@ -910,4 +910,92 @@ class LedgerTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee(route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $item->id]));
     }
+
+    public function test_admin_can_soft_delete_ledger_entry_with_reason()
+    {
+        $this->withMiddleware();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial',
+        ]);
+
+        // Prior to deletion, balance should be 10
+        $this->assertEquals(10, $item->getBalance($warehouse->id));
+
+        $response = $this->actingAs($admin)->delete("/ledgers/{$ledger->id}", [
+            'delete_reason' => 'Created in error by user',
+        ]);
+
+        $response->assertRedirect(route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $item->id]));
+        $response->assertSessionHas('success');
+
+        // Check soft deletion in DB
+        $deletedLedger = Ledger::withTrashed()->find($ledger->id);
+        $this->assertNotNull($deletedLedger->deleted_at);
+        $this->assertEquals('Created in error by user', $deletedLedger->delete_reason);
+        $this->assertEquals($admin->id, $deletedLedger->deleted_by);
+
+        // Check running balance correctly excludes soft deleted ledger
+        $this->assertEquals(0, $item->getBalance($warehouse->id));
+    }
+
+    public function test_non_admin_cannot_soft_delete_ledger_entry()
+    {
+        $this->withMiddleware();
+
+        $logger = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial',
+        ]);
+
+        $response = $this->actingAs($logger)->delete("/ledgers/{$ledger->id}", [
+            'delete_reason' => 'Trying to delete as logger',
+        ]);
+
+        $response->assertStatus(403);
+        $this->assertNull($ledger->fresh()->deleted_at);
+    }
+
+    public function test_delete_requires_reason_of_at_least_five_characters()
+    {
+        $this->withMiddleware();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial',
+        ]);
+
+        // Short reason
+        $response = $this->actingAs($admin)->delete("/ledgers/{$ledger->id}", [
+            'delete_reason' => 'Oops',
+        ]);
+
+        $response->assertSessionHasErrors(['delete_reason']);
+        $this->assertNull($ledger->fresh()->deleted_at);
+    }
 }

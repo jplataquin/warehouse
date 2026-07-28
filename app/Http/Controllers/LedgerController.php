@@ -459,4 +459,33 @@ class LedgerController extends Controller
 
         return back()->with('success', 'Ledger entry approved.');
     }
+
+    public function destroy(Request $request, $ledger)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins are allowed to delete ledger entries.');
+        }
+
+        if (! ($ledger instanceof Ledger) || ! $ledger->exists) {
+            $ledger = Ledger::findOrFail(is_numeric($ledger) ? $ledger : $ledger->id);
+        }
+
+        $validated = $request->validate([
+            'delete_reason' => 'required|string|min:5|max:255',
+        ]);
+
+        try {
+            $ledger->update([
+                'delete_reason' => $validated['delete_reason'],
+                'deleted_by' => auth()->id(),
+            ]);
+
+            $ledger->delete();
+
+            return redirect()->route('ledgers.item_history', ['warehouse' => $ledger->warehouse_id, 'item' => $ledger->item_id])
+                ->with('success', 'Ledger entry soft deleted successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
 }
