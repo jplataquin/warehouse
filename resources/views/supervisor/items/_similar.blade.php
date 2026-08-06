@@ -12,7 +12,7 @@
                     <th class="py-2">Type</th>
                     <th class="py-2">Unit</th>
                     <th class="py-2">Status</th>
-                    @if(auth()->user()->isAdmin())
+                    @if(auth()->user()->isAdmin() || auth()->user()->isSupervisor())
                         <th class="text-end pe-3 py-2">Actions</th>
                     @endif
                 </tr>
@@ -37,19 +37,26 @@
                             {{ $sItem->status }}
                         </span>
                     </td>
-                    @if(auth()->user()->isAdmin())
+                    @if(auth()->user()->isAdmin() || auth()->user()->isSupervisor())
                         <td class="text-end pe-3 py-2">
-                            @php
-                                $specStr = $sItem->specification ? " ({$sItem->specification})" : "";
-                                $targetName = "ID: {$sItem->id} - {$sItem->name}{$specStr} - {$sItem->unit}";
-                            @endphp
-                            <a href="{{ route('items.merge.form', [
-                                'item' => $item->id,
-                                'target_item_id' => $sItem->id,
-                                'target_item_name' => $targetName
-                            ]) }}" class="btn btn-xs btn-outline-warning py-0 px-2 fw-bold" style="font-size: 0.75rem;" title="Merge pending item INTO this existing item">
-                                <i class="bi bi-arrow-left-right me-1"></i> Merge
-                            </a>
+                            <div class="d-inline-flex gap-1">
+                                <a href="{{ route('items.edit', $sItem) }}" class="btn btn-xs btn-outline-secondary py-0 px-2 fw-bold" style="font-size: 0.75rem;" title="Edit this item">
+                                    <i class="bi bi-pencil me-1"></i> Edit
+                                </a>
+                                @if(auth()->user()->isAdmin())
+                                    @php
+                                        $specStr = $sItem->specification ? " ({$sItem->specification})" : "";
+                                        $targetName = "ID: {$sItem->id} - {$sItem->name}{$specStr} - {$sItem->unit}";
+                                    @endphp
+                                    <a href="{{ route('items.merge.form', [
+                                        'item' => $item->id,
+                                        'target_item_id' => $sItem->id,
+                                        'target_item_name' => $targetName
+                                    ]) }}" class="btn btn-xs btn-outline-warning py-0 px-2 fw-bold" style="font-size: 0.75rem;" title="Merge pending item INTO this existing item">
+                                        <i class="bi bi-arrow-left-right me-1"></i> Merge
+                                    </a>
+                                @endif
+                            </div>
                         </td>
                     @endif
                 </tr>
