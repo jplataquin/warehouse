@@ -23,9 +23,41 @@ class ItemController extends Controller
             $query->where('type', $request->type);
         }
 
+        // Get active tab (default to 'approved' if not specified)
+        $tab = $request->query('tab', 'approved');
+        if ($tab === 'pending') {
+            $query->where('is_approved', false);
+        } else {
+            $query->where('is_approved', true);
+        }
+
         $items = $query->latest()->paginate(50)->withQueryString();
 
-        return view('supervisor.items.index', compact('items'));
+        // Count for badges based on filters
+        $approvedCountQuery = Item::query();
+        $pendingCountQuery = Item::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $approvedCountQuery->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('specification', 'LIKE', "%{$search}%");
+            });
+            $pendingCountQuery->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('specification', 'LIKE', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('type')) {
+            $approvedCountQuery->where('type', $request->type);
+            $pendingCountQuery->where('type', $request->type);
+        }
+
+        $approvedCount = $approvedCountQuery->where('is_approved', true)->count();
+        $pendingCount = $pendingCountQuery->where('is_approved', false)->count();
+
+        return view('supervisor.items.index', compact('items', 'tab', 'approvedCount', 'pendingCount'));
     }
 
     public function assets(Request $request)

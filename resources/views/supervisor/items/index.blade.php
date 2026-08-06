@@ -16,6 +16,7 @@
         </div>
         <div class="card-body">
             <form action="{{ route('items.index') }}" method="GET" class="row g-3 mb-4">
+                <input type="hidden" name="tab" value="{{ $tab }}">
                 <div class="col-md-6">
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0">
@@ -36,6 +37,25 @@
                     <button type="submit" class="btn btn-secondary w-100">Filter</button>
                 </div>
             </form>
+
+            <ul class="nav nav-tabs mb-4">
+                <li class="nav-item">
+                    <a class="nav-link {{ $tab === 'approved' ? 'active fw-bold' : '' }}" href="{{ route('items.index', array_merge(request()->except('page'), ['tab' => 'approved'])) }}">
+                        <i class="bi bi-patch-check-fill me-1 text-success"></i> Approved Items 
+                        <span class="badge bg-secondary ms-1">{{ $approvedCount }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ $tab === 'pending' ? 'active fw-bold' : '' }}" href="{{ route('items.index', array_merge(request()->except('page'), ['tab' => 'pending'])) }}">
+                        <i class="bi bi-exclamation-circle-fill me-1 text-warning"></i> Pending Review
+                        @if($pendingCount > 0)
+                            <span class="badge bg-danger ms-1">{{ $pendingCount }}</span>
+                        @else
+                            <span class="badge bg-secondary ms-1">{{ $pendingCount }}</span>
+                        @endif
+                    </a>
+                </li>
+            </ul>
 
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
