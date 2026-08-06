@@ -88,7 +88,7 @@
                         </tr>
                         <tr class="similar-row-container d-none" id="similar-row-{{ $item->id }}">
                             <td colspan="4" class="p-0 border-0">
-                                <div class="collapse similar-collapse" id="similar-collapse-{{ $item->id }}" data-item-id="{{ $item->id }}">
+                                <div class="collapse similar-collapse" id="similar-collapse-{{ $item->id }}" data-item-id="{{ $item->id }}" data-url="{{ route('items.similar', $item) }}">
                                     <div class="p-3 border-top border-bottom bg-light bg-opacity-50">
                                         <div class="d-flex justify-content-center py-3 similar-loading">
                                             <div class="spinner-border spinner-border-sm text-primary" role="status">
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Only fetch if we haven't already fetched it
             if (contentDiv.innerHTML.trim() === '') {
-                const url = collapse.closest('td').querySelector('.toggle-similar').dataset.url;
+                const url = collapse.dataset.url;
                 
                 fetch(url)
                     .then(response => response.text())
