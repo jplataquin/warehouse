@@ -23,13 +23,9 @@
                     <td class="ps-3 py-2">
                         <div class="fw-bold text-dark d-flex align-items-center gap-1">
                             <span>{{ $sItem->name }}</span>
-                            <span class="text-primary" style="font-size: 0.75rem;">#{{ $sItem->id }}</span>
                         </div>
                         @if($sItem->specification)
                             <div class="small text-muted">{{ $sItem->specification }}</div>
-                        @endif
-                        @if(!$sItem->is_approved)
-                            <span class="badge bg-warning text-dark px-2 py-1 mt-1" style="font-size: 0.65rem;"><i class="bi bi-exclamation-circle me-1"></i> Pending Review</span>
                         @endif
                     </td>
                     <td class="py-2">

@@ -149,7 +149,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetch(url)
                     .then(response => response.text())
                     .then(html => {
-                        loadingDiv.style.display = 'none';
+                        loadingDiv.classList.remove('d-flex');
+                        loadingDiv.classList.add('d-none');
                         contentDiv.innerHTML = html;
                     })
                     .catch(err => {

@@ -456,6 +456,7 @@ class ItemController extends Controller
 
         
         $similarItems = Item::where('id', '!=', $item->id)
+            ->where('is_approved', true)
             ->whereRaw("{$concatExpr} LIKE ?", ["%{$item->name}%"])
             ->limit(10)
             ->get();
