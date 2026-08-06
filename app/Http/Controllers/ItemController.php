@@ -454,11 +454,16 @@ class ItemController extends Controller
             $concatExpr = "CONCAT(name, ' ', COALESCE(specification, ''))";
         }
 
+        
+
+
+        DB::enableQueryLog();
         $similarItems = Item::where('id', '!=', $item->id)
             ->whereRaw("{$concatExpr} LIKE ?", ["%{$concatenatedQuery}%"])
             ->limit(10)
             ->get();
-
+        
+            dd(DB::getQueryLog());
         return view('supervisor.items._similar', compact('similarItems', 'item'));
     }
 }
