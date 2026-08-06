@@ -454,10 +454,10 @@ class ItemController extends Controller
             $concatExpr = "CONCAT(name, ' ', COALESCE(specification, ''))";
         }
 
-        $similarItems = Item::withTrashed()
+        $similarItems = Item::select($concatExpr.' AS item_name')
             ->where('id', '!=', $item->id)
-            ->whereRaw("{$concatExpr} LIKE ?", ["%{$concatenatedQuery}%"])
-            ->orderByRaw("{$concatExpr} ASC")
+            ->whereRaw("item_name LIKE ?", ["%{$concatenatedQuery}%"])
+            ->orderByRaw("item_name ASC")
             ->limit(10)
             ->get();
 
