@@ -442,4 +442,25 @@ class ItemController extends Controller
             ], 500);
         }
     }
+
+    public function similar(Item $item)
+    {
+        $concatenatedQuery = trim($item->name . ' ' . ($item->specification ?? ''));
+
+        $driver = \DB::connection()->getDriverName();
+        if ($driver === 'sqlite') {
+            $concatExpr = "name || ' ' || COALESCE(specification, '')";
+        } else {
+            $concatExpr = "CONCAT(name, ' ', COALESCE(specification, ''))";
+        }
+
+        $similarItems = Item::withTrashed()
+            ->where('id', '!=', $item->id)
+            ->whereRaw("{$concatExpr} LIKE ?", ["%{$concatenatedQuery}%"])
+            ->orderByRaw("{$concatExpr} ASC")
+            ->limit(10)
+            ->get();
+
+        return view('supervisor.items._similar', compact('similarItems', 'item'));
+    }
 }

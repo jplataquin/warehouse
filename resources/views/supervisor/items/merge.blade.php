@@ -85,9 +85,9 @@
                                     <i class="bi bi-search text-muted" id="search-icon"></i>
                                     <div class="spinner-border spinner-border-sm text-primary" id="search-spinner" style="display: none;" role="status"></div>
                                 </span>
-                                <input type="text" id="target-item-search" class="form-control form-control-lg border-start-0 border-opacity-50" placeholder="Type name, ID, or specification to search target..." autocomplete="off" required>
+                                <input type="text" id="target-item-search" class="form-control form-control-lg border-start-0 border-opacity-50" placeholder="Type name, ID, or specification to search target..." value="{{ old('target_item_name', request('target_item_name')) }}" autocomplete="off" required>
                             </div>
-                            <input type="hidden" name="target_item_id" id="target-item-id" value="{{ old('target_item_id') }}">
+                            <input type="hidden" name="target_item_id" id="target-item-id" value="{{ old('target_item_id', request('target_item_id')) }}">
                             
                             <!-- CUSTOM AUTOCOMPLETE DROPDOWN OVERLAY -->
                             <div id="search-results-dropdown" class="dropdown-menu shadow-lg w-100 p-0 overflow-auto" style="max-height: 280px; display: none; position: absolute; z-index: 1050; top: 100%; left: 0; border: 1px solid rgba(0,0,0,0.15);">
@@ -142,6 +142,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const isConfirmed = confirmCheckbox.checked;
         submitBtn.disabled = !(hasValidTarget && isConfirmed);
     }
+
+    // Call validity check on page load to handle pre-populated query parameters
+    checkFormValidity();
 
     itemSearch.addEventListener('input', function() {
         const query = this.value.trim();

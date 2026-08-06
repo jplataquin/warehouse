@@ -553,4 +553,45 @@ class ItemTest extends TestCase
             ]
         ]);
     }
+
+    public function test_similar_items_endpoint_returns_view_with_similar_items()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        $item1 = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Deformed Bar 16mm',
+            'specification' => '16mm x 6m',
+            'unit' => 'length',
+            'is_approved' => true,
+        ]);
+
+        $item2 = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Deformed Bar',
+            'specification' => '',
+            'unit' => 'length',
+            'is_approved' => false,
+        ]);
+
+        $item3 = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Completely Different Cement',
+            'specification' => 'Portland',
+            'unit' => 'Bags',
+            'is_approved' => true,
+        ]);
+
+        // Request similar items for item2 (should find item1 since item2's concat is "Deformed Bar" and item1's concat matches it)
+        $response = $this->actingAs($supervisor)->get(route('items.similar', $item2));
+
+        $response->assertStatus(200);
+        $response->assertViewIs('supervisor.items._similar');
+        $response->assertViewHas('similarItems');
+        
+        $similarItems = $response->viewData('similarItems');
+        $this->assertTrue($similarItems->contains($item1));
+        $this->assertFalse($similarItems->contains($item3));
+        $this->assertFalse($similarItems->contains($item2)); // should exclude itself
+    }
 }

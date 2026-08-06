@@ -105,6 +105,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::resource('items', ItemController::class);
         Route::post('items/{item}/approve', [ItemController::class, 'approve'])->name('items.approve');
+        Route::get('items/{item}/similar', [ItemController::class, 'similar'])->name('items.similar');
         Route::resource('allocations', AllocationController::class)->except(['index', 'create']);
 
         Route::get('assignments', [LoggerAssignmentController::class, 'index'])->name('assignments.index');
