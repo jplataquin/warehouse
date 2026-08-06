@@ -89,7 +89,7 @@
                                     <button type="button" class="btn btn-sm btn-outline-info toggle-similar" data-bs-toggle="collapse" data-bs-target="#similar-collapse-{{ $item->id }}" data-item-id="{{ $item->id }}" data-url="{{ route('items.similar', $item) }}" title="Show Similar Items">
                                         <i class="bi bi-layers-half me-1"></i> Similar
                                     </button>
-                                    <form action="{{ route('items.approve', $item) }}" method="POST" class="d-inline">
+                                    <form action="{{ route('items.approve', $item) }}" method="POST" class="d-inline approve-form" data-item-id="{{ $item->id }}">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-outline-success" title="Approve Item">
                                             <i class="bi bi-check-circle me-1"></i> Approve
@@ -183,6 +183,98 @@ document.addEventListener('DOMContentLoaded', function() {
         // Listen for when the accordion is fully hidden
         collapse.addEventListener('hidden.bs.collapse', function () {
             rowContainer.classList.add('d-none');
+        });
+    });
+
+    // Intercept approval form submissions
+    const approveForms = document.querySelectorAll('.approve-form');
+    approveForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const btn = form.querySelector('button[type="submit"]');
+            const originalHtml = btn.innerHTML;
+            
+            // Show loading state
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Approving...`;
+            
+            const itemId = form.dataset.itemId;
+            const url = form.getAttribute('action');
+            const token = form.querySelector('input[name="_token"]').value;
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Find rows to remove
+                    const mainRow = form.closest('tr');
+                    const similarRow = document.getElementById(`similar-row-${itemId}`);
+                    
+                    // Fade out and remove rows
+                    mainRow.style.transition = 'all 0.5s ease';
+                    mainRow.style.opacity = '0';
+                    mainRow.style.transform = 'translateX(-20px)';
+                    
+                    if (similarRow) {
+                        similarRow.style.transition = 'all 0.5s ease';
+                        similarRow.style.opacity = '0';
+                    }
+                    
+                    setTimeout(() => {
+                        mainRow.remove();
+                        if (similarRow) similarRow.remove();
+                        
+                        // If no more rows are left on the page, reload or show empty state
+                        const remainingRows = document.querySelectorAll('table tbody tr:not(.similar-row-container)');
+                        if (remainingRows.length === 0) {
+                            location.reload(); // reload to show empty state/pagination recalculation
+                        }
+                    }, 500);
+                    
+                    // Dynamic Badge Updates!
+                    const pendingBadges = document.querySelectorAll('.nav-link .badge.bg-danger, .badge.bg-danger');
+                    pendingBadges.forEach(badge => {
+                        let count = parseInt(badge.textContent.trim());
+                        if (!isNaN(count) && count > 0) {
+                            count--;
+                            badge.textContent = count;
+                            if (count === 0) {
+                                badge.className = 'badge bg-secondary ms-1';
+                            }
+                        }
+                    });
+                    
+                    const approvedBadges = document.querySelectorAll('.nav-link .badge.bg-secondary');
+                    approvedBadges.forEach(badge => {
+                        if (badge.closest('.nav-link').textContent.includes('Approved Items')) {
+                            let count = parseInt(badge.textContent.trim());
+                            if (!isNaN(count)) {
+                                count++;
+                                badge.textContent = count;
+                            }
+                        }
+                    });
+                } else {
+                    alert('Failed to approve item: ' + (data.message || 'Unknown error'));
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            })
+            .catch(err => {
+                alert('An error occurred: ' + err.message);
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            });
         });
     });
 });

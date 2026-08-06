@@ -277,9 +277,16 @@ class ItemController extends Controller
         return redirect()->route('items.index')->with('success', 'Items consolidated successfully.');
     }
 
-    public function approve(Item $item)
+    public function approve(Request $request, Item $item)
     {
         $item->update(['is_approved' => true]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Item "' . $item->name . '" has been approved.'
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Item "' . $item->name . '" has been approved.');
     }
