@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Item;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ItemController extends Controller
 {
@@ -456,15 +455,11 @@ class ItemController extends Controller
         }
 
         
-
-
-        DB::enableQueryLog();
         $similarItems = Item::where('id', '!=', $item->id)
-            ->whereRaw("{$concatExpr} LIKE ?", ["%{$concatenatedQuery}%"])
+            ->whereRaw("{$concatExpr} LIKE ?", ["%{$item->name}%"])
             ->limit(10)
             ->get();
         
-            dd(DB::getQueryLog());
         return view('supervisor.items._similar', compact('similarItems', 'item'));
     }
 }
