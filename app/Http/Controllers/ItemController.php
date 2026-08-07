@@ -438,42 +438,40 @@ class ItemController extends Controller
         ]);
 
         $query = $request->input('query');
-        $apiKey = config('services.google_search.api_key');
-        $cx = config('services.google_search.search_engine_id');
+        $apiKey = config('services.pixabay.api_key');
 
-        if (!$apiKey || !$cx) {
+        if (!$apiKey) {
             return response()->json([
-                'error' => 'Google Custom Search is not configured. Please add GOOGLE_SEARCH_API_KEY and GOOGLE_SEARCH_ENGINE_ID to your .env file.'
+                'error' => 'Pixabay API is not configured. Please add PIXABAY_API_KEY to your .env file.'
             ], 400);
         }
 
         try {
-            $response = \Illuminate\Support\Facades\Http::get('https://www.googleapis.com/customsearch/v1', [
+            $response = \Illuminate\Support\Facades\Http::get('https://pixabay.com/api/', [
                 'key' => $apiKey,
-                'cx' => $cx,
                 'q' => $query,
-                'searchType' => 'image',
-                'num' => 8,
+                'image_type' => 'photo',
+                'per_page' => 8,
             ]);
 
             if ($response->successful()) {
                 $data = $response->json();
-                $items = $data['items'] ?? [];
+                $hits = $data['hits'] ?? [];
                 
-                $results = array_map(function ($item) {
+                $results = array_map(function ($hit) {
                     return [
-                        'title' => $item['title'] ?? '',
-                        'link' => $item['link'] ?? '',
-                        'thumbnail' => $item['image']['thumbnailLink'] ?? ($item['link'] ?? ''),
+                        'title' => $hit['tags'] ?? '',
+                        'link' => $hit['webformatURL'] ?? '',
+                        'thumbnail' => $hit['previewURL'] ?? ($hit['webformatURL'] ?? ''),
                     ];
-                }, $items);
+                }, $hits);
 
                 return response()->json($results);
             }
 
             return response()->json([
-                'error' => 'Failed to retrieve images from Google Custom Search API: ' . $response->body()
-            ], 500);
+                'error' => 'Failed to retrieve images from Pixabay API: ' . $response->body()
+            ], $response->status() ?: 500);
 
         } catch (\Exception $e) {
             return response()->json([

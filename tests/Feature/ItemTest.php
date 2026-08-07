@@ -527,14 +527,12 @@ class ItemTest extends TestCase
     public function test_image_search_endpoint_returns_json_results()
     {
         \Illuminate\Support\Facades\Http::fake([
-            'https://www.googleapis.com/customsearch/v1*' => \Illuminate\Support\Facades\Http::response([
-                'items' => [
+            'https://pixabay.com/api/*' => \Illuminate\Support\Facades\Http::response([
+                'hits' => [
                     [
-                        'title' => 'Test Image',
-                        'link' => 'https://example.com/test.jpg',
-                        'image' => [
-                            'thumbnailLink' => 'https://example.com/thumb.jpg',
-                        ]
+                        'tags' => 'Test Image',
+                        'webformatURL' => 'https://example.com/test.jpg',
+                        'previewURL' => 'https://example.com/thumb.jpg',
                     ]
                 ]
             ], 200)

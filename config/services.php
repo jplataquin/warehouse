@@ -35,9 +35,8 @@ return [
         ],
     ],
 
-    'google_search' => [
-        'api_key' => env('GOOGLE_SEARCH_API_KEY'),
-        'search_engine_id' => env('GOOGLE_SEARCH_ENGINE_ID'),
+    'pixabay' => [
+        'api_key' => env('PIXABAY_API_KEY'),
     ],
 
 ];
