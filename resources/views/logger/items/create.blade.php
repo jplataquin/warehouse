@@ -72,11 +72,11 @@
                     
                     <div class="row g-3">
                         <div class="col-md-4 text-center">
-                            <div class="border rounded bg-light p-3 d-flex flex-column justify-content-center align-items-center mb-2" style="min-height: 200px;">
+                            <div id="photo-dropzone" class="border rounded bg-light p-3 d-flex flex-column justify-content-center align-items-center mb-2" style="min-height: 200px; border: 2px dashed #dee2e6 !important; transition: all 0.2s ease-in-out; cursor: pointer;">
                                 <img id="photo-preview" class="img-fluid rounded shadow-sm" style="max-height: 180px; display: none;" alt="Preview">
                                 <div id="photo-placeholder" class="text-muted">
                                     <i class="bi bi-image fs-1 d-block mb-2"></i>
-                                    <span>No photo selected</span>
+                                    <span>Drag & drop or paste photo here</span>
                                 </div>
                             </div>
                         </div>
@@ -142,9 +142,72 @@ document.addEventListener('DOMContentLoaded', function() {
     const photoUrlInput = document.getElementById('photo_url');
     const photoPreview = document.getElementById('photo-preview');
     const photoPlaceholder = document.getElementById('photo-placeholder');
+    const photoDropzone = document.getElementById('photo-dropzone');
     const webSearchQueryInput = document.getElementById('web-search-query');
     const btnWebSearch = document.getElementById('btn-web-search');
     const searchResultsContainer = document.getElementById('search-results');
+
+    // Drag & Drop event handling
+    if (photoDropzone) {
+        photoDropzone.addEventListener('click', function() {
+            photoFileInput.click();
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            photoDropzone.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                photoDropzone.classList.add('bg-primary-subtle', 'border-primary');
+                photoDropzone.style.borderColor = '#0d6efd';
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            photoDropzone.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                photoDropzone.classList.remove('bg-primary-subtle', 'border-primary');
+                photoDropzone.style.borderColor = '#dee2e6';
+            }, false);
+        });
+
+        photoDropzone.addEventListener('drop', function(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files.length > 0) {
+                const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+                if (validFiles.length > 0) {
+                    const container = new DataTransfer();
+                    container.items.add(validFiles[0]);
+                    photoFileInput.files = container.files;
+                    
+                    const event = new Event('change', { bubbles: true });
+                    photoFileInput.dispatchEvent(event);
+                }
+            }
+        }, false);
+    }
+
+    // Copy & Paste event handling
+    document.addEventListener('paste', function(e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let index in items) {
+            const item = items[index];
+            if (item.kind === 'file' && item.type.startsWith('image/')) {
+                const blob = item.getAsFile();
+                const file = new File([blob], "pasted-image.png", { type: item.type });
+                
+                const container = new DataTransfer();
+                container.items.add(file);
+                photoFileInput.files = container.files;
+                
+                const event = new Event('change', { bubbles: true });
+                photoFileInput.dispatchEvent(event);
+                
+                break;
+            }
+        }
+    });
 
     // Handle Local File Upload Preview
     photoFileInput.addEventListener('change', function() {
