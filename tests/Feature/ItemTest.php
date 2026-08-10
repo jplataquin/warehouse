@@ -368,37 +368,7 @@ class ItemTest extends TestCase
         $this->assertTrue($item->fresh()->is_approved);
     }
 
-    public function test_admin_can_access_items_review_page()
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-        Item::create([
-            'type' => 'CONSUMABLE',
-            'name' => 'Logger Item',
-            'unit' => 'Pcs',
-            'is_approved' => false,
-        ]);
-
-        $response = $this->actingAs($admin)->get(route('admin.items.review'));
-
-        $response->assertStatus(200);
-        $response->assertViewIs('admin.items.review');
-        $response->assertViewHas('items');
-        $response->assertSee('Logger Item');
-    }
-
-    public function test_non_admin_cannot_access_items_review_page()
-    {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
-        $logger = User::factory()->create(['role' => 'logger']);
-
-        $response = $this->actingAs($supervisor)->get(route('admin.items.review'));
-        $response->assertStatus(403);
-
-        $response = $this->actingAs($logger)->get(route('admin.items.review'));
-        $response->assertStatus(403);
-    }
-
-    public function test_items_review_page_only_lists_unapproved_items()
+    public function test_items_index_page_pending_tab_only_lists_unapproved_items()
     {
         $admin = User::factory()->create(['role' => 'admin']);
         Item::create([
@@ -409,45 +379,16 @@ class ItemTest extends TestCase
         ]);
         Item::create([
             'type' => 'CONSUMABLE',
-            'name' => 'Approved Item',
+            'name' => 'Some Approved Product',
             'unit' => 'Pcs',
             'is_approved' => true,
         ]);
 
-        $response = $this->actingAs($admin)->get(route('admin.items.review'));
+        $response = $this->actingAs($admin)->get(route('items.index', ['tab' => 'pending']));
 
         $response->assertStatus(200);
         $response->assertSee('Unapproved Item');
-        $response->assertDontSee('Approved Item');
-    }
-
-    public function test_items_review_page_filtering_works()
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-        Item::create([
-            'type' => 'CONSUMABLE',
-            'name' => 'Unapproved Consumable',
-            'specification' => 'Spec A',
-            'unit' => 'Pcs',
-            'is_approved' => false,
-        ]);
-        Item::create([
-            'type' => 'ASSET',
-            'name' => 'Unapproved Asset',
-            'specification' => 'Spec B',
-            'unit' => 'Pcs',
-            'is_approved' => false,
-        ]);
-
-        // Filter by Search
-        $response = $this->actingAs($admin)->get(route('admin.items.review') . '?search=Consumable');
-        $response->assertSee('Unapproved Consumable');
-        $response->assertDontSee('Unapproved Asset');
-
-        // Filter by Type
-        $response = $this->actingAs($admin)->get(route('admin.items.review') . '?type=ASSET');
-        $response->assertSee('Unapproved Asset');
-        $response->assertDontSee('Unapproved Consumable');
+        $response->assertDontSee('Some Approved Product');
     }
 
     public function test_navigation_displays_pending_items_badge_for_admin()
@@ -455,7 +396,7 @@ class ItemTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         
         $response = $this->actingAs($admin)->get(route('home'));
-        $response->assertSee('Pending Items');
+        $response->assertSee('Items');
         $response->assertDontSee('badge bg-danger rounded-pill'); // initially hidden when 0
         
         Item::create([
@@ -466,7 +407,7 @@ class ItemTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin)->get(route('home'));
-        $response->assertSee('Pending Items');
+        $response->assertSee('Items');
         $response->assertSee('1'); // badge count
     }
 

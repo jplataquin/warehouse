@@ -72,23 +72,22 @@
                         <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('assignments.index') }}">Assignments</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('items.index') }}">Items</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('items.assets') }}">Assets</a>
-                    </li>
-                    @if(Auth::user()->isAdmin())
-                        <li class="nav-item">
-                            <a class="nav-link text-white-50 small fw-bold text-uppercase p-2 d-flex align-items-center gap-1" href="{{ route('items.index', ['tab' => 'pending']) }}">
-                                Pending Items
+                        <a class="nav-link text-white-50 small fw-bold text-uppercase p-2 d-flex align-items-center gap-1" href="{{ route('items.index') }}">
+                            Items
+                            @if(Auth::user()->isAdmin())
                                 @php
                                     $pendingCount = \App\Models\Item::where('is_approved', false)->count();
                                 @endphp
                                 @if($pendingCount > 0)
                                     <span class="badge bg-danger rounded-pill" style="font-size: 0.7rem; padding: 0.25em 0.5em;">{{ $pendingCount }}</span>
                                 @endif
-                            </a>
-                        </li>
+                            @endif
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('items.assets') }}">Assets</a>
+                    </li>
+                    @if(Auth::user()->isAdmin())
                         <li class="nav-item">
                             <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('users.index') }}">Users</a>
                         </li>
