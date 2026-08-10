@@ -79,7 +79,7 @@
                     </li>
                     @if(Auth::user()->isAdmin())
                         <li class="nav-item">
-                            <a class="nav-link text-white-50 small fw-bold text-uppercase p-2 d-flex align-items-center gap-1" href="{{ route('admin.items.review') }}">
+                            <a class="nav-link text-white-50 small fw-bold text-uppercase p-2 d-flex align-items-center gap-1" href="{{ route('items.index', ['tab' => 'pending']) }}">
                                 Pending Items
                                 @php
                                     $pendingCount = \App\Models\Item::where('is_approved', false)->count();
