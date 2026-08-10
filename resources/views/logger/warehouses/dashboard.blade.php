@@ -26,7 +26,7 @@
                         <div class="mt-3" style="max-width: 300px;">
                             <h5 class="text-muted small text-uppercase fw-bold">Sub-Warehouses</h5>
                             <select class="form-select form-select-sm mt-1" onchange="if(this.value) window.location.href=this.value;">
-                                <option value="">-- Switch Sub-Warehouse --</option>
+                                <option value="{{ route('logger.warehouse.dashboard', $warehouse->parent->id) }}">-- Switch Sub-Warehouse --</option>
                                 @foreach($warehouse->parent->children as $child)
                                     <option value="{{ route('logger.warehouse.dashboard', $child->id) }}" {{ $warehouse->id == $child->id ? 'selected' : '' }}>
                                         {{ $child->name }}
@@ -39,7 +39,7 @@
                     <div class="mt-3" style="max-width: 300px;">
                         <h5 class="text-muted small text-uppercase fw-bold">Sub-Warehouses</h5>
                         <select class="form-select form-select-sm mt-1" onchange="if(this.value) window.location.href=this.value;">
-                            <option value="">-- Select Sub-Warehouse --</option>
+                            <option value="{{ route('logger.warehouse.dashboard', $warehouse->id) }}">-- Select Sub-Warehouse --</option>
                             @foreach($warehouse->children as $child)
                                 <option value="{{ route('logger.warehouse.dashboard', $child->id) }}">
                                     {{ $child->name }}

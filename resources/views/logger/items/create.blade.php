@@ -162,6 +162,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Trigger search on Enter key press
+    webSearchQueryInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            btnWebSearch.click();
+        }
+    });
+
     // Handle Web Search
     btnWebSearch.addEventListener('click', function() {
         const query = webSearchQueryInput.value.trim();
