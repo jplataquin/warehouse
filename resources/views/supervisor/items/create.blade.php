@@ -72,7 +72,7 @@
                             </div>
                             
                             <!-- Hidden native file input and temp file name -->
-                            <input type="file" name="photo_file" id="photo_file" accept="image/*" capture="environment" class="d-none">
+                            <input type="file" id="photo_file" accept="image/*" capture="environment" class="d-none">
                             <input type="hidden" name="temp_photo_file" id="temp_photo_file" value="{{ old('temp_photo_file') }}">
                         </div>
                         
