@@ -533,4 +533,81 @@ class ItemTest extends TestCase
         $this->assertFalse($similarItems->contains($item3));
         $this->assertFalse($similarItems->contains($item2)); // should exclude itself
     }
+
+    public function test_chunk_upload_flow_works_correctly()
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        
+        // Chunk 1
+        $file1 = \Illuminate\Http\UploadedFile::fake()->create('chunk1.jpg', 10);
+        $response1 = $this->actingAs($supervisor)->post(route('chunk.upload'), [
+            'file_id' => 'test_upload_123',
+            'chunk_index' => 0,
+            'total_chunks' => 2,
+            'file_name' => 'test.jpg',
+            'file_chunk' => $file1,
+        ]);
+        $response1->assertStatus(200);
+        $response1->assertJson(['success' => true]);
+
+        // Chunk 2
+        $file2 = \Illuminate\Http\UploadedFile::fake()->create('chunk2.jpg', 10);
+        $response2 = $this->actingAs($supervisor)->post(route('chunk.upload'), [
+            'file_id' => 'test_upload_123',
+            'chunk_index' => 1,
+            'total_chunks' => 2,
+            'file_name' => 'test.jpg',
+            'file_chunk' => $file2,
+        ]);
+        $response2->assertStatus(200);
+        $response2->assertJsonStructure(['success', 'temp_file_name']);
+        
+        $tempFileName = $response2->json('temp_file_name');
+        
+        // Submit item form with temp_photo_file
+        $responseStore = $this->actingAs($supervisor)->post(route('items.store'), [
+            'type' => 'CONSUMABLE',
+            'name' => 'Chunked Item Test',
+            'unit' => 'Pcs',
+            'temp_photo_file' => $tempFileName,
+        ]);
+        
+        $responseStore->assertRedirect(route('items.index'));
+        $item = Item::where('name', 'Chunked Item Test')->first();
+        $this->assertNotNull($item);
+        $this->assertNotNull($item->photo);
+        
+        // Check file exists on public disk
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($item->photo);
+    }
+
+    public function test_uploads_cleanup_command_works_correctly()
+    {
+        $tempDir = storage_path('app/temp_uploads');
+        if (!\Illuminate\Support\Facades\File::exists($tempDir)) {
+            \Illuminate\Support\Facades\File::makeDirectory($tempDir, 0755, true, true);
+        }
+        
+        // Create a fake stale file
+        $staleFile = $tempDir . '/stale_file.png';
+        file_put_contents($staleFile, 'stale content');
+        touch($staleFile, time() - 36 * 3600); // 36 hours ago
+        
+        // Create a fake fresh file
+        $freshFile = $tempDir . '/fresh_file.png';
+        file_put_contents($freshFile, 'fresh content');
+        
+        clearstatcache();
+        
+        $this->artisan('uploads:cleanup --hours=24')
+            ->assertExitCode(0);
+            
+        $this->assertFalse(\Illuminate\Support\Facades\File::exists($staleFile));
+        $this->assertTrue(\Illuminate\Support\Facades\File::exists($freshFile));
+        
+        // Clean up fresh file
+        \Illuminate\Support\Facades\File::delete($freshFile);
+    }
 }

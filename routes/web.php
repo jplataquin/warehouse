@@ -31,6 +31,7 @@ Route::get('/public/items/{item}/stock', [PublicDashboardController::class, 'get
 Auth::routes(['register' => false, 'reset' => false]);
 
 Route::middleware(['auth'])->group(function () {
+    Route::post('/chunk-upload', [\App\Http\Controllers\ChunkUploadController::class, 'upload'])->name('chunk.upload');
     Route::get('/password/change', [ChangePasswordController::class, 'showChangeForm'])->name('password.change');
     Route::post('/password/change', [ChangePasswordController::class, 'updatePassword'])->name('password.change.update');
 

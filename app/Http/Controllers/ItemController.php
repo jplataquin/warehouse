@@ -105,6 +105,7 @@ class ItemController extends Controller
             'status' => 'nullable|in:Operational,Out of Order',
             'photo_file' => 'nullable|image|max:5120',
             'photo_url' => 'nullable|url',
+            'temp_photo_file' => 'nullable|string',
         ]);
 
         $exists = Item::withTrashed()
@@ -147,6 +148,7 @@ class ItemController extends Controller
             'status' => 'nullable|in:Operational,Out of Order',
             'photo_file' => 'nullable|image|max:5120',
             'photo_url' => 'nullable|url',
+            'temp_photo_file' => 'nullable|string',
         ]);
 
         $existingItem = Item::withTrashed()
@@ -308,6 +310,7 @@ class ItemController extends Controller
             'photo_file' => 'nullable|image|max:5120',
             'photo_url' => 'nullable|url',
             'photo' => 'nullable|string',
+            'temp_photo_file' => 'nullable|string',
         ]);
 
         $exists = Item::withTrashed()
@@ -369,6 +372,28 @@ class ItemController extends Controller
 
     private function processPhoto(Request $request, $currentPhoto = null)
     {
+        if ($request->filled('temp_photo_file')) {
+            $tempFileName = $request->input('temp_photo_file');
+            $tempPath = storage_path('app/temp_uploads/' . $tempFileName);
+            
+            if (\Illuminate\Support\Facades\File::exists($tempPath)) {
+                if ($currentPhoto) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($currentPhoto);
+                }
+                
+                $extension = pathinfo($tempPath, PATHINFO_EXTENSION);
+                $newFilename = 'items/' . uniqid() . '.' . $extension;
+                
+                // Store in public disk
+                \Illuminate\Support\Facades\Storage::disk('public')->put($newFilename, file_get_contents($tempPath));
+                
+                // Delete temp file
+                \Illuminate\Support\Facades\File::delete($tempPath);
+                
+                return $newFilename;
+            }
+        }
+
         if ($request->hasFile('photo_file')) {
             if ($currentPhoto) {
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($currentPhoto);

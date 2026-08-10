@@ -60,31 +60,38 @@
                     <h5 class="fw-bold mb-3 text-secondary text-uppercase fs-6">Item Photo (Optional)</h5>
                     
                     <div class="row g-3">
-                        <div class="col-md-4 text-center">
-                            <div id="photo-dropzone" class="border rounded bg-light p-3 d-flex flex-column justify-content-center align-items-center mb-2" style="min-height: 200px; border: 2px dashed #dee2e6 !important; transition: all 0.2s ease-in-out; cursor: pointer;">
+                        <div class="col-md-6">
+                            <!-- Clickable Dropzone -->
+                            <div id="photo-dropzone" class="border rounded bg-light p-3 d-flex flex-column justify-content-center align-items-center mb-2 h-100" style="min-height: 220px; border: 2px dashed #0d6efd !important; transition: all 0.2s ease-in-out; cursor: pointer;" title="Click to select file, or drag and drop or paste image here">
                                 @if($item->photo)
-                                    <img id="photo-preview" src="{{ Storage::url($item->photo) }}" class="img-fluid rounded shadow-sm" style="max-height: 180px;" alt="Current Photo">
-                                    <div id="photo-placeholder" class="text-muted" style="display: none;">
-                                        <i class="bi bi-image fs-1 d-block mb-2"></i>
-                                        <span>Drag & drop or paste photo here</span>
+                                    <img id="photo-preview" src="{{ Storage::url($item->photo) }}" class="img-fluid rounded shadow-sm mb-2" style="max-height: 160px;" alt="Current Photo">
+                                    <div id="photo-placeholder" class="text-center text-muted p-2" style="display: none;">
+                                        <i class="bi bi-cloud-arrow-up-fill fs-1 d-block mb-2 text-primary"></i>
+                                        <span class="fw-bold d-block small">Click to upload or drag image here</span>
+                                        <span class="small text-muted d-block mt-1" style="font-size: 0.75rem;">You can also copy & paste an image directly (Ctrl+V)</span>
                                     </div>
                                 @else
-                                    <img id="photo-preview" class="img-fluid rounded shadow-sm" style="max-height: 180px; display: none;" alt="Preview">
-                                    <div id="photo-placeholder" class="text-muted">
-                                        <i class="bi bi-image fs-1 d-block mb-2"></i>
-                                        <span>Drag & drop or paste photo here</span>
+                                    <img id="photo-preview" class="img-fluid rounded shadow-sm mb-2" style="max-height: 160px; display: none;" alt="Preview">
+                                    <div id="photo-placeholder" class="text-center text-muted p-2">
+                                        <i class="bi bi-cloud-arrow-up-fill fs-1 d-block mb-2 text-primary"></i>
+                                        <span class="fw-bold d-block small">Click to upload or drag image here</span>
+                                        <span class="small text-muted d-block mt-1" style="font-size: 0.75rem;">You can also copy & paste an image directly (Ctrl+V)</span>
                                     </div>
                                 @endif
+                                <div id="upload-progress-container" class="w-100 px-3 mt-2 d-none">
+                                    <div class="progress mb-1" style="height: 8px;">
+                                        <div id="upload-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;"></div>
+                                    </div>
+                                    <span id="upload-progress-text" class="small text-muted d-block text-center" style="font-size: 0.7rem;">Uploading... 0%</span>
+                                </div>
                             </div>
+                            
+                            <!-- Hidden native file input and temp file name -->
+                            <input type="file" name="photo_file" id="photo_file" accept="image/*" capture="environment" class="d-none">
+                            <input type="hidden" name="temp_photo_file" id="temp_photo_file">
                         </div>
-                        <div class="col-md-8">
-                            <!-- Device Upload / Take Picture -->
-                            <div class="mb-3">
-                                <label class="form-label fw-bold small text-muted text-uppercase">Upload / Take Picture</label>
-                                <input type="file" name="photo_file" id="photo_file" accept="image/*" capture="environment" class="form-control">
-                                <div class="form-text small">Works with device camera on mobile, or file selector on desktop.</div>
-                            </div>
-
+                        
+                        <div class="col-md-6">
                             <!-- Google Image Search -->
                             <div class="mb-3">
                                 <label class="form-label fw-bold small text-muted text-uppercase">Search Web for a Photo</label>
@@ -198,16 +205,97 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Handle Local File Upload Preview
+    function uploadFileInChunks(file) {
+        const chunkSize = 256 * 1024; // 256KB chunks
+        const totalChunks = Math.ceil(file.size / chunkSize);
+        const fileId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+        const fileName = file.name || 'pasted-image.png';
+
+        const progressContainer = document.getElementById('upload-progress-container');
+        const progressBar = document.getElementById('upload-progress-bar');
+        const progressText = document.getElementById('upload-progress-text');
+        const tempPhotoFileInput = document.getElementById('temp_photo_file');
+
+        progressContainer.classList.remove('d-none');
+        photoPlaceholder.style.display = 'none';
+        photoPreview.style.display = 'none';
+
+        let currentChunk = 0;
+
+        function uploadNextChunk() {
+            const start = currentChunk * chunkSize;
+            const end = Math.min(start + chunkSize, file.size);
+            const chunkBlob = file.slice(start, end);
+
+            const formData = new FormData();
+            formData.append('file_id', fileId);
+            formData.append('chunk_index', currentChunk);
+            formData.append('total_chunks', totalChunks);
+            formData.append('file_name', fileName);
+            formData.append('file_chunk', chunkBlob, fileName);
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '{{ route("chunk.upload") }}', true);
+
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const overallProgress = Math.round(((currentChunk * chunkSize) + (e.loaded)) / file.size * 100);
+                    const safeProgress = Math.min(overallProgress, 99); // Show 99% until completely merged
+                    progressBar.style.width = safeProgress + '%';
+                    progressText.textContent = `Uploading... ${safeProgress}%`;
+                }
+            };
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.temp_file_name) {
+                        progressBar.style.width = '100%';
+                        progressText.textContent = 'Upload complete!';
+                        setTimeout(() => {
+                            progressContainer.classList.add('d-none');
+                            
+                            // Set hidden input with temp filename
+                            tempPhotoFileInput.value = response.temp_file_name;
+
+                            // Render local preview of the completed file
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                photoPreview.src = e.target.result;
+                                photoPreview.style.display = 'block';
+                            };
+                            reader.readAsDataURL(file);
+                        }, 500);
+                    } else {
+                        currentChunk++;
+                        if (currentChunk < totalChunks) {
+                            uploadNextChunk();
+                        }
+                    }
+                } else {
+                    alert('Chunk upload failed. Please try again.');
+                    progressContainer.classList.add('d-none');
+                    photoPlaceholder.style.display = 'block';
+                }
+            };
+
+            xhr.onerror = function() {
+                alert('Upload connection error. Please try again.');
+                progressContainer.classList.add('d-none');
+                photoPlaceholder.style.display = 'block';
+            };
+
+            xhr.send(formData);
+        }
+
+        uploadNextChunk();
+    }
+
+    // Handle Local File Upload
     photoFileInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                photoPreview.src = e.target.result;
-                photoPreview.style.display = 'block';
-                photoPlaceholder.style.display = 'none';
-            }
-            reader.readAsDataURL(this.files[0]);
+            uploadFileInChunks(this.files[0]);
             
             photoUrlInput.value = '';
             document.querySelectorAll('.search-thumb-container').forEach(el => el.classList.remove('border', 'border-primary', 'border-3'));
