@@ -95,4 +95,17 @@ class ChunkUploadController extends Controller
             'message' => 'Chunk uploaded successfully'
         ]);
     }
+
+    public function preview($filename)
+    {
+        // Prevent directory traversal attacks
+        $filename = basename($filename);
+        $path = storage_path('app/temp_uploads/' . $filename);
+        
+        if (!File::exists($path)) {
+            abort(404);
+        }
+
+        return response()->file($path);
+    }
 }

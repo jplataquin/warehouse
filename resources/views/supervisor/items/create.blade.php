@@ -73,7 +73,7 @@
                             
                             <!-- Hidden native file input and temp file name -->
                             <input type="file" name="photo_file" id="photo_file" accept="image/*" capture="environment" class="d-none">
-                            <input type="hidden" name="temp_photo_file" id="temp_photo_file">
+                            <input type="hidden" name="temp_photo_file" id="temp_photo_file" value="{{ old('temp_photo_file') }}">
                         </div>
                         
                         <div class="col-md-6">
@@ -123,9 +123,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const photoPreview = document.getElementById('photo-preview');
     const photoPlaceholder = document.getElementById('photo-placeholder');
     const photoDropzone = document.getElementById('photo-dropzone');
+    const tempPhotoFileInput = document.getElementById('temp_photo_file');
     const webSearchQueryInput = document.getElementById('web-search-query');
     const btnWebSearch = document.getElementById('btn-web-search');
     const searchResultsContainer = document.getElementById('search-results');
+
+    // Restore temp preview on load if present
+    if (tempPhotoFileInput && tempPhotoFileInput.value) {
+        photoPreview.src = `/temp-preview/${encodeURIComponent(tempPhotoFileInput.value)}`;
+        photoPreview.style.display = 'block';
+        photoPlaceholder.style.display = 'none';
+    }
 
     // Drag & Drop event handling
     if (photoDropzone) {
@@ -198,7 +206,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const progressContainer = document.getElementById('upload-progress-container');
         const progressBar = document.getElementById('upload-progress-bar');
         const progressText = document.getElementById('upload-progress-text');
-        const tempPhotoFileInput = document.getElementById('temp_photo_file');
 
         progressContainer.classList.remove('d-none');
         photoPlaceholder.style.display = 'none';
