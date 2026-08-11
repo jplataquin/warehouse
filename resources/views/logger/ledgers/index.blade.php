@@ -8,10 +8,7 @@
                 <i class="bi bi-journal-text fs-2 text-primary"></i>
             </div>
             <div>
-                <h1 class="fw-bold mb-0 text-dark">General Ledger</h1>
-                <div class="text-muted small text-uppercase fw-bold tracking-wider">
-                    {{ $selectedWarehouse ? 'Viewing stock for ' . $selectedWarehouse->name : 'Select a warehouse to view stock' }}
-                </div>
+                <h1 class="fw-bold mb-0 text-dark">Item Ledger</h1>
             </div>
         </div>
     </div>

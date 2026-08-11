@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('logger.partials.sidebar', function ($view) {
             if (Auth::check() && (Auth::user()->role === 'logger' || Auth::user()->role === 'viewer')) {
-                $view->with('warehouses', Auth::user()->warehouses()->active()->get());
+                $view->with('warehouses', Auth::user()->warehouses()->active()->whereNull('parent_id')->get());
             }
         });
     }
