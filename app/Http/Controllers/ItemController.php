@@ -103,7 +103,7 @@ class ItemController extends Controller
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
             'status' => 'nullable|in:Operational,Out of Order',
-            'photo_file' => 'nullable|image|max:5120',
+            'photo_file' => 'nullable|image|mimes:jpeg,jpg,png|max:5120',
             'photo_url' => 'nullable|url',
             'temp_photo_file' => 'nullable|string',
         ]);
@@ -146,7 +146,7 @@ class ItemController extends Controller
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
             'status' => 'nullable|in:Operational,Out of Order',
-            'photo_file' => 'nullable|image|max:5120',
+            'photo_file' => 'nullable|image|mimes:jpeg,jpg,png|max:5120',
             'photo_url' => 'nullable|url',
             'temp_photo_file' => 'nullable|string',
         ]);
@@ -307,7 +307,7 @@ class ItemController extends Controller
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
             'status' => 'nullable|in:Operational,Out of Order',
-            'photo_file' => 'nullable|image|max:5120',
+            'photo_file' => 'nullable|image|mimes:jpeg,jpg,png|max:5120',
             'photo_url' => 'nullable|url',
             'photo' => 'nullable|string',
             'temp_photo_file' => 'nullable|string',

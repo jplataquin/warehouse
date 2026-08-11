@@ -56,28 +56,35 @@
                     <div class="form-text">Check this to mark this item as approved and verified.</div>
                 </div>
 
+                @if($item->photo)
+                    <div class="mb-4 border-top pt-4">
+                        <h5 class="fw-bold mb-3 text-secondary text-uppercase fs-6"><i class="bi bi-image me-1"></i> Current Displayed Photo</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0 shadow-sm overflow-hidden" style="max-width: 320px; border-radius: 12px;">
+                                    <img src="{{ Storage::url($item->photo) }}" class="card-img-top img-fluid" style="max-height: 240px; object-fit: contain; background-color: #f8f9fa;" alt="Current Photo">
+                                    <div class="card-body p-2 bg-white text-center border-top">
+                                        <span class="small text-muted"><i class="bi bi-check-circle-fill text-success me-1"></i> Active Item Image</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="mb-4 border-top pt-4">
-                    <h5 class="fw-bold mb-3 text-secondary text-uppercase fs-6">Item Photo (Optional)</h5>
+                    <h5 class="fw-bold mb-3 text-secondary text-uppercase fs-6">Replace Item Photo (Optional)</h5>
                     
                     <div class="row g-3">
                         <div class="col-md-6">
                             <!-- Clickable Dropzone -->
                             <div id="photo-dropzone" class="border rounded bg-light p-3 d-flex flex-column justify-content-center align-items-center mb-2 h-100" style="min-height: 220px; border: 2px dashed #0d6efd !important; transition: all 0.2s ease-in-out; cursor: pointer;" title="Click to select file, or drag and drop or paste image here">
-                                @if($item->photo)
-                                    <img id="photo-preview" src="{{ Storage::url($item->photo) }}" class="img-fluid rounded shadow-sm mb-2" style="max-height: 160px;" alt="Current Photo">
-                                    <div id="photo-placeholder" class="text-center text-muted p-2" style="display: none;">
-                                        <i class="bi bi-cloud-arrow-up-fill fs-1 d-block mb-2 text-primary"></i>
-                                        <span class="fw-bold d-block small">Click to upload or drag image here</span>
-                                        <span class="small text-muted d-block mt-1" style="font-size: 0.75rem;">You can also copy & paste an image directly (Ctrl+V)</span>
-                                    </div>
-                                @else
-                                    <img id="photo-preview" class="img-fluid rounded shadow-sm mb-2" style="max-height: 160px; display: none;" alt="Preview">
-                                    <div id="photo-placeholder" class="text-center text-muted p-2">
-                                        <i class="bi bi-cloud-arrow-up-fill fs-1 d-block mb-2 text-primary"></i>
-                                        <span class="fw-bold d-block small">Click to upload or drag image here</span>
-                                        <span class="small text-muted d-block mt-1" style="font-size: 0.75rem;">You can also copy & paste an image directly (Ctrl+V)</span>
-                                    </div>
-                                @endif
+                                <img id="photo-preview" class="img-fluid rounded shadow-sm mb-2" style="max-height: 160px; display: none;" alt="Preview">
+                                <div id="photo-placeholder" class="text-center text-muted p-2">
+                                    <i class="bi bi-cloud-arrow-up-fill fs-1 d-block mb-2 text-primary"></i>
+                                    <span class="fw-bold d-block small">Click to upload or drag image here</span>
+                                    <span class="small text-muted d-block mt-1" style="font-size: 0.75rem;">You can also copy & paste an image directly (Ctrl+V)</span>
+                                </div>
                                 <div id="upload-progress-container" class="w-100 px-3 mt-2 d-none">
                                     <div class="progress mb-1" style="height: 8px;">
                                         <div id="upload-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;"></div>
@@ -87,7 +94,7 @@
                             </div>
                             
                             <!-- Hidden native file input and temp file name -->
-                            <input type="file" id="photo_file" accept="image/*" capture="environment" class="d-none">
+                            <input type="file" id="photo_file" accept=".jpeg,.jpg,.png,image/jpeg,image/png" capture="environment" class="d-none">
                             <input type="hidden" name="temp_photo_file" id="temp_photo_file" value="{{ old('temp_photo_file') }}">
                         </div>
                         
@@ -110,7 +117,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Update Item</button>
+                <button type="submit" id="btn-submit" class="btn btn-primary">Update Item</button>
                 <a href="{{ route('items.index', request()->query()) }}" class="btn btn-secondary">Cancel</a>
             </form>
         </div>
@@ -214,6 +221,30 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function uploadFileInChunks(file) {
+        // Validate file type
+        const allowedExtensions = /(\.jpg|\.jpeg|\.png)$/i;
+        const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedExtensions.exec(file.name) || (file.type && !allowedMimeTypes.includes(file.type))) {
+            alert('Error: Only jpeg, jpg, and png formats are allowed.');
+            photoFileInput.value = '';
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Error: File size cannot exceed 5MB.');
+            photoFileInput.value = '';
+            return;
+        }
+
+        const submitButton = document.getElementById('btn-submit');
+        let originalSubmitHtml = '';
+        if (submitButton) {
+            originalSubmitHtml = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Uploading Image...`;
+        }
+
         const chunkSize = 256 * 1024; // 256KB chunks
         const totalChunks = Math.ceil(file.size / chunkSize);
         const fileId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
@@ -266,6 +297,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Set hidden input with temp filename
                             tempPhotoFileInput.value = response.temp_file_name;
 
+                            // Re-enable submit button
+                            if (submitButton) {
+                                submitButton.disabled = false;
+                                submitButton.innerHTML = originalSubmitHtml;
+                            }
+
                             // Render local preview of the completed file
                             const reader = new FileReader();
                             reader.onload = function(e) {
@@ -284,6 +321,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Chunk upload failed. Please try again.');
                     progressContainer.classList.add('d-none');
                     photoPlaceholder.style.display = 'block';
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalSubmitHtml;
+                    }
                 }
             };
 
@@ -291,6 +332,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Upload connection error. Please try again.');
                 progressContainer.classList.add('d-none');
                 photoPlaceholder.style.display = 'block';
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalSubmitHtml;
+                }
             };
 
             xhr.send(formData);

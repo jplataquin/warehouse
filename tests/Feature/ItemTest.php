@@ -678,4 +678,46 @@ class ItemTest extends TestCase
         $this->assertStringStartsWith('RIFF', $content);
         $this->assertStringContainsString('WEBP', $content);
     }
+
+    public function test_supervisor_cannot_upload_invalid_photo_extension()
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        
+        $file = \Illuminate\Http\UploadedFile::fake()->image('item.gif');
+
+        $response = $this->actingAs($supervisor)->post(route('items.store'), [
+            'type' => 'CONSUMABLE',
+            'name' => 'Drill DCD771 GIF',
+            'specification' => '20V Max',
+            'unit' => 'Pcs',
+            'photo_file' => $file,
+        ]);
+
+        $response->assertSessionHasErrors(['photo_file']);
+        $item = Item::where('name', 'Drill DCD771 GIF')->first();
+        $this->assertNull($item);
+    }
+
+    public function test_supervisor_cannot_upload_photo_exceeding_5mb()
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        
+        $file = \Illuminate\Http\UploadedFile::fake()->image('item.png')->size(6000);
+
+        $response = $this->actingAs($supervisor)->post(route('items.store'), [
+            'type' => 'CONSUMABLE',
+            'name' => 'Drill DCD771 Huge',
+            'specification' => '20V Max',
+            'unit' => 'Pcs',
+            'photo_file' => $file,
+        ]);
+
+        $response->assertSessionHasErrors(['photo_file']);
+        $item = Item::where('name', 'Drill DCD771 Huge')->first();
+        $this->assertNull($item);
+    }
 }

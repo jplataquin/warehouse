@@ -89,7 +89,7 @@
                             </div>
                             
                             <!-- Hidden native file input and temp file name -->
-                            <input type="file" id="photo_file" accept="image/*" capture="environment" class="d-none">
+                            <input type="file" id="photo_file" accept=".jpeg,.jpg,.png,image/jpeg,image/png" capture="environment" class="d-none">
                             <input type="hidden" name="temp_photo_file" id="temp_photo_file" value="{{ old('temp_photo_file') }}">
                         </div>
                         
@@ -113,7 +113,7 @@
                 </div>
 
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" id="btn-submit" class="btn btn-primary">
                         <i class="bi bi-save me-1"></i> Create Item
                     </button>
                     @if($warehouseId)
@@ -224,6 +224,30 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function uploadFileInChunks(file) {
+        // Validate file type
+        const allowedExtensions = /(\.jpg|\.jpeg|\.png)$/i;
+        const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedExtensions.exec(file.name) || (file.type && !allowedMimeTypes.includes(file.type))) {
+            alert('Error: Only jpeg, jpg, and png formats are allowed.');
+            photoFileInput.value = '';
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Error: File size cannot exceed 5MB.');
+            photoFileInput.value = '';
+            return;
+        }
+
+        const submitButton = document.getElementById('btn-submit');
+        let originalSubmitHtml = '';
+        if (submitButton) {
+            originalSubmitHtml = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Uploading Image...`;
+        }
+
         const chunkSize = 256 * 1024; // 256KB chunks
         const totalChunks = Math.ceil(file.size / chunkSize);
         const fileId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
@@ -276,6 +300,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Set hidden input with temp filename
                             tempPhotoFileInput.value = response.temp_file_name;
 
+                            // Re-enable submit button
+                            if (submitButton) {
+                                submitButton.disabled = false;
+                                submitButton.innerHTML = originalSubmitHtml;
+                            }
+
                             // Render local preview of the completed file
                             const reader = new FileReader();
                             reader.onload = function(e) {
@@ -294,6 +324,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Chunk upload failed. Please try again.');
                     progressContainer.classList.add('d-none');
                     photoPlaceholder.style.display = 'block';
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalSubmitHtml;
+                    }
                 }
             };
 
@@ -301,6 +335,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Upload connection error. Please try again.');
                 progressContainer.classList.add('d-none');
                 photoPlaceholder.style.display = 'block';
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalSubmitHtml;
+                }
             };
 
             xhr.send(formData);
