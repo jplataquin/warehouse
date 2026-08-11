@@ -90,6 +90,17 @@
     </div>
 
     <div class="col-lg-4">
+        @if($ledger->item->photo)
+        <div class="card border-0 shadow-sm mb-4 overflow-hidden" style="border-radius: 12px;">
+            <div class="card-header bg-white py-3">
+                <span class="fw-bold text-secondary text-uppercase small tracking-wide"><i class="bi bi-image me-1"></i> Item Photo</span>
+            </div>
+            <div class="card-body p-0 text-center bg-light">
+                <img src="{{ Storage::url($ledger->item->photo) }}" class="img-fluid" style="max-height: 240px; object-fit: contain; width: 100%;" alt="{{ $ledger->item->name }}">
+            </div>
+        </div>
+        @endif
+
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white py-3">
                 <span class="fw-bold text-secondary text-uppercase small tracking-wide">Extended Details</span>

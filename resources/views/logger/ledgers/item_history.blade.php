@@ -3,15 +3,19 @@
 @section('inner_content')
 <div class="row mb-4 align-items-center">
     <div class="col-md-8">
-        <div class="d-flex align-items-center">
-            <a href="{{ route('ledgers.index', ['warehouse_id' => $warehouse->id]) }}" class="btn btn-outline-secondary btn-sm me-3 rounded-circle">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ route('ledgers.index', ['warehouse_id' => $warehouse->id]) }}" class="btn btn-outline-secondary btn-sm me-1 rounded-circle" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
                 <i class="bi bi-arrow-left"></i>
             </a>
-            <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
-                <i class="bi bi-clock-history fs-2 text-primary"></i>
-            </div>
+            @if($item->photo)
+                <img src="{{ Storage::url($item->photo) }}" class="rounded shadow-sm border" style="width: 50px; height: 50px; object-fit: cover;" alt="{{ $item->name }}">
+            @else
+                <div class="bg-primary bg-opacity-10 p-3 rounded-circle" style="width: 50px; height: 50px; display: inline-flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-clock-history fs-3 text-primary"></i>
+                </div>
+            @endif
             <div>
-                <h1 class="fw-bold mb-0 text-dark">{{ $item->name }}</h1>
+                <h1 class="fw-bold mb-0 text-dark" style="font-size: 1.75rem;">{{ $item->name }}</h1>
                 <div class="text-muted small text-uppercase fw-bold tracking-wider">
                     <i class="bi bi-building me-1"></i> {{ $warehouse->name }} • {{ $item->specification }}
                 </div>

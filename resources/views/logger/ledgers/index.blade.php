@@ -29,7 +29,10 @@
     <div class="card-body p-4">
         <div class="row align-items-center">
             <div class="col-md-{{ $item->type === 'ASSET' ? '5' : '8' }}">
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    @if($item->photo)
+                        <img src="{{ Storage::url($item->photo) }}" class="rounded shadow-sm border border-white border-2" style="width: 60px; height: 60px; object-fit: cover;" alt="{{ $item->name }}">
+                    @endif
                     <div>
                         <h4 class="fw-bold mb-1">{{ $item->name }}</h4>
                         <div class="opacity-75 small text-uppercase fw-bold tracking-wider">
@@ -52,7 +55,7 @@
             </div>
             @endif
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                <div class="small text-white-50 text-uppercase fw-bold mb-1">Current Stock in {{ $selectedWarehouse->name }}</div>
+                <div class="small text-white-50 text-uppercase fw-bold mb-1">Current Stock</div>
                 <div class="h2 mb-0 fw-bold">
                     {{ number_format($balance, 2) }} <span class="fs-5 fw-normal opacity-75">{{ $item->unit }}</span>
                 </div>
