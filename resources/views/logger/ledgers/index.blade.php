@@ -22,7 +22,7 @@
 </div>
 
 @if($item)
-<div class="card shadow-sm border-0 mb-4 bg-primary text-white overflow-hidden">
+<div class="card shadow-sm border-0 mb-4 bg-primary text-white overflow-hidden" style="position:sticky; top:55px; z-index: 10">
     <div class="card-body p-0">
         <div class="row g-0 align-items-center">
             @if($item->photo)

@@ -12,7 +12,7 @@
         <div class="col-lg-10">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h3 class="fw-bold text-primary mb-0"><i class="bi bi-journal-plus"></i> {{ __('Unified Ledger Entry') }}</h3>
+                    <h3 class="fw-bold text-primary mb-0"><i class="bi bi-journal-plus"></i> {{ __('Ledger Entry') }}</h3>
                     @if($warehouse && $warehouse->project)
                         <div class="text-muted mt-1"><i class="bi bi-building me-1"></i> Assigned Project: <strong>{{ $warehouse->project->name }}</strong></div>
                     @endif
