@@ -19,7 +19,7 @@
                     </select>
                 </div>
 
-                <div class="mb-3">
+                <div class="mb-3" id="warehouse-assignment-section" style="display: none;">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <label class="form-label mb-0">Assign Warehouses</label>
                         @if(!$warehouses->isEmpty())
@@ -103,6 +103,8 @@
         }
 
         loggerSelect.addEventListener('change', function() {
+            toggleAssignmentSection();
+
             const selectedOption = this.options[this.selectedIndex];
             if (!selectedOption.value) {
                 checkboxes.forEach(cb => cb.checked = false);
@@ -116,6 +118,17 @@
             });
             updateSelectAllState();
         });
+
+        function toggleAssignmentSection() {
+            const section = document.getElementById('warehouse-assignment-section');
+            if (section) {
+                if (loggerSelect.value) {
+                    section.style.display = 'block';
+                } else {
+                    section.style.display = 'none';
+                }
+            }
+        }
 
         function updateSelectAllState() {
             if (!selectAllCheckbox) return;
@@ -132,6 +145,9 @@
                 selectAllCheckbox.indeterminate = true;
             }
         }
+
+        // Initialize state on load
+        toggleAssignmentSection();
     });
 </script>
 @endsection
