@@ -25,36 +25,38 @@
 </div>
 
 @if($item)
-<div class="card shadow-sm border-0 mb-4 bg-primary text-white">
-    <div class="card-body p-4">
-        <div class="row align-items-center">
-            <div class="col-md-{{ $item->type === 'ASSET' ? '5' : '8' }}">
-                <div class="d-flex align-items-center gap-3">
-                    @if($item->photo)
-                        <img src="{{ Storage::url($item->photo) }}" class="rounded shadow-sm border border-white border-2" style="width: 60px; height: 60px; object-fit: cover;" alt="{{ $item->name }}">
-                    @endif
-                    <div>
+<div class="card shadow-sm border-0 mb-4 bg-primary text-white overflow-hidden">
+    <div class="card-body p-0">
+        <div class="row g-0 align-items-center">
+            @if($item->photo)
+                <div class="col-md-auto text-center mx-auto" style="width: 300px; height: 300px;">
+                    <img src="{{ Storage::url($item->photo) }}" class="img-fluid h-100 w-100" style="object-fit: cover;" alt="{{ $item->name }}">
+                </div>
+            @endif
+            <div class="col p-4">
+                <div class="row align-items-center">
+                    <div class="col-md-{{ $item->type === 'ASSET' ? '7' : '12' }}">
                         <h4 class="fw-bold mb-1">{{ $item->name }}</h4>
                         <div class="opacity-75 small text-uppercase fw-bold tracking-wider">
                             {{ $item->type }} • {{ $item->specification ?? 'No Specification' }}
                         </div>
                     </div>
+                    @if($item->type === 'ASSET')
+                    <div class="col-md-5 mt-3 mt-md-0">
+                        <form action="{{ route('items.update-status', $item) }}" method="POST" class="d-inline-block text-start w-100">
+                            @csrf
+                            @method('PATCH')
+                            <div class="small text-white-50 text-uppercase fw-bold mb-1">Asset Status</div>
+                            <select name="status" class="form-select form-select-sm bg-white text-dark border-0 fw-bold py-2" onchange="this.form.submit()">
+                                <option value="Operational" {{ $item->status === 'Operational' ? 'selected' : '' }}>Operational</option>
+                                <option value="Out of Order" {{ $item->status === 'Out of Order' ? 'selected' : '' }}>Out of Order</option>
+                            </select>
+                        </form>
+                    </div>
+                    @endif
                 </div>
             </div>
-            @if($item->type === 'ASSET')
-            <div class="col-md-3 mt-3 mt-md-0">
-                <form action="{{ route('items.update-status', $item) }}" method="POST" class="d-inline-block text-start w-100">
-                    @csrf
-                    @method('PATCH')
-                    <div class="small text-white-50 text-uppercase fw-bold mb-1">Asset Status</div>
-                    <select name="status" class="form-select form-select-sm bg-white text-dark border-0 fw-bold py-2" onchange="this.form.submit()">
-                        <option value="Operational" {{ $item->status === 'Operational' ? 'selected' : '' }}>Operational</option>
-                        <option value="Out of Order" {{ $item->status === 'Out of Order' ? 'selected' : '' }}>Out of Order</option>
-                    </select>
-                </form>
-            </div>
-            @endif
-            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <div class="col-md-4 text-md-end p-4">
                 <div class="small text-white-50 text-uppercase fw-bold mb-1">Current Stock</div>
                 <div class="h2 mb-0 fw-bold">
                     {{ number_format($balance, 2) }} <span class="fs-5 fw-normal opacity-75">{{ $item->unit }}</span>
