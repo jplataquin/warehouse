@@ -71,13 +71,24 @@
                         @forelse($items as $item)
                         <tr>
                             <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="fw-bold text-dark">{{ $item->name }}</div>
-                                    @if(!$item->is_approved)
-                                        <span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-exclamation-circle me-1"></i> Pending Review</span>
+                                <div class="d-flex align-items-center gap-3">
+                                    @if($item->photo)
+                                        <img src="{{ Storage::url($item->photo) }}" class="rounded shadow-sm border" style="width: 40px; height: 40px; object-fit: cover;" alt="{{ $item->name }}">
+                                    @else
+                                        <div class="rounded bg-light border d-flex align-items-center justify-content-center text-muted" style="width: 40px; height: 40px;" title="No Image">
+                                            <i class="bi bi-box-seam fs-5"></i>
+                                        </div>
                                     @endif
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="fw-bold text-dark">{{ $item->name }}</div>
+                                            @if(!$item->is_approved)
+                                                <span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-exclamation-circle me-1"></i> Pending Review</span>
+                                            @endif
+                                        </div>
+                                        <div class="small text-muted">{{ $item->specification }}</div>
+                                    </div>
                                 </div>
-                                <div class="small text-muted">{{ $item->specification }}</div>
                             </td>
                             <td>
                                 <span class="badge bg-light text-dark border">{{ $item->type }}</span>

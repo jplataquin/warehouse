@@ -370,6 +370,28 @@ class ItemController extends Controller
             ->with('success', 'Item "' . $item->name . '" created successfully and flagged for review.');
     }
 
+    private function convertToWebp($imageData, $quality = 80)
+    {
+        $image = @imagecreatefromstring($imageData);
+        if ($image === false) {
+            return null;
+        }
+
+        imagealphablending($image, false);
+        imagesavealpha($image, true);
+
+        ob_start();
+        if (imagewebp($image, null, $quality)) {
+            $webpData = ob_get_clean();
+            imagedestroy($image);
+            return $webpData;
+        }
+
+        ob_end_clean();
+        imagedestroy($image);
+        return null;
+    }
+
     private function processPhoto(Request $request, $currentPhoto = null)
     {
         if ($request->filled('temp_photo_file')) {
@@ -381,13 +403,18 @@ class ItemController extends Controller
                     \Illuminate\Support\Facades\Storage::disk('public')->delete($currentPhoto);
                 }
                 
-                $extension = pathinfo($tempPath, PATHINFO_EXTENSION);
-                $newFilename = 'items/' . uniqid() . '.' . $extension;
+                $imageData = file_get_contents($tempPath);
+                $webpData = $this->convertToWebp($imageData);
                 
-                // Store in public disk
-                \Illuminate\Support\Facades\Storage::disk('public')->put($newFilename, file_get_contents($tempPath));
+                if ($webpData !== null) {
+                    $newFilename = 'items/' . uniqid() . '.webp';
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($newFilename, $webpData);
+                } else {
+                    $extension = pathinfo($tempPath, PATHINFO_EXTENSION);
+                    $newFilename = 'items/' . uniqid() . '.' . $extension;
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($newFilename, $imageData);
+                }
                 
-                // Delete temp file
                 \Illuminate\Support\Facades\File::delete($tempPath);
                 
                 return $newFilename;
@@ -398,7 +425,18 @@ class ItemController extends Controller
             if ($currentPhoto) {
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($currentPhoto);
             }
-            return $request->file('photo_file')->store('items', 'public');
+            
+            $file = $request->file('photo_file');
+            $imageData = file_get_contents($file->getRealPath());
+            $webpData = $this->convertToWebp($imageData);
+            
+            if ($webpData !== null) {
+                $newFilename = 'items/' . uniqid() . '.webp';
+                \Illuminate\Support\Facades\Storage::disk('public')->put($newFilename, $webpData);
+                return $newFilename;
+            } else {
+                return $file->store('items', 'public');
+            }
         }
 
         if ($request->filled('photo_url')) {
@@ -407,17 +445,25 @@ class ItemController extends Controller
                 $response = \Illuminate\Support\Facades\Http::timeout(10)->get($url);
                 if ($response->successful()) {
                     $imageData = $response->body();
-                    $extension = 'jpg';
-                    $contentType = $response->header('Content-Type');
-                    if (str_contains($contentType, 'png')) {
-                        $extension = 'png';
-                    } elseif (str_contains($contentType, 'gif')) {
-                        $extension = 'gif';
-                    } elseif (str_contains($contentType, 'webp')) {
-                        $extension = 'webp';
+                    $webpData = $this->convertToWebp($imageData);
+                    
+                    if ($webpData !== null) {
+                        $filename = 'items/' . uniqid() . '.webp';
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $webpData);
+                    } else {
+                        $extension = 'jpg';
+                        $contentType = $response->header('Content-Type');
+                        if (str_contains($contentType, 'png')) {
+                            $extension = 'png';
+                        } elseif (str_contains($contentType, 'gif')) {
+                            $extension = 'gif';
+                        } elseif (str_contains($contentType, 'webp')) {
+                            $extension = 'webp';
+                        }
+                        $filename = 'items/' . uniqid() . '.' . $extension;
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $imageData);
                     }
-                    $filename = 'items/' . uniqid() . '.' . $extension;
-                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $imageData);
+                    
                     if ($currentPhoto) {
                         \Illuminate\Support\Facades\Storage::disk('public')->delete($currentPhoto);
                     }

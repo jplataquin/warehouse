@@ -610,4 +610,72 @@ class ItemTest extends TestCase
         // Clean up fresh file
         \Illuminate\Support\Facades\File::delete($freshFile);
     }
+
+    public function test_supervisor_uploaded_photo_file_is_converted_to_webp()
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        
+        $file = \Illuminate\Http\UploadedFile::fake()->image('item.jpg');
+
+        $response = $this->actingAs($supervisor)->post(route('items.store'), [
+            'type' => 'CONSUMABLE',
+            'name' => 'Drill DCD771 Webp',
+            'specification' => '20V Max',
+            'unit' => 'Pcs',
+            'photo_file' => $file,
+        ]);
+
+        $response->assertRedirect(route('items.index'));
+        $item = Item::where('name', 'Drill DCD771 Webp')->first();
+        $this->assertNotNull($item);
+        $this->assertNotNull($item->photo);
+        
+        $this->assertStringEndsWith('.webp', $item->photo);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($item->photo);
+        
+        $content = \Illuminate\Support\Facades\Storage::disk('public')->get($item->photo);
+        $this->assertStringStartsWith('RIFF', $content);
+        $this->assertStringContainsString('WEBP', $content);
+    }
+
+    public function test_supervisor_downloaded_photo_url_is_converted_to_webp()
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        
+        ob_start();
+        $img = imagecreatetruecolor(10, 10);
+        imagejpeg($img);
+        $jpegBinary = ob_get_clean();
+        imagedestroy($img);
+
+        \Illuminate\Support\Facades\Http::fake([
+            'https://example.com/test-drill.jpg' => \Illuminate\Support\Facades\Http::response($jpegBinary, 200, [
+                'Content-Type' => 'image/jpeg',
+            ])
+        ]);
+
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        $response = $this->actingAs($supervisor)->post(route('items.store'), [
+            'type' => 'CONSUMABLE',
+            'name' => 'Drill DCD771 Webp URL',
+            'specification' => '20V Max',
+            'unit' => 'Pcs',
+            'photo_url' => 'https://example.com/test-drill.jpg',
+        ]);
+
+        $response->assertRedirect(route('items.index'));
+        $item = Item::where('name', 'Drill DCD771 Webp URL')->first();
+        $this->assertNotNull($item);
+        $this->assertNotNull($item->photo);
+        
+        $this->assertStringEndsWith('.webp', $item->photo);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($item->photo);
+        
+        $content = \Illuminate\Support\Facades\Storage::disk('public')->get($item->photo);
+        $this->assertStringStartsWith('RIFF', $content);
+        $this->assertStringContainsString('WEBP', $content);
+    }
 }
