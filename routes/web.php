@@ -109,8 +109,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('items/{item}/similar', [ItemController::class, 'similar'])->name('items.similar');
         Route::resource('allocations', AllocationController::class)->except(['index', 'create']);
 
-        Route::get('assignments', [LoggerAssignmentController::class, 'index'])->name('assignments.index');
-        Route::post('assignments', [LoggerAssignmentController::class, 'store'])->name('assignments.store');
+        Route::get('users/{user}/assignments', [LoggerAssignmentController::class, 'edit'])->name('users.assignments.edit');
+        Route::post('users/{user}/assignments', [LoggerAssignmentController::class, 'update'])->name('users.assignments.update');
     });
 
     // Admin only routes

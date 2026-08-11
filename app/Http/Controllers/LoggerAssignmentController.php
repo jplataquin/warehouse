@@ -8,30 +8,30 @@ use Illuminate\Http\Request;
 
 class LoggerAssignmentController extends Controller
 {
-    public function index()
+    public function edit(User $user)
     {
-        $loggers = User::whereIn('role', ['logger', 'viewer'])->with('warehouses')->get();
-        $warehouses = Warehouse::all();
+        if (!in_array($user->role, ['logger', 'viewer'])) {
+            abort(404, 'User is not a logger or viewer.');
+        }
 
-        return view('supervisor.assignments.index', compact('loggers', 'warehouses'));
+        $warehouses = Warehouse::active()->get();
+
+        return view('supervisor.assignments.edit', compact('user', 'warehouses'));
     }
 
-    public function store(Request $request)
+    public function update(Request $request, User $user)
     {
+        if (!in_array($user->role, ['logger', 'viewer'])) {
+            abort(404, 'User is not a logger or viewer.');
+        }
+
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
             'warehouse_ids' => 'nullable|array',
             'warehouse_ids.*' => 'exists:warehouses,id',
         ]);
 
-        $user = User::findOrFail($validated['user_id']);
-
-        if (!in_array($user->role, ['logger', 'viewer'])) {
-            return back()->with('error', 'Assignments can only be made to users with logger or viewer roles.');
-        }
-
         $user->warehouses()->sync($validated['warehouse_ids'] ?? []);
 
-        return redirect()->route('assignments.index')->with('success', "Warehouses assigned to {$user->name} successfully.");
+        return redirect()->route('users.index')->with('success', "Warehouses assigned to {$user->name} successfully.");
     }
 }

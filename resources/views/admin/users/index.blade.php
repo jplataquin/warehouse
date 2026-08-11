@@ -25,6 +25,9 @@
                         <td><span class="badge bg-secondary">{{ strtoupper($user->role) }}</span></td>
                         <td>
                             <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                            @if(in_array($user->role, ['logger', 'viewer']))
+                                <a href="{{ route('users.assignments.edit', $user) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-geo-alt me-1"></i> Assign</a>
+                            @endif
                             @if($user->id !== Auth::id())
                             <form action="{{ route('users.destroy', $user) }}" method="POST" class="d-inline">
                                 @csrf
