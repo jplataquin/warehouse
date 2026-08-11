@@ -104,7 +104,6 @@ class ItemController extends Controller
             'unit' => 'required|string|max:50',
             'status' => 'nullable|in:Operational,Out of Order',
             'photo_file' => 'nullable|image|mimes:jpeg,jpg,png|max:5120',
-            'photo_url' => 'nullable|url',
             'temp_photo_file' => 'nullable|string',
         ]);
 
@@ -147,7 +146,6 @@ class ItemController extends Controller
             'unit' => 'required|string|max:50',
             'status' => 'nullable|in:Operational,Out of Order',
             'photo_file' => 'nullable|image|mimes:jpeg,jpg,png|max:5120',
-            'photo_url' => 'nullable|url',
             'temp_photo_file' => 'nullable|string',
         ]);
 
@@ -308,7 +306,6 @@ class ItemController extends Controller
             'unit' => 'required|string|max:50',
             'status' => 'nullable|in:Operational,Out of Order',
             'photo_file' => 'nullable|image|mimes:jpeg,jpg,png|max:5120',
-            'photo_url' => 'nullable|url',
             'photo' => 'nullable|string',
             'temp_photo_file' => 'nullable|string',
         ]);
@@ -439,91 +436,7 @@ class ItemController extends Controller
             }
         }
 
-        if ($request->filled('photo_url')) {
-            try {
-                $url = $request->input('photo_url');
-                $response = \Illuminate\Support\Facades\Http::timeout(10)->get($url);
-                if ($response->successful()) {
-                    $imageData = $response->body();
-                    $webpData = $this->convertToWebp($imageData);
-                    
-                    if ($webpData !== null) {
-                        $filename = 'items/' . uniqid() . '.webp';
-                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $webpData);
-                    } else {
-                        $extension = 'jpg';
-                        $contentType = $response->header('Content-Type');
-                        if (str_contains($contentType, 'png')) {
-                            $extension = 'png';
-                        } elseif (str_contains($contentType, 'gif')) {
-                            $extension = 'gif';
-                        } elseif (str_contains($contentType, 'webp')) {
-                            $extension = 'webp';
-                        }
-                        $filename = 'items/' . uniqid() . '.' . $extension;
-                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $imageData);
-                    }
-                    
-                    if ($currentPhoto) {
-                        \Illuminate\Support\Facades\Storage::disk('public')->delete($currentPhoto);
-                    }
-                    return $filename;
-                }
-            } catch (\Exception $e) {
-                \Log::error('Failed to download item photo from URL: ' . $e->getMessage());
-            }
-        }
-
         return $currentPhoto;
-    }
-
-    public function searchGoogleImages(Request $request)
-    {
-        $request->validate([
-            'query' => 'required|string|max:100',
-        ]);
-
-        $query = $request->input('query');
-        $apiKey = config('services.pixabay.api_key');
-
-        if (!$apiKey) {
-            return response()->json([
-                'error' => 'Pixabay API is not configured. Please add PIXABAY_API_KEY to your .env file.'
-            ], 400);
-        }
-
-        try {
-            $response = \Illuminate\Support\Facades\Http::get('https://pixabay.com/api/', [
-                'key' => $apiKey,
-                'q' => $query,
-                'image_type' => 'photo',
-                'per_page' => 8,
-            ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-                $hits = $data['hits'] ?? [];
-                
-                $results = array_map(function ($hit) {
-                    return [
-                        'title' => $hit['tags'] ?? '',
-                        'link' => $hit['webformatURL'] ?? '',
-                        'thumbnail' => $hit['previewURL'] ?? ($hit['webformatURL'] ?? ''),
-                    ];
-                }, $hits);
-
-                return response()->json($results);
-            }
-
-            return response()->json([
-                'error' => 'Failed to retrieve images from Pixabay API: ' . $response->body()
-            ], $response->status() ?: 500);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'An error occurred while connecting to the image search service: ' . $e->getMessage()
-            ], 500);
-        }
     }
 
     public function similar(Item $item)

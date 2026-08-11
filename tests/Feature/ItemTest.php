@@ -436,63 +436,6 @@ class ItemTest extends TestCase
         \Illuminate\Support\Facades\Storage::disk('public')->assertExists($item->photo);
     }
 
-    public function test_supervisor_can_create_item_with_photo_url_download()
-    {
-        \Illuminate\Support\Facades\Storage::fake('public');
-        \Illuminate\Support\Facades\Http::fake([
-            'https://example.com/test-drill.jpg' => \Illuminate\Support\Facades\Http::response('fake_image_binary', 200, [
-                'Content-Type' => 'image/jpeg',
-            ])
-        ]);
-
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
-
-        $response = $this->actingAs($supervisor)->post(route('items.store'), [
-            'type' => 'CONSUMABLE',
-            'name' => 'Drill DCD771',
-            'specification' => '20V Max',
-            'unit' => 'Pcs',
-            'photo_url' => 'https://example.com/test-drill.jpg',
-        ]);
-
-        $response->assertRedirect(route('items.index'));
-        $item = Item::where('name', 'Drill DCD771')->first();
-        $this->assertNotNull($item);
-        $this->assertNotNull($item->photo);
-        
-        // Assert file was downloaded and saved
-        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($item->photo);
-        $this->assertEquals('fake_image_binary', \Illuminate\Support\Facades\Storage::disk('public')->get($item->photo));
-    }
-
-    public function test_image_search_endpoint_returns_json_results()
-    {
-        \Illuminate\Support\Facades\Http::fake([
-            'https://pixabay.com/api/*' => \Illuminate\Support\Facades\Http::response([
-                'hits' => [
-                    [
-                        'tags' => 'Test Image',
-                        'webformatURL' => 'https://example.com/test.jpg',
-                        'previewURL' => 'https://example.com/thumb.jpg',
-                    ]
-                ]
-            ], 200)
-        ]);
-
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
-
-        $response = $this->actingAs($supervisor)->get(route('items.search-images', ['query' => 'Drill']));
-
-        $response->assertStatus(200);
-        $response->assertJson([
-            [
-                'title' => 'Test Image',
-                'link' => 'https://example.com/test.jpg',
-                'thumbnail' => 'https://example.com/thumb.jpg',
-            ]
-        ]);
-    }
-
     public function test_similar_items_endpoint_returns_view_with_similar_items()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
@@ -629,45 +572,6 @@ class ItemTest extends TestCase
 
         $response->assertRedirect(route('items.index'));
         $item = Item::where('name', 'Drill DCD771 Webp')->first();
-        $this->assertNotNull($item);
-        $this->assertNotNull($item->photo);
-        
-        $this->assertStringEndsWith('.webp', $item->photo);
-        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($item->photo);
-        
-        $content = \Illuminate\Support\Facades\Storage::disk('public')->get($item->photo);
-        $this->assertStringStartsWith('RIFF', $content);
-        $this->assertStringContainsString('WEBP', $content);
-    }
-
-    public function test_supervisor_downloaded_photo_url_is_converted_to_webp()
-    {
-        \Illuminate\Support\Facades\Storage::fake('public');
-        
-        ob_start();
-        $img = imagecreatetruecolor(10, 10);
-        imagejpeg($img);
-        $jpegBinary = ob_get_clean();
-        imagedestroy($img);
-
-        \Illuminate\Support\Facades\Http::fake([
-            'https://example.com/test-drill.jpg' => \Illuminate\Support\Facades\Http::response($jpegBinary, 200, [
-                'Content-Type' => 'image/jpeg',
-            ])
-        ]);
-
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
-
-        $response = $this->actingAs($supervisor)->post(route('items.store'), [
-            'type' => 'CONSUMABLE',
-            'name' => 'Drill DCD771 Webp URL',
-            'specification' => '20V Max',
-            'unit' => 'Pcs',
-            'photo_url' => 'https://example.com/test-drill.jpg',
-        ]);
-
-        $response->assertRedirect(route('items.index'));
-        $item = Item::where('name', 'Drill DCD771 Webp URL')->first();
         $this->assertNotNull($item);
         $this->assertNotNull($item->photo);
         

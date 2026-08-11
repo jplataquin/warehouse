@@ -75,23 +75,6 @@
                             <input type="file" id="photo_file" accept=".jpeg,.jpg,.png,image/jpeg,image/png" capture="environment" class="d-none">
                             <input type="hidden" name="temp_photo_file" id="temp_photo_file" value="{{ old('temp_photo_file') }}">
                         </div>
-                        
-                        <div class="col-md-6">
-                            <!-- Google Image Search -->
-                            <div class="mb-3">
-                                <label class="form-label fw-bold small text-muted text-uppercase">Search Web for a Photo</label>
-                                <div class="input-group">
-                                    <input type="text" id="web-search-query" class="form-control" placeholder="Enter term (e.g. DeWalt Drill DCD771)">
-                                    <button class="btn btn-outline-secondary" type="button" id="btn-web-search">
-                                        <i class="bi bi-search"></i> Search
-                                    </button>
-                                </div>
-                                <div id="search-results" class="row row-cols-4 g-2 mt-2" style="max-height: 200px; overflow-y: auto;">
-                                    <!-- Search results populated by JS -->
-                                </div>
-                                <input type="hidden" name="photo_url" id="photo_url">
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -119,14 +102,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Photo Preview & Search Logic
     const photoFileInput = document.getElementById('photo_file');
-    const photoUrlInput = document.getElementById('photo_url');
     const photoPreview = document.getElementById('photo-preview');
     const photoPlaceholder = document.getElementById('photo-placeholder');
     const photoDropzone = document.getElementById('photo-dropzone');
     const tempPhotoFileInput = document.getElementById('temp_photo_file');
-    const webSearchQueryInput = document.getElementById('web-search-query');
-    const btnWebSearch = document.getElementById('btn-web-search');
-    const searchResultsContainer = document.getElementById('search-results');
 
     // Restore temp preview on load if present
     if (tempPhotoFileInput && tempPhotoFileInput.value) {
@@ -325,75 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
     photoFileInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
             uploadFileInChunks(this.files[0]);
-            
-            photoUrlInput.value = '';
-            document.querySelectorAll('.search-thumb-container').forEach(el => el.classList.remove('border', 'border-primary', 'border-3'));
         }
-    });
-
-    // Trigger search on Enter key press
-    webSearchQueryInput.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            btnWebSearch.click();
-        }
-    });
-
-    // Handle Web Search
-    btnWebSearch.addEventListener('click', function() {
-        const query = webSearchQueryInput.value.trim();
-        if (!query) {
-            alert('Please enter a search term first.');
-            return;
-        }
-
-        btnWebSearch.disabled = true;
-        btnWebSearch.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-        searchResultsContainer.innerHTML = '';
-
-        fetch(`{{ route('items.search-images') }}?query=${encodeURIComponent(query)}`)
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw new Error(err.error || 'Failed to fetch search results.'); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.length === 0) {
-                    searchResultsContainer.innerHTML = '<div class="col-12 text-muted text-center py-2">No images found.</div>';
-                } else {
-                    data.forEach(item => {
-                        const col = document.createElement('div');
-                        col.className = 'col text-center';
-                        col.innerHTML = `
-                            <div class="card h-100 p-1 search-thumb-container" style="cursor: pointer;">
-                                <img src="${item.thumbnail}" data-full="${item.link}" class="img-fluid rounded search-thumb" style="max-height: 80px; object-fit: cover;" title="${item.title}">
-                            </div>
-                        `;
-                        col.querySelector('.search-thumb-container').addEventListener('click', function() {
-                            document.querySelectorAll('.search-thumb-container').forEach(el => el.classList.remove('border', 'border-primary', 'border-3'));
-                            this.classList.add('border', 'border-primary', 'border-3');
-                            
-                            photoUrlInput.value = item.link;
-                            
-                            photoPreview.src = item.thumbnail;
-                            photoPreview.style.display = 'block';
-                            photoPlaceholder.style.display = 'none';
-                            
-                            photoFileInput.value = '';
-                        });
-                        searchResultsContainer.appendChild(col);
-                    });
-                }
-            })
-            .catch(error => {
-                alert(error.message);
-                searchResultsContainer.innerHTML = `<div class="col-12 text-danger text-center py-2">${error.message}</div>`;
-            })
-            .finally(() => {
-                btnWebSearch.disabled = false;
-                btnWebSearch.innerHTML = '<i class="bi bi-search"></i> Search';
-            });
     });
 });
 </script>
