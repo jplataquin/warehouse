@@ -42,18 +42,20 @@
             <div class="row g-3 align-items-end">
                 <div class="{{ $selectedWarehouse ? 'col-md-4' : 'col-md-5' }}">
                     <label class="form-label small fw-bold text-muted text-uppercase">Select Warehouse</label>
-                    <select name="warehouse_id" class="form-select border-primary shadow-sm" onchange="this.form.submit()">
-                        <option value="">-- Choose Warehouse --</option>
+                    <div class="input-group">
+                        <input type="text" id="warehouse-search" class="form-control border-primary shadow-sm" list="warehouses-list" placeholder="Search warehouse..." value="{{ $selectedWarehouse ? ($selectedWarehouse->parent ? $selectedWarehouse->parent->name . ' > ' : '') . $selectedWarehouse->name : '' }}" autocomplete="off">
+                        @if($selectedWarehouse)
+                            <button class="btn btn-outline-secondary border-primary shadow-sm" type="button" onclick="document.getElementById('warehouse-search').value=''; document.getElementById('warehouse-id-hidden').value=''; this.form.submit();" title="Clear selection">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        @endif
+                    </div>
+                    <datalist id="warehouses-list">
                         @foreach($warehouses as $wh)
-                            <option value="{{ $wh->id }}" {{ request('warehouse_id') == $wh->id ? 'selected' : '' }}>
-                                @if($wh->parent)
-                                    {{ $wh->parent->name }} &gt; {{ $wh->name }}
-                                @else
-                                    {{ $wh->name }}
-                                @endif
-                            </option>
+                            <option data-value="{{ $wh->id }}" value="{{ $wh->parent ? $wh->parent->name . ' > ' : '' }}{{ $wh->name }}"></option>
                         @endforeach
-                    </select>
+                    </datalist>
+                    <input type="hidden" name="warehouse_id" id="warehouse-id-hidden" value="{{ request('warehouse_id') }}">
                 </div>
 
                 <div class="{{ $selectedWarehouse ? 'col-md-3' : 'col-md-4' }}">
@@ -147,6 +149,43 @@
     <p class="text-muted mx-auto" style="max-width: 400px;">Please select a warehouse from the dropdown above to view its general ledger and stock levels.</p>
 </div>
 @endif
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const warehouseSearch = document.getElementById('warehouse-search');
+    const warehouseIdHidden = document.getElementById('warehouse-id-hidden');
+    const warehousesList = document.getElementById('warehouses-list');
+
+    if (warehouseSearch) {
+        warehouseSearch.addEventListener('input', function() {
+            const val = this.value;
+            const options = warehousesList.options;
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === val) {
+                    warehouseIdHidden.value = options[i].getAttribute('data-value');
+                    this.form.submit();
+                    break;
+                }
+            }
+        });
+
+        warehouseSearch.addEventListener('blur', function() {
+            const val = this.value;
+            const options = warehousesList.options;
+            let isValid = false;
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === val) {
+                    isValid = true;
+                    break;
+                }
+            }
+            if (!isValid && val !== '') {
+                this.value = '{{ $selectedWarehouse ? ($selectedWarehouse->parent ? $selectedWarehouse->parent->name . " > " : "") . $selectedWarehouse->name : "" }}';
+            }
+        });
+    }
+});
+</script>
 
 <style>
     .hover-shadow {
