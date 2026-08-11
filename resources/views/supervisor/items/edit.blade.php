@@ -61,8 +61,8 @@
                         <h5 class="fw-bold mb-3 text-secondary text-uppercase fs-6"><i class="bi bi-image me-1"></i> Current Displayed Photo</h5>
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="card bg-light border-0 shadow-sm overflow-hidden" style="max-width: 320px; border-radius: 12px;">
-                                    <img src="{{ Storage::url($item->photo) }}" class="card-img-top img-fluid" style="max-height: 240px; object-fit: contain; background-color: #f8f9fa;" alt="Current Photo">
+                                <div class="card bg-light border-0 shadow-sm overflow-hidden" style="max-width: 400px; border-radius: 12px;">
+                                    <img src="{{ Storage::url($item->photo) }}" class="card-img-top img-fluid" style="height: 300px; object-fit: cover; background-color: #f8f9fa;" alt="Current Photo">
                                     <div class="card-body p-2 bg-white text-center border-top">
                                         <span class="small text-muted"><i class="bi bi-check-circle-fill text-success me-1"></i> Active Item Image</span>
                                     </div>

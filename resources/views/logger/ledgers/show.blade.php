@@ -96,7 +96,7 @@
                 <span class="fw-bold text-secondary text-uppercase small tracking-wide"><i class="bi bi-image me-1"></i> Item Photo</span>
             </div>
             <div class="card-body p-0 text-center bg-light">
-                <img src="{{ Storage::url($ledger->item->photo) }}" class="img-fluid" style="max-height: 240px; object-fit: contain; width: 100%;" alt="{{ $ledger->item->name }}">
+                <img src="{{ Storage::url($ledger->item->photo) }}" class="img-fluid" style="height: 300px; object-fit: cover; width: 100%;" alt="{{ $ledger->item->name }}">
             </div>
         </div>
         @endif
