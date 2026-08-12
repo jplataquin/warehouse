@@ -41,7 +41,14 @@ class LedgerController extends Controller
 
             if ($request->filled('item_type')) {
                 $itemIdsQuery->whereHas('item', function ($q) use ($request) {
-                    $q->where('type', $request->item_type);
+                    $itemType = $request->item_type;
+                    if (is_numeric($itemType)) {
+                        $q->where('item_type_id', $itemType);
+                    } else {
+                        $q->whereHas('itemType', function ($sub) use ($itemType) {
+                            $sub->where('base_behavior', $itemType);
+                        });
+                    }
                 });
             }
 
@@ -69,7 +76,14 @@ class LedgerController extends Controller
 
             if ($request->filled('item_type')) {
                 $query->whereHas('item', function ($q) use ($request) {
-                    $q->where('type', $request->item_type);
+                    $itemType = $request->item_type;
+                    if (is_numeric($itemType)) {
+                        $q->where('item_type_id', $itemType);
+                    } else {
+                        $q->whereHas('itemType', function ($sub) use ($itemType) {
+                            $sub->where('base_behavior', $itemType);
+                        });
+                    }
                 });
             }
 

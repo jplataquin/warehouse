@@ -41,8 +41,11 @@
                 <div class="mb-3">
                     <label class="form-label fw-bold">Type</label>
                     <select name="type" class="form-select" required>
-                        <option value="CONSUMABLE" {{ old('type', request('type')) === 'CONSUMABLE' ? 'selected' : '' }}>CONSUMABLE</option>
-                        <option value="ASSET" {{ old('type', request('type')) === 'ASSET' ? 'selected' : '' }}>ASSET</option>
+                        @foreach(\App\Models\ItemType::all() as $itemType)
+                            <option value="{{ $itemType->id }}" data-behavior="{{ $itemType->base_behavior }}" {{ old('type', request('type')) == $itemType->id ? 'selected' : '' }}>
+                                {{ strtoupper($itemType->name) }}
+                            </option>
+                        @endforeach
                     </select>
                 </div>
 
@@ -116,7 +119,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusGroup = document.getElementById('status-group');
 
     function toggleStatusField() {
-        if (typeSelect.value === 'ASSET') {
+        const selectedOption = typeSelect.options[typeSelect.selectedIndex];
+        const behavior = selectedOption ? selectedOption.getAttribute('data-behavior') : '';
+        if (behavior === 'ASSET') {
             statusGroup.style.display = 'block';
         } else {
             statusGroup.style.display = 'none';

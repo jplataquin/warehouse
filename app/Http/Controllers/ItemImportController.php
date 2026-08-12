@@ -44,13 +44,20 @@ class ItemImportController extends Controller
 
             // Validation
             $validator = Validator::make($item, [
-                'type' => 'required|in:CONSUMABLE,ASSET',
+                'type' => 'required|string',
                 'name' => 'required|string|max:255',
                 'specification' => 'nullable|string|max:255',
                 'unit' => 'required|string|max:50',
             ]);
 
             $errors = $validator->errors()->all();
+
+            $itemType = \App\Models\ItemType::where('base_behavior', $item['type'])
+                ->orWhere('name', $item['type'])
+                ->first();
+            if (!$itemType) {
+                $errors[] = "The item type '{$item['type']}' is invalid. Valid types are: " . \App\Models\ItemType::pluck('name')->implode(', ') . '.';
+            }
 
             $itemKey = strtolower($item['name'].'|'.($item['specification'] ?? '').'|'.$item['unit']);
 

@@ -20,7 +20,14 @@ class ItemController extends Controller
         }
 
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
+            $typeFilter = $request->type;
+            if (is_numeric($typeFilter)) {
+                $query->where('item_type_id', $typeFilter);
+            } else {
+                $query->whereHas('itemType', function ($q) use ($typeFilter) {
+                    $q->where('base_behavior', $typeFilter);
+                });
+            }
         }
 
         // Get active tab (default to 'approved' if not specified)
@@ -50,8 +57,18 @@ class ItemController extends Controller
         }
 
         if ($request->filled('type')) {
-            $approvedCountQuery->where('type', $request->type);
-            $pendingCountQuery->where('type', $request->type);
+            $typeFilter = $request->type;
+            if (is_numeric($typeFilter)) {
+                $approvedCountQuery->where('item_type_id', $typeFilter);
+                $pendingCountQuery->where('item_type_id', $typeFilter);
+            } else {
+                $approvedCountQuery->whereHas('itemType', function ($q) use ($typeFilter) {
+                    $q->where('base_behavior', $typeFilter);
+                });
+                $pendingCountQuery->whereHas('itemType', function ($q) use ($typeFilter) {
+                    $q->where('base_behavior', $typeFilter);
+                });
+            }
         }
 
         $approvedCount = $approvedCountQuery->where('is_approved', true)->count();
@@ -62,7 +79,9 @@ class ItemController extends Controller
 
     public function assets(Request $request)
     {
-        $query = Item::where('type', 'ASSET')->with(['currentWarehouse', 'latestUtilizeLedger']);
+        $query = Item::whereHas('itemType', function ($q) {
+            $q->where('base_behavior', 'ASSET');
+        })->with(['currentWarehouse', 'latestUtilizeLedger']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -98,7 +117,20 @@ class ItemController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|in:CONSUMABLE,ASSET',
+            'type' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if (is_numeric($value)) {
+                        if (!\App\Models\ItemType::where('id', $value)->exists()) {
+                            $fail('The selected item type is invalid.');
+                        }
+                    } else {
+                        if (!\App\Models\ItemType::where('base_behavior', $value)->exists()) {
+                            $fail('The selected item type is invalid.');
+                        }
+                    }
+                }
+            ],
             'name' => 'required|string|max:255',
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
@@ -140,7 +172,20 @@ class ItemController extends Controller
     public function update(Request $request, Item $item)
     {
         $validated = $request->validate([
-            'type' => 'required|in:CONSUMABLE,ASSET',
+            'type' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if (is_numeric($value)) {
+                        if (!\App\Models\ItemType::where('id', $value)->exists()) {
+                            $fail('The selected item type is invalid.');
+                        }
+                    } else {
+                        if (!\App\Models\ItemType::where('base_behavior', $value)->exists()) {
+                            $fail('The selected item type is invalid.');
+                        }
+                    }
+                }
+            ],
             'name' => 'required|string|max:255',
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
@@ -300,7 +345,20 @@ class ItemController extends Controller
     public function loggerStore(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|in:CONSUMABLE,ASSET',
+            'type' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if (is_numeric($value)) {
+                        if (!\App\Models\ItemType::where('id', $value)->exists()) {
+                            $fail('The selected item type is invalid.');
+                        }
+                    } else {
+                        if (!\App\Models\ItemType::where('base_behavior', $value)->exists()) {
+                            $fail('The selected item type is invalid.');
+                        }
+                    }
+                }
+            ],
             'name' => 'required|string|max:255',
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',

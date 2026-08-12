@@ -9,7 +9,7 @@ class Item extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['type', 'name', 'specification', 'unit', 'current_warehouse_id', 'status', 'is_asset_utilized', 'is_approved', 'photo'];
+    protected $fillable = ['type', 'item_type_id', 'name', 'specification', 'unit', 'current_warehouse_id', 'status', 'is_asset_utilized', 'is_approved', 'photo'];
 
     protected $attributes = [
         'status' => 'Operational',
@@ -19,6 +19,32 @@ class Item extends Model
         'is_asset_utilized' => 'boolean',
         'is_approved' => 'boolean',
     ];
+
+    public function getTypeAttribute()
+    {
+        return $this->itemType ? $this->itemType->base_behavior : null;
+    }
+
+    public function setTypeAttribute($value)
+    {
+        if ($value) {
+            if (is_numeric($value)) {
+                $this->attributes['item_type_id'] = (int) $value;
+            } else {
+                $itemType = ItemType::where('base_behavior', $value)
+                    ->orWhere('name', $value)
+                    ->first();
+                if ($itemType) {
+                    $this->attributes['item_type_id'] = $itemType->id;
+                }
+            }
+        }
+    }
+
+    public function itemType()
+    {
+        return $this->belongsTo(ItemType::class);
+    }
 
     public function ledgers()
     {
