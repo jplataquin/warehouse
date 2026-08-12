@@ -69,6 +69,9 @@
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ route('users.index') }}">Users</a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ route('api-credentials.index') }}">API Keys</a>
+                                </li>
                             @endif
                         @endauth
                     </ul>

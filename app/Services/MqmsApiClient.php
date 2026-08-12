@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\ApiCredential;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * MQMS API Client (Reference Implementation)
@@ -26,10 +28,28 @@ class MqmsApiClient
 
     public function __construct()
     {
-        // Pull configuration from .env
-        $this->baseUrl = rtrim((string) env('MQMS_API_BASE_URL'), '/').'/';
-        $this->apiKey = (string) env('MQMS_API_KEY');
-        $this->secretKey = (string) env('MQMS_API_SECRET_KEY');
+        $dbConfig = null;
+        try {
+            if (Schema::hasTable('api_credentials')) {
+                $dbConfig = ApiCredential::where('service', 'mqms')
+                    ->where('is_active', true)
+                    ->first();
+            }
+        } catch (\Throwable $e) {
+            // Silently ignore database exceptions during installation / commands
+        }
+
+        if ($dbConfig) {
+            $this->baseUrl = rtrim((string) $dbConfig->base_url, '/').'/';
+            $this->apiKey = (string) $dbConfig->api_key;
+            $this->secretKey = (string) $dbConfig->secret_key;
+        } else {
+            // Pull configuration from .env
+            $this->baseUrl = rtrim((string) env('MQMS_API_BASE_URL'), '/').'/';
+            $this->apiKey = (string) env('MQMS_API_KEY');
+            $this->secretKey = (string) env('MQMS_API_SECRET_KEY');
+        }
+
         $this->verifySsl = (bool) env('MQMS_API_VERIFY_SSL', true);
     }
 
