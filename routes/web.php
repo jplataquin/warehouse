@@ -16,6 +16,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\TestMqmsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiCredentialController;
+use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseImportController;
 use Illuminate\Support\Facades\Route;
@@ -118,6 +119,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['admin'])->group(function () {
         Route::resource('users', UserController::class);
         Route::resource('api-credentials', ApiCredentialController::class);
+        Route::get('settings', [AdminSettingsController::class, 'index'])->name('admin.settings');
         Route::post('ledgers/{ledger}/approve', [LedgerController::class, 'approve'])->name('ledgers.approve');
         Route::get('items/{item}/merge/search', [ItemController::class, 'searchMergeTargets'])->name('items.merge.search');
         Route::get('items/{item}/merge', [ItemController::class, 'mergeForm'])->name('items.merge.form');

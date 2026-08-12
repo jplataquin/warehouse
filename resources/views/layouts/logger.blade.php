@@ -88,6 +88,9 @@
                         <li class="nav-item">
                             <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('users.index') }}">Users</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.settings') ? 'text-white' : 'text-white-50' }} small fw-bold text-uppercase p-2" href="{{ route('admin.settings') }}">Settings</a>
+                        </li>
                     @endif
                 @endif
                 @if(Auth::user()->isLogger() || Auth::user()->isViewer())

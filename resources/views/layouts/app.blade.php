@@ -72,6 +72,9 @@
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ route('api-credentials.index') }}">API Keys</a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {{ request()->routeIs('admin.settings') ? 'active fw-bold' : '' }}" href="{{ route('admin.settings') }}">Settings</a>
+                                </li>
                             @endif
                         @endauth
                     </ul>
