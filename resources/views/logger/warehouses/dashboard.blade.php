@@ -263,4 +263,32 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </div>
+
+@if(isset($lowStockAlerts) && $lowStockAlerts->isNotEmpty())
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080;">
+    @foreach($lowStockAlerts as $index => $alert)
+        <div class="toast align-items-center text-dark bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true" id="toast-low-stock-{{ $index }}" data-bs-delay="10000">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong class="text-dark"><i class="bi bi-exclamation-triangle-fill me-1 text-danger"></i> Low Stock Alert!</strong><br>
+                    <span>The stock of <strong>{{ $alert['item_name'] }}</strong> in <strong>{{ $alert['warehouse_name'] }}</strong> is currently at <strong>{{ number_format($alert['current_stock'], 2) }} {{ $alert['unit'] }}</strong>, which is below the threshold of <strong>{{ number_format($alert['threshold'], 2) }} {{ $alert['unit'] }}</strong>.</span>
+                </div>
+                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    @endforeach
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        @foreach($lowStockAlerts as $index => $alert)
+            const toastEl = document.getElementById('toast-low-stock-{{ $index }}');
+            if (toastEl) {
+                const toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        @endforeach
+    });
+</script>
+@endif
 @endsection

@@ -54,4 +54,9 @@ class Warehouse extends Model
     {
         return $this->hasMany(Ledger::class);
     }
+
+    public function stockLevelRegistries()
+    {
+        return $this->hasMany(StockLevelRegistry::class);
+    }
 }

@@ -61,6 +61,11 @@ class Item extends Model
         return $this->belongsTo(Warehouse::class, 'current_warehouse_id');
     }
 
+    public function stockLevelRegistries()
+    {
+        return $this->hasMany(StockLevelRegistry::class);
+    }
+
     public function latestUtilizeLedger()
     {
         return $this->hasOne(Ledger::class)

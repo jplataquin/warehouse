@@ -71,8 +71,17 @@ class DashboardController extends Controller
         $itemIds = $itemWarehousePairs->pluck('item_id')->unique()->toArray();
         $itemsMap = Item::whereIn('id', $itemIds)->get()->keyBy('id');
 
+        // Fetch thresholds for target warehouses and items in a single query
+        $thresholds = \App\Models\StockLevelRegistry::whereIn('warehouse_id', $targetWarehouseIds)
+            ->whereIn('item_id', $itemIds)
+            ->get()
+            ->keyBy(function ($registry) {
+                return $registry->warehouse_id . '-' . $registry->item_id;
+            });
+
         // 4. Construct a collection of cloned items, with specific warehouse contexts and stock levels
         $items = collect();
+        $lowStockAlerts = collect();
 
         foreach ($itemWarehousePairs as $pair) {
             $item = $itemsMap->get($pair->item_id);
@@ -80,13 +89,27 @@ class DashboardController extends Controller
 
             if ($item && $wh) {
                 $newItem = clone $item;
-                $newItem->current_stock = $item->getBalance($wh->id);
+                $currentStock = $item->getBalance($wh->id);
+                $newItem->current_stock = $currentStock;
                 $newItem->warehouse_context = $wh; // Attached specific warehouse context
                 $items->push($newItem);
+
+                // Check threshold
+                $registryKey = $wh->id . '-' . $item->id;
+                $thresholdRegistry = $thresholds->get($registryKey);
+                if ($thresholdRegistry && $currentStock < $thresholdRegistry->threshold) {
+                    $lowStockAlerts->push([
+                        'item_name' => $item->name,
+                        'warehouse_name' => $wh->name,
+                        'current_stock' => $currentStock,
+                        'threshold' => $thresholdRegistry->threshold,
+                        'unit' => $item->unit,
+                    ]);
+                }
             }
         }
 
-        return view('logger.warehouses.dashboard', compact('warehouse', 'items'));
+        return view('logger.warehouses.dashboard', compact('warehouse', 'items', 'lowStockAlerts'));
     }
 
     public function loggerRules()

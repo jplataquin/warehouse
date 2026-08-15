@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -37,13 +38,15 @@ class WarehouseController extends Controller
             $warehouse = Warehouse::findOrFail($warehouse);
         }
 
-        $warehouse->load(['project', 'loggers', 'allocations', 'parent', 'children']);
+        $warehouse->load(['project', 'loggers', 'allocations', 'parent', 'children', 'stockLevelRegistries.item']);
         $availableLoggers = User::whereIn('role', ['logger', 'viewer'])
             ->whereDoesntHave('warehouses', function ($query) use ($warehouse) {
                 $query->where('warehouses.id', $warehouse->id);
             })->get();
 
-        return view('supervisor.warehouses.show', compact('warehouse', 'availableLoggers'));
+        $allItems = Item::orderBy('name', 'asc')->get();
+
+        return view('supervisor.warehouses.show', compact('warehouse', 'availableLoggers', 'allItems'));
     }
 
     public function assignLogger(Request $request, $warehouse)

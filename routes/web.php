@@ -20,6 +20,7 @@ use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\ItemTypeController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseImportController;
+use App\Http\Controllers\StockLevelRegistryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -95,6 +96,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('warehouses/bulk-import/store', [WarehouseImportController::class, 'store'])->name('warehouses.import.store');
 
         Route::resource('warehouses', WarehouseController::class);
+        Route::post('warehouses/{warehouse}/thresholds', [StockLevelRegistryController::class, 'store'])->name('warehouses.thresholds.store');
+        Route::delete('warehouses/{warehouse}/thresholds/{threshold}', [StockLevelRegistryController::class, 'destroy'])->name('warehouses.thresholds.destroy');
 
         // MQMS Component Import to Warehouse
         Route::get('warehouses/{warehouse}/import-components/sections', [MqmsComponentImportController::class, 'sections'])->name('warehouses.import-components.sections');

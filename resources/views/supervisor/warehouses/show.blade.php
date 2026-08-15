@@ -236,6 +236,81 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Stock Thresholds Section -->
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-shield-exclamation text-primary me-2"></i> Stock Thresholds</h5>
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#addThresholdForm">
+                        <i class="bi bi-plus-circle me-1"></i> Add/Edit Threshold
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div id="addThresholdForm" class="collapse p-3 border-bottom bg-light">
+                        <form action="{{ route('warehouses.thresholds.store', $warehouse) }}" method="POST">
+                            @csrf
+                            <div class="row align-items-end g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold text-uppercase text-muted">Item Name</label>
+                                    <input type="text" id="item_search" class="form-control" placeholder="Search item name..." list="itemSuggestions" autocomplete="off" required>
+                                    <datalist id="itemSuggestions">
+                                        @foreach($allItems as $item)
+                                            <option value="{{ $item->name }}" data-id="{{ $item->id }}"></option>
+                                        @endforeach
+                                    </datalist>
+                                    <input type="hidden" name="item_id" id="item_id">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-uppercase text-muted">Threshold Quantity</label>
+                                    <input type="number" step="0.01" name="threshold" class="form-control" placeholder="e.g. 10.00" required min="0.01">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-success w-100" id="saveThresholdBtn" disabled>Save</button>
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Search for an item and specify the threshold stock level. If it drops below this, a toast notification will show on views.</small>
+                        </form>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Item Name</th>
+                                    <th>Threshold</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($warehouse->stockLevelRegistries as $registry)
+                                    <tr>
+                                        <td class="ps-4 fw-bold text-dark">{{ $registry->item ? $registry->item->name : 'N/A' }}</td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ number_format($registry->threshold, 2) }}</span>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <form action="{{ route('warehouses.thresholds.destroy', [$warehouse, $registry]) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('Are you sure you want to delete this threshold?')">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="text-center py-5 text-muted">
+                                            <i class="bi bi-info-circle fs-4 d-block mb-2"></i>
+                                            No stock thresholds set for this warehouse.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="col-md-4">
@@ -342,6 +417,35 @@
                 } else {
                     loggerIdInput.value = '';
                     addLoggerBtn.disabled = true;
+                }
+            });
+        }
+
+        // Item Search and Threshold Save handling
+        const itemSearch = document.getElementById('item_search');
+        const itemIdInput = document.getElementById('item_id');
+        const saveThresholdBtn = document.getElementById('saveThresholdBtn');
+        const itemDatalist = document.getElementById('itemSuggestions');
+
+        if (itemSearch) {
+            itemSearch.addEventListener('input', function() {
+                const val = this.value;
+                const options = itemDatalist.options;
+                let found = false;
+
+                for (let i = 0; i < options.length; i++) {
+                    if (options[i].value === val) {
+                        itemIdInput.value = options[i].getAttribute('data-id');
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found) {
+                    saveThresholdBtn.disabled = false;
+                } else {
+                    itemIdInput.value = '';
+                    saveThresholdBtn.disabled = true;
                 }
             });
         }

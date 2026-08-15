@@ -329,7 +329,23 @@ class LedgerController extends Controller
         $balance = $item->getBalance($warehouse->id);
         $allocations = Allocation::where('warehouse_id', $warehouse->id)->orderBy('name', 'asc')->get();
 
-        return view($this->getRoleView('item_history'), compact('ledgers', 'item', 'warehouse', 'balance', 'openingBalance', 'allocations'));
+        // Check stock threshold
+        $thresholdRegistry = \App\Models\StockLevelRegistry::where('warehouse_id', $warehouse->id)
+            ->where('item_id', $item->id)
+            ->first();
+
+        $lowStockAlert = null;
+        if ($thresholdRegistry && $balance < $thresholdRegistry->threshold) {
+            $lowStockAlert = [
+                'item_name' => $item->name,
+                'warehouse_name' => $warehouse->name,
+                'current_stock' => $balance,
+                'threshold' => $thresholdRegistry->threshold,
+                'unit' => $item->unit,
+            ];
+        }
+
+        return view($this->getRoleView('item_history'), compact('ledgers', 'item', 'warehouse', 'balance', 'openingBalance', 'allocations', 'lowStockAlert'));
     }
 
     public function printItemHistory($warehouseId, $itemId, Request $request)

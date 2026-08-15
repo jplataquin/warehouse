@@ -198,4 +198,28 @@
     </div>
     @endif
 </div>
+
+@if(isset($lowStockAlert) && $lowStockAlert)
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080;">
+    <div class="toast align-items-center text-dark bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true" id="toast-low-stock" data-bs-delay="10000">
+        <div class="d-flex">
+            <div class="toast-body">
+                <strong class="text-dark"><i class="bi bi-exclamation-triangle-fill me-1 text-danger"></i> Low Stock Alert!</strong><br>
+                <span>The stock of <strong>{{ $lowStockAlert['item_name'] }}</strong> in <strong>{{ $lowStockAlert['warehouse_name'] }}</strong> is currently at <strong>{{ number_format($lowStockAlert['current_stock'], 2) }} {{ $lowStockAlert['unit'] }}</strong>, which is below the threshold of <strong>{{ number_format($lowStockAlert['threshold'], 2) }} {{ $lowStockAlert['unit'] }}</strong>.</span>
+            </div>
+            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const toastEl = document.getElementById('toast-low-stock');
+        if (toastEl) {
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
+    });
+</script>
+@endif
 @endsection
