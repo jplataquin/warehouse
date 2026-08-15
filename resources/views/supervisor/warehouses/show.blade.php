@@ -255,7 +255,7 @@
                                     <input type="text" id="item_search" class="form-control" placeholder="Search item name..." list="itemSuggestions" autocomplete="off" required>
                                     <datalist id="itemSuggestions">
                                         @foreach($allItems as $item)
-                                            <option value="{{ $item->name }}" data-id="{{ $item->id }}"></option>
+                                            <option value="{{ $item->name }}{{ $item->specification ? ' - ' . $item->specification : '' }} ({{ $item->unit }})" data-id="{{ $item->id }}"></option>
                                         @endforeach
                                     </datalist>
                                     <input type="hidden" name="item_id" id="item_id">
