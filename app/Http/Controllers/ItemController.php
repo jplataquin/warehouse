@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Item;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+//use Illuminate\Support\Facades\DB;
 
 class ItemController extends Controller
 {
@@ -513,7 +513,7 @@ class ItemController extends Controller
 
         //Special case with dash
         if(str_contains($query, '-') && $query != '-'){
-            $query = explode('-',$item->name)[0] ?? '';
+            $query = trim(explode('-',$item->name)[0]) ?? '';
         }
 
   //      DB::enableQueryLog();
