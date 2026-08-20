@@ -500,7 +500,7 @@ class ItemController extends Controller
 
     public function similar(Item $item)
     {
-        $concatenatedQuery = trim($item->name . ' ' . ($item->specification ?? ''));
+
 
         $driver = \DB::connection()->getDriverName();
         if ($driver === 'sqlite') {
@@ -509,17 +509,24 @@ class ItemController extends Controller
             $concatExpr = "CONCAT(name, ' ', COALESCE(specification, ''))";
         }
 
-        DB::enableQueryLog();
+        $query = trim($item->name); 
+
+        //Special case with dash
+        if(str_contains($query, '-') && $query != '-'){
+            $query = explode('-',$item->name)[0] ?? '';
+        }
+
+  //      DB::enableQueryLog();
         $similarItems = Item::where('id', '!=', $item->id)
             ->where('is_approved', true)
-            ->whereRaw("{$concatExpr} LIKE ?", ["%{$item->name}%"])
+            ->whereRaw("{$concatExpr} LIKE ?", ["%{$query}%"])
             ->limit(10)
             ->get();
 
-        $queryLog = DB::getQueryLog();
-$lastQuery = end($queryLog); 
+       // $queryLog = DB::getQueryLog();
+//$lastQuery = end($queryLog); 
         
-dd($lastQuery);
+//dd($lastQuery);
         return view('supervisor.items._similar', compact('similarItems', 'item'));
     }
 }
