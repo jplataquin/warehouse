@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Item;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ItemController extends Controller
 {
@@ -508,13 +509,17 @@ class ItemController extends Controller
             $concatExpr = "CONCAT(name, ' ', COALESCE(specification, ''))";
         }
 
-        
+        DB::enableQueryLog();
         $similarItems = Item::where('id', '!=', $item->id)
             ->where('is_approved', true)
             ->whereRaw("{$concatExpr} LIKE ?", ["%{$item->name}%"])
             ->limit(10)
             ->get();
+
+        $queryLog = DB::getQueryLog();
+$lastQuery = end($queryLog); 
         
+dd($lastQuery);
         return view('supervisor.items._similar', compact('similarItems', 'item'));
     }
 }
