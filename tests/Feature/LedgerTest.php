@@ -1009,4 +1009,90 @@ class LedgerTest extends TestCase
         $response->assertSessionHasErrors(['delete_reason']);
         $this->assertNull($ledger->fresh()->deleted_at);
     }
+
+    public function test_cannot_update_ledger_entry_if_it_results_in_negative_stock()
+    {
+        $this->withMiddleware();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        
+        // Add IN entry of 10
+        $ledgerIn = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial',
+        ]);
+
+        // Add OUT entry of 8
+        $ledgerOut = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'OUT',
+            'action' => 'DISPOSE',
+            'item_id' => $item->id,
+            'quantity' => 8,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Disposed',
+        ]);
+
+        // Try to update IN entry from 10 to 5 (resulting in overall balance of -3)
+        $response = $this->actingAs($admin)->put("/ledgers/{$ledgerIn->id}", [
+            'entry_date' => now()->format('Y-m-d'),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 5,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Reduced Initial',
+        ]);
+
+        $response->assertSessionHas('error');
+        $this->assertStringContainsString('negative stock balance', session('error'));
+        $this->assertEquals(10, $ledgerIn->fresh()->quantity); // Assert quantity is NOT changed
+    }
+
+    public function test_cannot_delete_ledger_entry_if_it_results_in_negative_stock()
+    {
+        $this->withMiddleware();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        
+        // Add IN entry of 10
+        $ledgerIn = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Initial',
+        ]);
+
+        // Add OUT entry of 8
+        $ledgerOut = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'OUT',
+            'action' => 'DISPOSE',
+            'item_id' => $item->id,
+            'quantity' => 8,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Disposed',
+        ]);
+
+        // Try to delete the IN entry (resulting in overall balance of -8)
+        $response = $this->actingAs($admin)->delete("/ledgers/{$ledgerIn->id}", [
+            'delete_reason' => 'Deleting initial stock to break balance',
+        ]);
+
+        $response->assertSessionHas('error');
+        $this->assertStringContainsString('negative stock balance', session('error'));
+        $this->assertNull($ledgerIn->fresh()->deleted_at); // Assert it's NOT deleted
+    }
 }

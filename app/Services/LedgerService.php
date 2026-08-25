@@ -18,7 +18,7 @@ class LedgerService
     public function createEntry(array $data)
     {
         return DB::transaction(function () use ($data) {
-            $item = Item::findOrFail($data['item_id']);
+            $item = Item::lockForUpdate()->findOrFail($data['item_id']);
 
             // Auto-populate project_id if missing
             if (empty($data['project_id'])) {
@@ -103,6 +103,11 @@ class LedgerService
                 }
             }
 
+            // Post-operation balance check to prevent negative stock
+            if ($item->getBalance($entry->warehouse_id) < 0) {
+                throw new Exception("Transaction would result in a negative stock balance for '{$item->name}'.");
+            }
+
             return $entry;
         });
     }
@@ -115,9 +120,10 @@ class LedgerService
         return DB::transaction(function () use ($ledger, $data) {
             $originalItemId = $ledger->item_id;
             $newItemId = $data['item_id'] ?? $originalItemId;
+            $originalWarehouseId = $ledger->warehouse_id;
 
-            $originalItem = Item::findOrFail($originalItemId);
-            $newItem = Item::findOrFail($newItemId);
+            $originalItem = Item::lockForUpdate()->findOrFail($originalItemId);
+            $newItem = ($originalItemId == $newItemId) ? $originalItem : Item::lockForUpdate()->findOrFail($newItemId);
 
             // If the original item is an ASSET and the ledger was an IN entry, we temporarily reset its current warehouse
             $originalCurrentWarehouseId = $originalItem->current_warehouse_id;
@@ -203,6 +209,18 @@ class LedgerService
                 } else {
                     // If action is no longer UTILIZE or ASSET_RETURN, remove any existing utilization record
                     AssetUtilization::where('ledger_id', $ledger->id)->delete();
+                }
+            }
+
+            // Post-operation balance check to prevent negative stock
+            $newWarehouseId = $ledger->warehouse_id;
+            if ($newItem->getBalance($newWarehouseId) < 0) {
+                throw new Exception("Transaction would result in a negative stock balance for '{$newItem->name}'.");
+            }
+
+            if ($originalItemId != $newItemId || $originalWarehouseId != $newWarehouseId) {
+                if ($originalItem->getBalance($originalWarehouseId) < 0) {
+                    throw new Exception("Transaction would result in a negative stock balance for '{$originalItem->name}' in the original warehouse.");
                 }
             }
 

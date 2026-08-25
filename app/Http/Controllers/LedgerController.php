@@ -505,12 +505,21 @@ class LedgerController extends Controller
         ]);
 
         try {
-            $ledger->update([
-                'delete_reason' => $validated['delete_reason'],
-                'deleted_by' => auth()->id(),
-            ]);
+            \Illuminate\Support\Facades\DB::transaction(function () use ($ledger, $validated) {
+                $item = \App\Models\Item::lockForUpdate()->findOrFail($ledger->item_id);
 
-            $ledger->delete();
+                $ledger->update([
+                    'delete_reason' => $validated['delete_reason'],
+                    'deleted_by' => auth()->id(),
+                ]);
+
+                $ledger->delete();
+
+                // Check post-deletion balance
+                if ($item->getBalance($ledger->warehouse_id) < 0) {
+                    throw new \Exception("Cannot delete this entry because it would result in a negative stock balance for '{$item->name}'.");
+                }
+            });
 
             return redirect()->route('ledgers.item_history', ['warehouse' => $ledger->warehouse_id, 'item' => $ledger->item_id])
                 ->with('success', 'Ledger entry soft deleted successfully.');
