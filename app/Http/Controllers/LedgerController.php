@@ -560,7 +560,13 @@ class LedgerController extends Controller
                 }
             });
 
-            return back()->with('success', 'Selected ledger entries soft deleted successfully.');
+            // Find the warehouse_id and item_id of one of the deleted entries to redirect to the correct item history page
+            $firstLedger = Ledger::withTrashed()->findOrFail($validated['ledger_ids'][0]);
+
+            return redirect()->route('ledgers.item_history', [
+                'warehouse' => $firstLedger->warehouse_id,
+                'item' => $firstLedger->item_id
+            ])->with('success', 'Selected ledger entries soft deleted successfully.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
