@@ -212,14 +212,14 @@ class LedgerService
                 }
             }
 
-            // Post-operation balance check to prevent negative stock
+            // Post-operation balance check to prevent negative stock (bypassed for Admins)
             $newWarehouseId = $ledger->warehouse_id;
-            if ($newItem->getBalance($newWarehouseId) < 0) {
+            if ($newItem->getBalance($newWarehouseId) < 0 && (! auth()->user() || ! auth()->user()->isAdmin())) {
                 throw new Exception("Transaction would result in a negative stock balance for '{$newItem->name}'.");
             }
 
             if ($originalItemId != $newItemId || $originalWarehouseId != $newWarehouseId) {
-                if ($originalItem->getBalance($originalWarehouseId) < 0) {
+                if ($originalItem->getBalance($originalWarehouseId) < 0 && (! auth()->user() || ! auth()->user()->isAdmin())) {
                     throw new Exception("Transaction would result in a negative stock balance for '{$originalItem->name}' in the original warehouse.");
                 }
             }
