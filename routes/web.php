@@ -121,6 +121,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Admin only routes
     Route::middleware(['admin'])->group(function () {
+        Route::delete('ledgers/bulk-destroy', [LedgerController::class, 'bulkDestroy'])->name('ledgers.bulk_destroy');
         Route::resource('users', UserController::class);
         Route::resource('api-credentials', ApiCredentialController::class);
         Route::resource('item-types', ItemTypeController::class);
