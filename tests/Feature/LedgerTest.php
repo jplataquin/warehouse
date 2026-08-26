@@ -836,7 +836,7 @@ class LedgerTest extends TestCase
         $this->assertEquals($admin->id, $ledger->fresh()->updated_by);
     }
 
-    public function test_admin_update_validates_business_rules()
+    public function test_admin_update_bypasses_stock_limits_validation()
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
@@ -875,8 +875,8 @@ class LedgerTest extends TestCase
             'remarks' => 'Utilize more than stock',
         ]);
 
-        $response->assertSessionHas('error');
-        $this->assertEquals(8, $ledger2->fresh()->quantity); // Quantity should remain unchanged
+        $response->assertSessionHas('success');
+        $this->assertEquals(15, $ledger2->fresh()->quantity); // Quantity should be changed
     }
 
     public function test_logger_can_access_item_history_print_page()
@@ -1010,7 +1010,7 @@ class LedgerTest extends TestCase
         $this->assertNull($ledger->fresh()->deleted_at);
     }
 
-    public function test_cannot_update_ledger_entry_if_it_results_in_negative_stock()
+    public function test_admin_can_update_ledger_entry_even_if_it_results_in_negative_stock()
     {
         $this->withMiddleware();
 
@@ -1051,12 +1051,11 @@ class LedgerTest extends TestCase
             'remarks' => 'Reduced Initial',
         ]);
 
-        $response->assertSessionHas('error');
-        $this->assertStringContainsString('negative stock balance', session('error'));
-        $this->assertEquals(10, $ledgerIn->fresh()->quantity); // Assert quantity is NOT changed
+        $response->assertSessionHas('success');
+        $this->assertEquals(5, $ledgerIn->fresh()->quantity); // Assert quantity is changed
     }
 
-    public function test_cannot_delete_ledger_entry_if_it_results_in_negative_stock()
+    public function test_admin_can_delete_ledger_entry_even_if_it_results_in_negative_stock()
     {
         $this->withMiddleware();
 
@@ -1091,8 +1090,74 @@ class LedgerTest extends TestCase
             'delete_reason' => 'Deleting initial stock to break balance',
         ]);
 
-        $response->assertSessionHas('error');
-        $this->assertStringContainsString('negative stock balance', session('error'));
-        $this->assertNull($ledgerIn->fresh()->deleted_at); // Assert it's NOT deleted
+        $response->assertSessionHas('success');
+        $this->assertNotNull($ledgerIn->fresh()->deleted_at); // Assert it IS deleted
+    }
+
+    public function test_admin_can_bulk_delete_ledger_entries()
+    {
+        $this->withMiddleware();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+
+        $ledger1 = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Entry 1',
+        ]);
+
+        $ledger2 = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 5,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Entry 2',
+        ]);
+
+        $response = $this->actingAs($admin)->delete('/ledgers/bulk-destroy', [
+            'ledger_ids' => [$ledger1->id, $ledger2->id],
+            'delete_reason' => 'Bulk cleaning erroneous data',
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertNotNull($ledger1->fresh()->deleted_at);
+        $this->assertNotNull($ledger2->fresh()->deleted_at);
+        $this->assertEquals('Bulk cleaning erroneous data', $ledger1->fresh()->delete_reason);
+        $this->assertEquals('Bulk cleaning erroneous data', $ledger2->fresh()->delete_reason);
+    }
+
+    public function test_non_admin_cannot_bulk_delete_ledger_entries()
+    {
+        $this->withMiddleware();
+
+        $logger = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Some Entry',
+        ]);
+
+        $response = $this->actingAs($logger)->delete('/ledgers/bulk-destroy', [
+            'ledger_ids' => [$ledger->id],
+            'delete_reason' => 'Trying to bulk delete as logger',
+        ]);
+
+        $response->assertStatus(403);
+        $this->assertNull($ledger->fresh()->deleted_at);
     }
 }

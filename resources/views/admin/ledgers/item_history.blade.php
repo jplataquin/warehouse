@@ -97,6 +97,11 @@
             <i class="bi bi-list-ul me-1"></i> Movement History
         </h5>
         <div class="d-flex gap-2">
+            @if(auth()->check() && auth()->user()->isAdmin())
+                <button type="button" class="btn btn-outline-danger btn-sm shadow-sm d-none" id="btn-bulk-delete" data-mode="bulk" data-bs-toggle="modal" data-bs-target="#deleteLedgerModal">
+                    <i class="bi bi-trash me-1"></i> Bulk Delete (<span id="bulk-delete-count">0</span>)
+                </button>
+            @endif
             <a href="{{ route('ledgers.item_history.print', ['warehouse' => $warehouse->id, 'item' => $item->id] + request()->query()) }}" 
                target="_blank" class="btn btn-outline-dark btn-sm shadow-sm">
                 <i class="bi bi-printer me-1"></i> Print Ledger
@@ -112,7 +117,14 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light">
                     <tr>
-                        <th class="ps-4">Date</th>
+                        @if(auth()->check() && auth()->user()->isAdmin())
+                            <th class="ps-4" style="width: 40px;">
+                                <input type="checkbox" id="select-all-ledgers" class="form-check-input">
+                            </th>
+                            <th>Date</th>
+                        @else
+                            <th class="ps-4">Date</th>
+                        @endif
                         <th>ID</th>
                         <th>Type</th>
                         <th>Action</th>
@@ -135,9 +147,18 @@
                         }
                     @endphp
                     <tr onclick="window.location='{{ route('ledgers.show', $ledger) }}'" style="cursor: pointer;" class="hover-bg-light">
-                        <td class="ps-4">
-                            <div class="fw-bold">{{ $ledger->entry_date ? $ledger->entry_date->format('M d, Y') : 'N/A' }}</div>
-                        </td>
+                        @if(auth()->check() && auth()->user()->isAdmin())
+                            <td class="ps-4" onclick="event.stopPropagation();">
+                                <input type="checkbox" value="{{ $ledger->id }}" class="form-check-input ledger-checkbox">
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ $ledger->entry_date ? $ledger->entry_date->format('M d, Y') : 'N/A' }}</div>
+                            </td>
+                        @else
+                            <td class="ps-4">
+                                <div class="fw-bold">{{ $ledger->entry_date ? $ledger->entry_date->format('M d, Y') : 'N/A' }}</div>
+                            </td>
+                        @endif
                         <td class="small text-muted">
                             #{{ $ledger->id }}
                         </td>
@@ -175,14 +196,26 @@
                             </div>
                         </td>
                         <td class="pe-4 text-end">
-                            <a href="{{ route('ledgers.edit', $ledger) }}" class="btn btn-outline-warning btn-sm shadow-sm" onclick="event.stopPropagation();">
-                                <i class="bi bi-pencil text-warning"></i> Edit
-                            </a>
+                            <div class="d-flex gap-1 justify-content-end">
+                                <a href="{{ route('ledgers.edit', $ledger) }}" class="btn btn-outline-warning btn-sm shadow-sm" onclick="event.stopPropagation();">
+                                    <i class="bi bi-pencil text-warning"></i> Edit
+                                </a>
+                                @if(auth()->check() && auth()->user()->isAdmin())
+                                    <button type="button" class="btn btn-outline-danger btn-sm shadow-sm btn-single-delete" 
+                                            data-id="{{ $ledger->id }}" 
+                                            data-mode="single" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteLedgerModal" 
+                                            onclick="event.stopPropagation();">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="10" class="text-center py-5 text-muted">
+                        <td colspan="{{ auth()->check() && auth()->user()->isAdmin() ? 11 : 10 }}" class="text-center py-5 text-muted">
                             <i class="bi bi-search fs-2 d-block mb-3"></i>
                             No movements found for this item in this warehouse.
                         </td>
@@ -199,6 +232,41 @@
     @endif
 </div>
 
+@if(auth()->check() && auth()->user()->isAdmin())
+<!-- Delete Ledger Modal (Shared for Single & Bulk Deletion) -->
+<div class="modal fade" id="deleteLedgerModal" tabindex="-1" aria-labelledby="deleteLedgerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold" id="deleteLedgerModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="" method="POST" id="modal-delete-form">
+                @csrf
+                @method('DELETE')
+                <div id="modal-hidden-inputs"></div>
+                <div class="modal-body p-4">
+                    <p class="text-dark">Are you sure you want to soft delete the selected ledger entry/entries? This action will adjust the stock balance accordingly.</p>
+
+                    <div class="mb-3">
+                        <label for="delete_reason" class="form-label small fw-bold text-uppercase text-muted">Reason for Deletion <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="delete_reason" name="delete_reason" rows="3" required minlength="5" placeholder="Please provide a valid reason (minimum 5 characters)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top-0 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Yes, Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
 @if(isset($lowStockAlert) && $lowStockAlert)
 <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080;">
     <div class="toast align-items-center text-dark bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true" id="toast-low-stock" data-bs-delay="10000">
@@ -211,15 +279,91 @@
         </div>
     </div>
 </div>
+@endif
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Low Stock Toast
         const toastEl = document.getElementById('toast-low-stock');
         if (toastEl) {
             const toast = new bootstrap.Toast(toastEl);
             toast.show();
         }
+
+        @if(auth()->check() && auth()->user()->isAdmin())
+        // Bulk deletion logic
+        const selectAllCheckbox = document.getElementById('select-all-ledgers');
+        const ledgerCheckboxes = document.querySelectorAll('.ledger-checkbox');
+        const bulkDeleteBtn = document.getElementById('btn-bulk-delete');
+        const bulkDeleteCount = document.getElementById('bulk-delete-count');
+
+        function updateBulkDeleteButton() {
+            const checkedBoxes = document.querySelectorAll('.ledger-checkbox:checked');
+            const count = checkedBoxes.length;
+            
+            if (count > 0) {
+                bulkDeleteBtn.classList.remove('d-none');
+                bulkDeleteCount.textContent = count;
+            } else {
+                bulkDeleteBtn.classList.add('d-none');
+            }
+        }
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function () {
+                ledgerCheckboxes.forEach(cb => {
+                    cb.checked = selectAllCheckbox.checked;
+                });
+                updateBulkDeleteButton();
+            });
+        }
+
+        ledgerCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function () {
+                const totalBoxes = ledgerCheckboxes.length;
+                const checkedBoxes = document.querySelectorAll('.ledger-checkbox:checked').length;
+                
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = (totalBoxes === checkedBoxes);
+                    selectAllCheckbox.indeterminate = (checkedBoxes > 0 && checkedBoxes < totalBoxes);
+                }
+                
+                updateBulkDeleteButton();
+            });
+        });
+
+        const deleteModal = document.getElementById('deleteLedgerModal');
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const mode = button.getAttribute('data-mode'); // 'single' or 'bulk'
+                const form = document.getElementById('modal-delete-form');
+                const hiddenContainer = document.getElementById('modal-hidden-inputs');
+                
+                // Clear any previous hidden inputs
+                hiddenContainer.innerHTML = '';
+                // Clear validation errors or input fields if needed
+                document.getElementById('delete_reason').value = '';
+
+                if (mode === 'single') {
+                    const ledgerId = button.getAttribute('data-id');
+                    form.action = `/ledgers/${ledgerId}`;
+                } else if (mode === 'bulk') {
+                    form.action = "{{ route('ledgers.bulk_destroy') }}";
+                    
+                    // Clone all checked checkbox values into the modal form as hidden inputs
+                    const checkedBoxes = document.querySelectorAll('.ledger-checkbox:checked');
+                    checkedBoxes.forEach(cb => {
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'ledger_ids[]';
+                        hiddenInput.value = cb.value;
+                        hiddenContainer.appendChild(hiddenInput);
+                    });
+                }
+            });
+        }
+        @endif
     });
 </script>
-@endif
 @endsection

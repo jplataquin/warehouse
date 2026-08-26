@@ -69,6 +69,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('ledgers/allocations-by-warehouse', [LedgerController::class, 'getAllocationsByWarehouse'])->name('ledgers.allocations_by_warehouse');
     Route::get('ledgers/warehouse/{warehouse}/item/{item}', [LedgerController::class, 'itemHistory'])->name('ledgers.item_history');
     Route::get('ledgers/warehouse/{warehouse}/item/{item}/print', [LedgerController::class, 'printItemHistory'])->name('ledgers.item_history.print');
+    Route::delete('ledgers/bulk-destroy', [LedgerController::class, 'bulkDestroy'])->name('ledgers.bulk_destroy')->middleware('admin');
     Route::resource('ledgers', LedgerController::class);
 
     // Supervisor + Admin routes
@@ -121,7 +122,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Admin only routes
     Route::middleware(['admin'])->group(function () {
-        Route::delete('ledgers/bulk-destroy', [LedgerController::class, 'bulkDestroy'])->name('ledgers.bulk_destroy');
         Route::resource('users', UserController::class);
         Route::resource('api-credentials', ApiCredentialController::class);
         Route::resource('item-types', ItemTypeController::class);

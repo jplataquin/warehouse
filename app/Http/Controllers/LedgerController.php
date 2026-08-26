@@ -527,4 +527,42 @@ class LedgerController extends Controller
             return back()->with('error', $e->getMessage());
         }
     }
+
+    public function bulkDestroy(Request $request)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins are allowed to bulk delete ledger entries.');
+        }
+
+        $validated = $request->validate([
+            'ledger_ids' => 'required|array|min:1',
+            'ledger_ids.*' => 'exists:ledgers,id',
+            'delete_reason' => 'required|string|min:5|max:255',
+        ]);
+
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($validated) {
+                foreach ($validated['ledger_ids'] as $id) {
+                    $ledger = Ledger::findOrFail($id);
+                    $item = \App\Models\Item::lockForUpdate()->findOrFail($ledger->item_id);
+
+                    $ledger->update([
+                        'delete_reason' => $validated['delete_reason'],
+                        'deleted_by' => auth()->id(),
+                    ]);
+
+                    $ledger->delete();
+
+                    // Check post-deletion balance (bypassed for Admins)
+                    if (! auth()->user()->isAdmin() && $item->getBalance($ledger->warehouse_id) < 0) {
+                        throw new \Exception("Cannot delete entry #{$ledger->id} because it would result in a negative stock balance for '{$item->name}'.");
+                    }
+                }
+            });
+
+            return back()->with('success', 'Selected ledger entries soft deleted successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
 }
