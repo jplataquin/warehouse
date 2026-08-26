@@ -260,14 +260,14 @@ class LedgerService
             }
         }
 
-        // Rule: Cannot log OUT if there's no enough stock in the warehouse
+        // Rule: Cannot log OUT if there's no enough stock in the warehouse (bypassed for Admins)
         if ($type === 'OUT') {
             $warehouseId = $data['warehouse_id'] ?? null;
             if ($warehouseId) {
                 $currentBalance = $item->getBalance($warehouseId);
                 $requestedQuantity = $data['quantity'];
 
-                if ($currentBalance < $requestedQuantity) {
+                if ($currentBalance < $requestedQuantity && (! auth()->user() || ! auth()->user()->isAdmin())) {
                     throw new Exception("Cannot perform OUT movement. Available stock for '{$item->name}' is {$currentBalance}, but {$requestedQuantity} was requested.");
                 }
             }
