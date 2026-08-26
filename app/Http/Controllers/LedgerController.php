@@ -515,8 +515,8 @@ class LedgerController extends Controller
 
                 $ledger->delete();
 
-                // Check post-deletion balance
-                if ($item->getBalance($ledger->warehouse_id) < 0) {
+                // Check post-deletion balance (bypassed for Admins)
+                if (! auth()->user()->isAdmin() && $item->getBalance($ledger->warehouse_id) < 0) {
                     throw new \Exception("Cannot delete this entry because it would result in a negative stock balance for '{$item->name}'.");
                 }
             });
