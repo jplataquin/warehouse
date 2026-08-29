@@ -42,6 +42,9 @@
                                 </li>
                             @endif
                             <li class="nav-item">
+                                <a class="nav-link" href="{{ route('reports.index') }}">Reports</a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" href="{{ route('ledgers.index') }}">Ledger</a>
                             </li>
                             @if(Auth::user()->isAdmin() || Auth::user()->isSupervisor())

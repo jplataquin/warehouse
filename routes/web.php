@@ -42,6 +42,12 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/home', [DashboardController::class, 'index'])->name('home');
     Route::get('/search', [SearchController::class, 'index'])->name('global.search');
+
+    // Reports Routes
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Reports\ReportIndexController::class, 'index'])->name('index');
+        Route::get('/project-allocation-summary', [\App\Http\Controllers\Reports\ProjectAllocationSummaryController::class, 'index'])->name('project-allocation-summary');
+    });
     Route::get('/warehouses/{warehouse}/dashboard', [DashboardController::class, 'warehouseDashboard'])
         ->name('logger.warehouse.dashboard')
         ->middleware('viewer_access');
