@@ -127,4 +127,68 @@ class MqmsComponentImportTest extends TestCase
             'name' => 'Component B',
         ]);
     }
+
+    public function test_store_updates_allocation_name_if_changed_in_mqms()
+    {
+        Allocation::create([
+            'warehouse_id' => $this->warehouse->id,
+            'name' => 'Old Name',
+            'mapped_to_component_id' => 'C1',
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->post(route('warehouses.import-components.store', $this->warehouse), [
+                'selected_components' => [
+                    ['id' => 'C1', 'name' => 'New Name'],
+                ],
+            ]);
+
+        $response->assertRedirect(route('warehouses.show', $this->warehouse));
+        $response->assertSessionHas('success', 'Successfully updated 1 existing component names.');
+        
+        $this->assertDatabaseHas('allocations', [
+            'warehouse_id' => $this->warehouse->id,
+            'name' => 'New Name',
+            'mapped_to_component_id' => 'C1',
+        ]);
+        $this->assertDatabaseMissing('allocations', [
+            'warehouse_id' => $this->warehouse->id,
+            'name' => 'Old Name',
+        ]);
+    }
+
+    public function test_store_prevents_name_collision_during_update()
+    {
+        // Allocation 1: Mapped to C1, named 'Old Name'
+        Allocation::create([
+            'warehouse_id' => $this->warehouse->id,
+            'name' => 'Old Name',
+            'mapped_to_component_id' => 'C1',
+        ]);
+
+        // Allocation 2: Named 'Colliding Name'
+        Allocation::create([
+            'warehouse_id' => $this->warehouse->id,
+            'name' => 'Colliding Name',
+            'mapped_to_component_id' => 'C2',
+        ]);
+
+        // Attempting to rename C1 to 'Colliding Name'
+        $response = $this->actingAs($this->user)
+            ->post(route('warehouses.import-components.store', $this->warehouse), [
+                'selected_components' => [
+                    ['id' => 'C1', 'name' => 'Colliding Name'],
+                ],
+            ]);
+
+        $response->assertRedirect(route('warehouses.show', $this->warehouse));
+        $response->assertSessionHas('warning', 'No components were imported or updated.');
+
+        // Verify C1's name remains 'Old Name'
+        $this->assertDatabaseHas('allocations', [
+            'warehouse_id' => $this->warehouse->id,
+            'name' => 'Old Name',
+            'mapped_to_component_id' => 'C1',
+        ]);
+    }
 }

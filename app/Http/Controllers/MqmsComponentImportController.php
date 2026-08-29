@@ -50,10 +50,9 @@ class MqmsComponentImportController extends Controller
         $mqmsComponents = $response['data'] ?? $response;
 
         $previewData = [];
-        $existingMappedIds = Allocation::where('warehouse_id', $warehouse->id)
-            ->whereNotNull('mapped_to_component_id')
-            ->pluck('mapped_to_component_id')
-            ->toArray();
+        $existingAllocations = Allocation::where('warehouse_id', $warehouse->id)->get();
+        $existingAllocationsByMappedId = $existingAllocations->whereNotNull('mapped_to_component_id')
+            ->keyBy('mapped_to_component_id');
 
         foreach ($mqmsComponents as $component) {
             $name = trim($component['name'] ?? $component['description'] ?? '');
@@ -64,21 +63,42 @@ class MqmsComponentImportController extends Controller
             }
 
             $errors = [];
+            $warning = null;
+            $isUpdate = false;
 
             // Check if MQMS ID already mapped in this warehouse
-            if (in_array($mqmsId, $existingMappedIds)) {
-                $errors[] = 'Component is already imported to this warehouse.';
-            }
+            $existingAllocation = $existingAllocationsByMappedId->get($mqmsId);
 
-            // Check if name exists in this warehouse
-            if (Allocation::where('warehouse_id', $warehouse->id)->where('name', $name)->exists()) {
-                $errors[] = 'An allocation with this name already exists in this warehouse.';
+            if ($existingAllocation) {
+                // If it exists, check if name has changed
+                if ($existingAllocation->name !== $name) {
+                    // Check if the NEW name is already taken by some OTHER allocation in the same warehouse
+                    $nameExists = $existingAllocations->where('name', $name)
+                        ->where('id', '!=', $existingAllocation->id)
+                        ->isNotEmpty();
+                    if ($nameExists) {
+                        $errors[] = "Name has changed from '{$existingAllocation->name}' to '{$name}', but another allocation with this name already exists in this warehouse.";
+                    } else {
+                        $isUpdate = true;
+                        $warning = "Component name has changed in MQMS. Importing will update it from '{$existingAllocation->name}' to '{$name}'.";
+                    }
+                } else {
+                    $errors[] = 'Component is already imported to this warehouse.';
+                }
+            } else {
+                // If MQMS ID doesn't exist, check if name exists in this warehouse
+                $nameExists = $existingAllocations->where('name', $name)->isNotEmpty();
+                if ($nameExists) {
+                    $errors[] = 'An allocation with this name already exists in this warehouse.';
+                }
             }
 
             $previewData[] = [
                 'id' => $mqmsId,
                 'name' => $name,
                 'errors' => $errors,
+                'warning' => $warning,
+                'is_update' => $isUpdate,
                 'is_valid' => empty($errors),
             ];
         }
@@ -99,32 +119,65 @@ class MqmsComponentImportController extends Controller
             return redirect()->route('warehouses.show', $warehouse)->with('warning', 'No components were selected for import.');
         }
 
-        $count = 0;
-        DB::transaction(function () use ($selectedComponents, $warehouse, &$count) {
+        $countCreated = 0;
+        $countUpdated = 0;
+
+        DB::transaction(function () use ($selectedComponents, $warehouse, &$countCreated, &$countUpdated) {
             foreach ($selectedComponents as $data) {
                 if (! isset($data['id'])) {
                     continue;
                 }
 
-                // Uniqueness check
-                $exists = Allocation::where('warehouse_id', $warehouse->id)
-                    ->where(function ($query) use ($data) {
-                        $query->where('name', $data['name'])
-                            ->orWhere('mapped_to_component_id', $data['id']);
-                    })
-                    ->exists();
+                $mqmsId = $data['id'];
+                $name = $data['name'];
 
-                if (! $exists) {
-                    Allocation::create([
-                        'warehouse_id' => $warehouse->id,
-                        'name' => $data['name'],
-                        'mapped_to_component_id' => $data['id'],
-                    ]);
-                    $count++;
+                // Retrieve existing allocation with this MQMS ID
+                $existing = Allocation::where('warehouse_id', $warehouse->id)
+                    ->where('mapped_to_component_id', $mqmsId)
+                    ->first();
+
+                if ($existing) {
+                    if ($existing->name !== $name) {
+                        // Double check name collision to prevent updates to duplicate names
+                        $collision = Allocation::where('warehouse_id', $warehouse->id)
+                            ->where('name', $name)
+                            ->where('id', '!=', $existing->id)
+                            ->exists();
+
+                        if (! $collision) {
+                            $existing->update(['name' => $name]);
+                            $countUpdated++;
+                        }
+                    }
+                } else {
+                    // Double check name collision for new imports
+                    $collision = Allocation::where('warehouse_id', $warehouse->id)
+                        ->where('name', $name)
+                        ->exists();
+
+                    if (! $collision) {
+                        Allocation::create([
+                            'warehouse_id' => $warehouse->id,
+                            'name' => $name,
+                            'mapped_to_component_id' => $mqmsId,
+                        ]);
+                        $countCreated++;
+                    }
                 }
             }
         });
 
-        return redirect()->route('warehouses.show', $warehouse)->with('success', "Successfully imported {$count} components as allocations.");
+        $message = "Successfully processed MQMS components.";
+        if ($countCreated > 0 && $countUpdated > 0) {
+            $message = "Successfully imported {$countCreated} new components and updated {$countUpdated} existing component names.";
+        } elseif ($countCreated > 0) {
+            $message = "Successfully imported {$countCreated} new components as allocations.";
+        } elseif ($countUpdated > 0) {
+            $message = "Successfully updated {$countUpdated} existing component names.";
+        } else {
+            return redirect()->route('warehouses.show', $warehouse)->with('warning', 'No components were imported or updated.');
+        }
+
+        return redirect()->route('warehouses.show', $warehouse)->with('success', $message);
     }
 }

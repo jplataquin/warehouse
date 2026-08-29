@@ -47,7 +47,12 @@
                                             <td><code class="small">{{ $item['id'] }}</code></td>
                                             <td>
                                                 @if($item['is_valid'])
-                                                    <span class="badge bg-success">Ready to Import</span>
+                                                    @if(!empty($item['warning']))
+                                                        <span class="badge bg-warning text-dark mb-1"><i class="bi bi-pencil-fill me-1"></i> Name Update</span>
+                                                        <div class="text-warning small" style="font-size: 0.8rem;"><i class="bi bi-info-circle-fill"></i> {{ $item['warning'] }}</div>
+                                                    @else
+                                                        <span class="badge bg-success">Ready to Import</span>
+                                                    @endif
                                                 @else
                                                     @foreach($item['errors'] as $error)
                                                         <div class="text-danger small"><i class="bi bi-exclamation-triangle-fill"></i> {{ $error }}</div>
