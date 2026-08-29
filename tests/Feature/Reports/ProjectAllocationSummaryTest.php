@@ -214,4 +214,92 @@ class ProjectAllocationSummaryTest extends TestCase
         $response2->assertSee('Allocation Alpha');
         $response2->assertSee('50.00');
     }
+
+    /**
+     * Test that guests cannot access reports details page.
+     */
+    public function test_guests_cannot_access_reports_details_page(): void
+    {
+        $this->get(route('reports.project-allocation-summary.details'))
+            ->assertRedirect(route('login'));
+    }
+
+    /**
+     * Test that reports details page loads and displays contributing ledger entries.
+     */
+    public function test_reports_details_loads_correctly_with_data_and_filters(): void
+    {
+        $project = Project::create(['name' => 'Project Gamma']);
+        $allocation = Allocation::create(['name' => 'Allocation Gamma', 'warehouse_id' => $this->warehouse->id]);
+        
+        // Ledger entry 1 contributing
+        $ledger1 = Ledger::create([
+            'entry_date' => '2026-08-01',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $this->item->id,
+            'quantity' => 12.50,
+            'warehouse_id' => $this->warehouse->id,
+            'project_id' => $project->id,
+            'allocation_id' => $allocation->id,
+            'po_number' => 'PO-12345',
+            'remarks' => 'Test contributing entry 1',
+        ]);
+
+        // Ledger entry 2 contributing
+        $ledger2 = Ledger::create([
+            'entry_date' => '2026-08-10',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $this->item->id,
+            'quantity' => 7.50,
+            'warehouse_id' => $this->warehouse->id,
+            'project_id' => $project->id,
+            'allocation_id' => $allocation->id,
+            'delivery_receipt' => 'DR-67890',
+            'remarks' => 'Test contributing entry 2',
+        ]);
+
+        // Ledger entry 3 - outside date range
+        $ledger3 = Ledger::create([
+            'entry_date' => '2026-08-20',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $this->item->id,
+            'quantity' => 50.00,
+            'warehouse_id' => $this->warehouse->id,
+            'project_id' => $project->id,
+            'allocation_id' => $allocation->id,
+        ]);
+
+        // Query the details page with date range filter (excluding entry 3)
+        $response = $this->actingAs($this->user)
+            ->get(route('reports.project-allocation-summary.details', [
+                'project_id' => $project->id,
+                'allocation_id' => $allocation->id,
+                'item_id' => $this->item->id,
+                'from_date' => '2026-08-01',
+                'to_date' => '2026-08-15',
+            ]));
+
+        $response->assertStatus(200);
+        
+        // Should show correct Context
+        $response->assertSee('Project Gamma');
+        $response->assertSee('Allocation Gamma');
+        $response->assertSee('Test Item');
+        
+        // Should display total sum of filtered entries: 12.50 + 7.50 = 20.00
+        $response->assertSee('Total Sum: 20.00');
+
+        // Should display contributing entries
+        $response->assertSee('PO-12345');
+        $response->assertSee('DR-67890');
+        $response->assertSee('Test contributing entry 1');
+        $response->assertSee('Test contributing entry 2');
+
+        // Should NOT show the quantity from the out-of-range entry (50.00)
+        $response->assertDontSee('Total Sum: 70.00');
+    }
 }
+

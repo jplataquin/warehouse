@@ -93,7 +93,11 @@
                                                 </td>
                                             </tr>
                                             @foreach($items as $data)
-                                                <tr>
+                                                @if($data->item_id)
+                                                    <tr onclick="window.open('{{ route('reports.project-allocation-summary.details', ['project_id' => $selectedProject->id, 'allocation_id' => $allocationId, 'item_id' => $data->item_id, 'from_date' => $fromDate, 'to_date' => $toDate]) }}', '_blank')" style="cursor: pointer;">
+                                                @else
+                                                    <tr>
+                                                @endif
                                                     <td class="ps-5 py-2 text-secondary fw-semibold">
                                                         <i class="bi bi-box-seam me-2 text-muted"></i>
                                                         {{ $data->item ? $data->item->name : 'Unspecified Item' }}
