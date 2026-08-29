@@ -60,6 +60,9 @@
 
                 @if(Auth::user()->isAdmin() || Auth::user()->isSupervisor())
                     <li class="nav-item">
+                        <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('reports.index') }}">Reports</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('ledgers.index') }}">Ledger</a>
                     </li>
                     <li class="nav-item">
@@ -94,6 +97,9 @@
                     @endif
                 @endif
                 @if(Auth::user()->isLogger() || Auth::user()->isViewer())
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('reports.index') }}">Reports</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('items.assets') }}">Assets</a>
                     </li>
