@@ -46,7 +46,7 @@
                                     <div class="text-muted small mb-0">
                                         <strong>Spec:</strong> {{ $item->specification ?? 'None' }} | 
                                         <strong>Unit:</strong> {{ $item->unit }} | 
-                                        <strong>Type:</strong> <span class="badge bg-secondary bg-opacity-10 text-dark">{{ $item->type }}</span>
+                                        <strong>Type:</strong> <span class="badge bg-secondary bg-opacity-10 text-dark">{{ $item->itemType ? $item->itemType->name : $item->type }}</span>
                                     </div>
                                 </div>
                                 <div class="col-sm-4 text-sm-end mt-3 mt-sm-0">

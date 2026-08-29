@@ -36,7 +36,7 @@
                                 @endif
                             </td>
                             <td>
-                                <span class="badge bg-light text-dark border">{{ $item->type }}</span>
+                                <span class="badge bg-light text-dark border">{{ $item->itemType ? $item->itemType->name : $item->type }}</span>
                             </td>
                             <td>{{ $item->unit }}</td>
                             <td>{{ $item->status }}</td>

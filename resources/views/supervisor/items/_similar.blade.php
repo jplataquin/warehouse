@@ -29,7 +29,7 @@
                         @endif
                     </td>
                     <td class="py-2">
-                        <span class="badge bg-light text-dark border">{{ $sItem->type }}</span>
+                        <span class="badge bg-light text-dark border">{{ $sItem->itemType ? $sItem->itemType->name : $sItem->type }}</span>
                     </td>
                     <td class="py-2">{{ $sItem->unit }}</td>
                     <td class="py-2">
