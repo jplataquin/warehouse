@@ -94,13 +94,20 @@
                                             </tr>
                                             @foreach($items as $data)
                                                 @if($data->item_id)
-                                                    <tr onclick="window.open('{{ route('reports.project-allocation-summary.details', ['project_id' => $selectedProject->id, 'allocation_id' => $allocationId, 'item_id' => $data->item_id, 'from_date' => $fromDate, 'to_date' => $toDate]) }}', '_blank')" style="cursor: pointer;">
+                                                    <tr class="clickable-row" onclick="window.open('{{ route('reports.project-allocation-summary.details', ['project_id' => $selectedProject->id, 'allocation_id' => $allocationId, 'item_id' => $data->item_id, 'from_date' => $fromDate, 'to_date' => $toDate]) }}', '_blank')">
                                                 @else
                                                     <tr>
                                                 @endif
                                                     <td class="ps-5 py-2 text-secondary fw-semibold">
-                                                        <i class="bi bi-box-seam me-2 text-muted"></i>
-                                                        {{ $data->item ? $data->item->name : 'Unspecified Item' }}
+                                                        @if($data->item_id)
+                                                            <a href="{{ route('reports.project-allocation-summary.details', ['project_id' => $selectedProject->id, 'allocation_id' => $allocationId, 'item_id' => $data->item_id, 'from_date' => $fromDate, 'to_date' => $toDate]) }}" target="_blank" class="text-decoration-none text-secondary hover-primary-link d-inline-block align-middle">
+                                                                <i class="bi bi-box-seam me-2 text-muted"></i>
+                                                                {{ $data->item ? $data->item->name : 'Unspecified Item' }}
+                                                            </a>
+                                                        @else
+                                                            <i class="bi bi-box-seam me-2 text-muted"></i>
+                                                            {{ $data->item ? $data->item->name : 'Unspecified Item' }}
+                                                        @endif
                                                         @if($data->item && $data->item->specification)
                                                             <span class="text-muted small ms-2">({{ $data->item->specification }})</span>
                                                         @endif
@@ -126,4 +133,22 @@
         </div>
     </div>
 </div>
+
+@push('styles')
+<style>
+    .clickable-row {
+        cursor: pointer !important;
+    }
+    .clickable-row td {
+        cursor: pointer !important;
+    }
+    .clickable-row:hover td {
+        background-color: rgba(var(--bs-primary-rgb), 0.05) !important;
+    }
+    .hover-primary-link:hover {
+        color: var(--bs-primary) !important;
+        text-decoration: underline !important;
+    }
+</style>
+@endpush
 @endsection
