@@ -270,4 +270,39 @@ class AssetInventoryTest extends TestCase
         $response->assertDontSee('South Grader');
         $response->assertSee('Unstored Truck');
     }
+
+    public function test_asset_inventory_can_filter_by_item_type()
+    {
+        // Create ItemTypes
+        $typeHeavy = \App\Models\ItemType::create(['name' => 'Heavy Equipment', 'base_behavior' => 'ASSET']);
+        $typeHand = \App\Models\ItemType::create(['name' => 'Hand Tools', 'base_behavior' => 'ASSET']);
+
+        $asset1 = Item::create([
+            'name' => 'Heavy Crane',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'item_type_id' => $typeHeavy->id,
+        ]);
+
+        $asset2 = Item::create([
+            'name' => 'Sledge Hammer',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'item_type_id' => $typeHand->id,
+        ]);
+
+        // Filter by Heavy Equipment
+        $response = $this->actingAs($this->supervisor)
+            ->get(route('items.assets', ['item_type_id' => $typeHeavy->id]));
+        $response->assertStatus(200);
+        $response->assertSee('Heavy Crane');
+        $response->assertDontSee('Sledge Hammer');
+
+        // Filter by Hand Tools
+        $response = $this->actingAs($this->supervisor)
+            ->get(route('items.assets', ['item_type_id' => $typeHand->id]));
+        $response->assertStatus(200);
+        $response->assertDontSee('Heavy Crane');
+        $response->assertSee('Sledge Hammer');
+    }
 }

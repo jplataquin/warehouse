@@ -9,7 +9,7 @@
     <div class="card shadow-sm border-0 mb-4 bg-light">
         <div class="card-body p-3">
             <form action="{{ route('items.assets') }}" method="GET" class="row g-3 align-items-end">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted text-uppercase">Search Keyword</label>
                     <div class="input-group">
                         <input type="text" name="search" class="form-control" placeholder="Search asset name or spec..." value="{{ request('search') }}">
@@ -21,7 +21,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label small fw-bold text-muted text-uppercase">Status</label>
                     <select name="status" class="form-select" onchange="this.form.submit()">
                         <option value="">All Statuses</option>
@@ -30,7 +30,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label small fw-bold text-muted text-uppercase">Warehouse</label>
                     <select name="warehouse_id" class="form-select" onchange="this.form.submit()">
                         <option value="">All Locations</option>
@@ -43,11 +43,23 @@
                     </select>
                 </div>
 
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Asset Type</label>
+                    <select name="item_type_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Asset Types</option>
+                        @foreach($assetTypes as $type)
+                            <option value="{{ $type->id }}" {{ request('item_type_id') == $type->id ? 'selected' : '' }}>
+                                {{ $type->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <div class="col-md-2 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1">
                         <i class="bi bi-filter"></i> Apply
                     </button>
-                    @if(request('search') || request('status') || request('warehouse_id'))
+                    @if(request('search') || request('status') || request('warehouse_id') || request('item_type_id'))
                         <a href="{{ route('items.assets') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-counterclockwise"></i>
                         </a>

@@ -104,10 +104,15 @@ class ItemController extends Controller
             }
         }
 
+        if ($request->filled('item_type_id')) {
+            $query->where('item_type_id', $request->item_type_id);
+        }
+
         $assets = $query->get();
         $warehouses = \App\Models\Warehouse::active()->get();
+        $assetTypes = \App\Models\ItemType::where('base_behavior', 'ASSET')->orderBy('name')->get();
 
-        return view('supervisor.items.assets', compact('assets', 'warehouses'));
+        return view('supervisor.items.assets', compact('assets', 'warehouses', 'assetTypes'));
     }
 
     public function create()
