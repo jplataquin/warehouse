@@ -88,6 +88,13 @@ class ProjectAllocationSummaryTest extends TestCase
         $allocation1 = Allocation::create(['name' => 'Allocation Alpha', 'warehouse_id' => $this->warehouse->id]);
         $allocation2 = Allocation::create(['name' => 'Allocation Beta', 'warehouse_id' => $this->warehouse->id]);
 
+        // Create Second Item
+        $item2 = Item::create([
+            'name' => 'Second Item',
+            'type' => 'CONSUMABLE',
+            'unit' => 'Bags',
+        ]);
+
         // 3. Create Ledger entries for Project One (within and outside range)
         // Ledger 1: Project One, Allocation Alpha, Qty 10.00, Date: 2026-08-01, Action: ALLOCATE (In range)
         Ledger::create([
@@ -108,6 +115,18 @@ class ProjectAllocationSummaryTest extends TestCase
             'action' => 'ALLOCATE',
             'item_id' => $this->item->id,
             'quantity' => 15.50,
+            'warehouse_id' => $this->warehouse->id,
+            'project_id' => $project1->id,
+            'allocation_id' => $allocation1->id,
+        ]);
+
+        // Ledger 7: Project One, Allocation Alpha, Qty 8.00, Date: 2026-08-07, Action: ALLOCATE (In range, Second Item)
+        Ledger::create([
+            'entry_date' => '2026-08-07',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item2->id,
+            'quantity' => 8.00,
             'warehouse_id' => $this->warehouse->id,
             'project_id' => $project1->id,
             'allocation_id' => $allocation1->id,
@@ -171,12 +190,17 @@ class ProjectAllocationSummaryTest extends TestCase
 
         $response->assertStatus(200);
 
-        // Alpha total should be 10.00 + 15.50 = 25.50
+        // Alpha total should be (10.00 + 15.50) = 25.50 (for Test Item) + 8.00 (for Second Item) = 33.50 total
         $response->assertSee('Allocation Alpha');
+        $response->assertSee('Total: 33.50');
+        $response->assertSee('Test Item');
         $response->assertSee('25.50');
+        $response->assertSee('Second Item');
+        $response->assertSee('8.00');
 
         // Beta total should be 20.00 (Ledger 4 with 5.00 is out of date range)
         $response->assertSee('Allocation Beta');
+        $response->assertSee('Total: 20.00');
         $response->assertSee('20.00');
 
         // Check that Project Two's 50.00 is NOT present

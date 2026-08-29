@@ -23,7 +23,7 @@ class ProjectAllocationSummaryController extends Controller
         $reportData = collect();
 
         if ($projectId) {
-            $reportData = Ledger::select('allocation_id')
+            $reportData = Ledger::select('allocation_id', 'item_id')
                 ->selectRaw('SUM(quantity) as total_quantity')
                 ->where('action', 'ALLOCATE')
                 ->where('project_id', $projectId)
@@ -34,11 +34,13 @@ class ProjectAllocationSummaryController extends Controller
                 ->when($toDate, function ($query) use ($toDate) {
                     return $query->whereDate('entry_date', '<=', $toDate);
                 })
-                ->groupBy('allocation_id')
-                ->with(['allocation'])
+                ->groupBy('allocation_id', 'item_id')
+                ->with(['allocation', 'item'])
                 ->get()
-                ->sortBy(function ($item) {
-                    return $item->allocation ? $item->allocation->name : '';
+                ->groupBy('allocation_id')
+                ->sortBy(function ($items) {
+                    $allocation = $items->first()->allocation;
+                    return $allocation ? $allocation->name : '';
                 });
         }
 

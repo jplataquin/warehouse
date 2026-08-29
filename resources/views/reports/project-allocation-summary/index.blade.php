@@ -74,23 +74,42 @@
                             </div>
                         @else
                             <div class="table-responsive">
-                                <table class="table table-hover table-striped mb-0">
+                                <table class="table table-hover mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th class="ps-4">Allocation Target</th>
+                                            <th class="ps-4">Allocation Target / Item</th>
                                             <th class="text-end pe-4" style="width: 250px;">Total Quantity Allocated</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($reportData as $data)
-                                            <tr>
-                                                <td class="ps-4 py-3 fw-semibold">
-                                                    {{ $data->allocation ? $data->allocation->name : 'Unspecified' }}
+                                        @foreach($reportData as $allocationId => $items)
+                                            @php
+                                                $allocationName = $items->first()->allocation ? $items->first()->allocation->name : 'Unspecified Target';
+                                                $targetTotal = $items->sum('total_quantity');
+                                            @endphp
+                                            <tr class="table-light">
+                                                <td class="ps-4 py-3 fw-bold text-dark bg-light border-bottom-0">
+                                                    <i class="bi bi-geo-alt-fill text-primary me-2"></i>{{ $allocationName }}
                                                 </td>
-                                                <td class="text-end pe-4 py-3 fw-bold text-success">
-                                                    {{ number_format($data->total_quantity, 2) }}
+                                                <td class="text-end pe-4 py-3 fw-bold text-dark bg-light border-bottom-0">
+                                                    Total: {{ number_format($targetTotal, 2) }}
                                                 </td>
                                             </tr>
+                                            @foreach($items as $data)
+                                                <tr>
+                                                    <td class="ps-5 py-2 text-secondary fw-semibold">
+                                                        <i class="bi bi-box-seam me-2 text-muted"></i>
+                                                        {{ $data->item ? $data->item->name : 'Unspecified Item' }}
+                                                        @if($data->item && $data->item->specification)
+                                                            <span class="text-muted small ms-2">({{ $data->item->specification }})</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-end pe-4 py-2 text-success fw-bold">
+                                                        {{ number_format($data->total_quantity, 2) }}
+                                                        <small class="text-muted fw-normal ms-1">{{ $data->item ? $data->item->unit : '' }}</small>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
                                         @endforeach
                                     </tbody>
                                 </table>
