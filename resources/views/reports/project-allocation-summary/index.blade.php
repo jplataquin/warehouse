@@ -65,6 +65,14 @@
                                 </small>
                             @endif
                         </div>
+                        @if(!$reportData->isEmpty())
+                            <div>
+                                <a href="{{ route('reports.project-allocation-summary.print', ['project_id' => $selectedProject->id, 'from_date' => $fromDate, 'to_date' => $toDate]) }}" 
+                                   target="_blank" class="btn btn-outline-dark btn-sm shadow-sm">
+                                    <i class="bi bi-printer me-1"></i> Print Report
+                                </a>
+                            </div>
+                        @endif
                     </div>
                     <div class="card-body p-0">
                         @if($reportData->isEmpty())

@@ -48,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Reports\ReportIndexController::class, 'index'])->name('index');
         Route::get('/project-allocation-summary', [\App\Http\Controllers\Reports\ProjectAllocationSummaryController::class, 'index'])->name('project-allocation-summary');
         Route::get('/project-allocation-summary/details', [\App\Http\Controllers\Reports\ProjectAllocationSummaryController::class, 'details'])->name('project-allocation-summary.details');
+        Route::get('/project-allocation-summary/print', [\App\Http\Controllers\Reports\ProjectAllocationSummaryController::class, 'print'])->name('project-allocation-summary.print');
     });
     Route::get('/warehouses/{warehouse}/dashboard', [DashboardController::class, 'warehouseDashboard'])
         ->name('logger.warehouse.dashboard')

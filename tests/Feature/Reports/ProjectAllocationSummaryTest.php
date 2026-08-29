@@ -301,5 +301,45 @@ class ProjectAllocationSummaryTest extends TestCase
         // Should NOT show the quantity from the out-of-range entry (50.00)
         $response->assertDontSee('Total Sum: 70.00');
     }
+
+    /**
+     * Test that guests cannot access reports print page.
+     */
+    public function test_guests_cannot_access_reports_print_page(): void
+    {
+        $this->get(route('reports.project-allocation-summary.print'))
+            ->assertRedirect(route('login'));
+    }
+
+    /**
+     * Test that reports print page loads and displays data grouped by target.
+     */
+    public function test_reports_print_loads_correctly_with_data_and_filters(): void
+    {
+        $project = Project::create(['name' => 'Project Delta']);
+        $allocation = Allocation::create(['name' => 'Allocation Delta', 'warehouse_id' => $this->warehouse->id]);
+        
+        Ledger::create([
+            'entry_date' => '2026-08-01',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $this->item->id,
+            'quantity' => 45.00,
+            'warehouse_id' => $this->warehouse->id,
+            'project_id' => $project->id,
+            'allocation_id' => $allocation->id,
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->get(route('reports.project-allocation-summary.print', [
+                'project_id' => $project->id,
+            ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Project Delta');
+        $response->assertSee('Target: Allocation Delta');
+        $response->assertSee('Test Item');
+        $response->assertSee('45.00');
+    }
 }
 
