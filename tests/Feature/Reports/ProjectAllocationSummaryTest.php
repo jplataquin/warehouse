@@ -190,9 +190,8 @@ class ProjectAllocationSummaryTest extends TestCase
 
         $response->assertStatus(200);
 
-        // Alpha total should be (10.00 + 15.50) = 25.50 (for Test Item) + 8.00 (for Second Item) = 33.50 total
+        // Alpha total should be (10.00 + 15.50) = 25.50 (for Test Item) + 8.00 (for Second Item)
         $response->assertSee('Allocation Alpha');
-        $response->assertSee('Total: 33.50');
         $response->assertSee('Test Item');
         $response->assertSee('25.50');
         $response->assertSee('Second Item');
@@ -200,7 +199,6 @@ class ProjectAllocationSummaryTest extends TestCase
 
         // Beta total should be 20.00 (Ledger 4 with 5.00 is out of date range)
         $response->assertSee('Allocation Beta');
-        $response->assertSee('Total: 20.00');
         $response->assertSee('20.00');
 
         // Check that Project Two's 50.00 is NOT present

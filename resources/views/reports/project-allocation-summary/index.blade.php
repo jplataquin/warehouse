@@ -88,11 +88,8 @@
                                                 $targetTotal = $items->sum('total_quantity');
                                             @endphp
                                             <tr class="table-light">
-                                                <td class="ps-4 py-3 fw-bold text-dark bg-light border-bottom-0">
+                                                <td colspan="2" class="ps-4 py-3 fw-bold text-dark bg-light border-bottom-0">
                                                     <i class="bi bi-geo-alt-fill text-primary me-2"></i>{{ $allocationName }}
-                                                </td>
-                                                <td class="text-end pe-4 py-3 fw-bold text-dark bg-light border-bottom-0">
-                                                    Total: {{ number_format($targetTotal, 2) }}
                                                 </td>
                                             </tr>
                                             @foreach($items as $data)
