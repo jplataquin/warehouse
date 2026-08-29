@@ -624,4 +624,36 @@ class ItemTest extends TestCase
         $item = Item::where('name', 'Drill DCD771 Huge')->first();
         $this->assertNull($item);
     }
+
+    public function test_supervisor_can_filter_items_by_item_type_id()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        $typeHeavy = \App\Models\ItemType::create(['name' => 'Heavy Equipment', 'base_behavior' => 'ASSET']);
+        $typeHand = \App\Models\ItemType::create(['name' => 'Hand Tools', 'base_behavior' => 'ASSET']);
+
+        $item1 = Item::create([
+            'name' => 'Heavy Crane',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'item_type_id' => $typeHeavy->id,
+            'is_approved' => true,
+        ]);
+
+        $item2 = Item::create([
+            'name' => 'Sledge Hammer',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'item_type_id' => $typeHand->id,
+            'is_approved' => true,
+        ]);
+
+        // Filter by Heavy Equipment
+        $response = $this->actingAs($supervisor)
+            ->get(route('items.index', ['type' => $typeHeavy->id]));
+        $response->assertStatus(200);
+        $response->assertSee('Heavy Crane');
+        $response->assertDontSee('Sledge Hammer');
+        $response->assertSee('Heavy Equipment');
+    }
 }

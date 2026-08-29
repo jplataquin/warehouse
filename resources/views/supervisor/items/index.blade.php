@@ -26,11 +26,21 @@
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <select name="type" class="form-select">
+                    <select name="type" class="form-select" onchange="this.form.submit()">
                         <option value="">All Types</option>
-                        <option value="CONSUMABLE" {{ request('type') === 'CONSUMABLE' ? 'selected' : '' }}>Consumable</option>
-                        <option value="ASSET" {{ request('type') === 'ASSET' ? 'selected' : '' }}>Asset</option>
-                        
+                        <optgroup label="Broad Categories">
+                            <option value="CONSUMABLE" {{ request('type') === 'CONSUMABLE' ? 'selected' : '' }}>Consumable</option>
+                            <option value="ASSET" {{ request('type') === 'ASSET' ? 'selected' : '' }}>Asset</option>
+                        </optgroup>
+                        @if($itemTypes->count() > 0)
+                            <optgroup label="Specific Item Types">
+                                @foreach($itemTypes as $type)
+                                    <option value="{{ $type->id }}" {{ request('type') == $type->id ? 'selected' : '' }}>
+                                        {{ $type->name }}
+                                    </option>
+                                @endforeach
+                            </optgroup>
+                        @endif
                     </select>
                 </div>
                 <div class="col-md-2">

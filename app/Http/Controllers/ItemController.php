@@ -74,8 +74,9 @@ class ItemController extends Controller
 
         $approvedCount = $approvedCountQuery->where('is_approved', true)->count();
         $pendingCount = $pendingCountQuery->where('is_approved', false)->count();
+        $itemTypes = \App\Models\ItemType::orderBy('name')->get();
 
-        return view('supervisor.items.index', compact('items', 'tab', 'approvedCount', 'pendingCount'));
+        return view('supervisor.items.index', compact('items', 'tab', 'approvedCount', 'pendingCount', 'itemTypes'));
     }
 
     public function assets(Request $request)
