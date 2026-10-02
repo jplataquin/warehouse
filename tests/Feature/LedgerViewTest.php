@@ -113,4 +113,38 @@ class LedgerViewTest extends TestCase
         // It should display Parent Warehouse > Sub Warehouse for the sub warehouse
         $response->assertSee('Parent Warehouse &gt; Sub Warehouse', false);
     }
+
+    public function test_logger_ledger_index_view_shows_id_column_after_date()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $warehouse = Warehouse::create(['name' => 'Logger WH', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $logger->warehouses()->attach($warehouse);
+
+        $item = Item::create([
+            'name' => 'Test Item',
+            'type' => 'CONSUMABLE',
+            'unit' => 'Units',
+        ]);
+
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 25,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+            'remarks' => 'Test delivery entry',
+        ]);
+
+        $response = $this->actingAs($logger)->get(route('ledgers.index', [
+            'warehouse_id' => $warehouse->id,
+            'item_id' => $item->id,
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('<th class="ps-4">Date</th>', false);
+        $response->assertSee('<th>ID</th>', false);
+        $response->assertSee("#{$ledger->id}");
+    }
 }
