@@ -175,10 +175,11 @@
                     @forelse($ledgers as $ledger)
                     @php
                         if ($item) {
+                            $displayBal = $ledger->running_balance ?? $runningBal;
                             if ($ledger->type === 'IN') {
-                                $runningBal += $ledger->quantity;
-                            } else {
                                 $runningBal -= $ledger->quantity;
+                            } else {
+                                $runningBal += $ledger->quantity;
                             }
                         }
                     @endphp
@@ -209,7 +210,7 @@
                         <td class="fw-bold">{{ $ledger->quantity }} <small class="text-muted fw-normal">{{ $ledger->item->unit }}</small></td>
                         <td class="fw-bold {{ $item ? 'text-primary' : 'text-muted' }}">
                             @if($item)
-                                {{ number_format($runningBal, 2) }} <small class="fw-normal">{{ $ledger->item->unit }}</small>
+                                {{ number_format($displayBal, 2) }} <small class="fw-normal">{{ $ledger->item->unit }}</small>
                             @else
                                 <span class="small opacity-50">N/A</span>
                             @endif

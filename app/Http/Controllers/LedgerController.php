@@ -114,37 +114,17 @@ class LedgerController extends Controller
             // Running balance logic only if single item selected
             $openingBalance = 0;
             if ($request->filled('item_id')) {
-                $ledgers = $query->oldest('entry_date')
-                    ->oldest('created_at')
+                $baseQuery = clone $query;
+                $ledgers = $query->latest('entry_date')
+                    ->latest('created_at')
+                    ->latest('id')
                     ->paginate(50);
 
-                $currentPage = $ledgers->currentPage();
-                $perPage = $ledgers->perPage();
-
-                // Calculate opening balance for the page
-                $openingBalance = Ledger::where('warehouse_id', $selectedWarehouseId)
-                    ->where('item_id', $request->item_id)
-                    ->where(function ($q) use ($request) {
-                        if ($request->has('start_date') && $request->start_date) {
-                            $q->whereDate('entry_date', '>=', $request->start_date);
-                        }
-                        if ($request->has('end_date') && $request->end_date) {
-                            $q->whereDate('entry_date', '<=', $request->end_date);
-                        }
-                        if ($request->filled('allocation_id')) {
-                            $q->where('allocation_id', $request->allocation_id);
-                        }
-                    })
-                    ->oldest('entry_date')
-                    ->oldest('created_at')
-                    ->take(($currentPage - 1) * $perPage)
-                    ->get()
-                    ->reduce(function ($carry, $ledger) {
-                        return $ledger->type === 'IN' ? $carry + $ledger->quantity : $carry - $ledger->quantity;
-                    }, 0);
+                $openingBalance = $this->attachRunningBalances($baseQuery, $ledgers, $selectedWarehouseId, $request->item_id, $request, true);
             } else {
                 $ledgers = $query->latest('entry_date')
                     ->latest('created_at')
+                    ->latest('id')
                     ->paginate(50);
             }
 
@@ -297,34 +277,13 @@ class LedgerController extends Controller
             $query->where('allocation_id', $request->allocation_id);
         }
 
-        $ledgers = $query->oldest('entry_date')
-            ->oldest('created_at')
+        $baseQuery = clone $query;
+        $ledgers = $query->latest('entry_date')
+            ->latest('created_at')
+            ->latest('id')
             ->paginate(50);
 
-        $currentPage = $ledgers->currentPage();
-        $perPage = $ledgers->perPage();
-
-        // Calculate opening balance for the page
-        $openingBalance = Ledger::where('warehouse_id', $warehouse->id)
-            ->where('item_id', $item->id)
-            ->where(function ($q) use ($request) {
-                if ($request->has('start_date') && $request->start_date) {
-                    $q->whereDate('entry_date', '>=', $request->start_date);
-                }
-                if ($request->has('end_date') && $request->end_date) {
-                    $q->whereDate('entry_date', '<=', $request->end_date);
-                }
-                if ($request->filled('allocation_id')) {
-                    $q->where('allocation_id', $request->allocation_id);
-                }
-            })
-            ->oldest('entry_date')
-            ->oldest('created_at')
-            ->take(($currentPage - 1) * $perPage)
-            ->get()
-            ->reduce(function ($carry, $ledger) {
-                return $ledger->type === 'IN' ? $carry + $ledger->quantity : $carry - $ledger->quantity;
-            }, 0);
+        $openingBalance = $this->attachRunningBalances($baseQuery, $ledgers, $warehouse->id, $item->id, $request, true);
 
         $balance = $item->getBalance($warehouse->id);
         $allocations = Allocation::where('warehouse_id', $warehouse->id)->orderBy('name', 'asc')->get();
@@ -377,33 +336,79 @@ class LedgerController extends Controller
             $query->where('allocation_id', $request->allocation_id);
         }
 
-        $ledgers = $query->oldest('entry_date')
-            ->oldest('created_at')
+        $baseQuery = clone $query;
+        $ledgers = $query->latest('entry_date')
+            ->latest('created_at')
+            ->latest('id')
             ->get();
 
         $balance = $item->getBalance($warehouse->id);
 
-        // For print, we calculate opening balance based on the full range up to the first shown record
-        $openingBalance = 0;
-        if ($request->filled('start_date') || $request->filled('end_date') || $request->filled('allocation_id')) {
-            $openingBalance = Ledger::where('warehouse_id', $warehouse->id)
-                ->where('item_id', $item->id)
-                ->where(function ($q) use ($request) {
-                    if ($request->has('start_date') && $request->start_date) {
-                        $q->whereDate('entry_date', '<', $request->start_date);
-                    }
-                    // Note: If no start date but other filters exist, we might need a more complex "history" calc,
-                    // but usually print follows what's on screen.
+        $openingBalance = $this->attachRunningBalances($baseQuery, $ledgers, $warehouse->id, $item->id, $request, false);
+
+        return view($this->getRoleView('print_item_history'), compact('ledgers', 'item', 'warehouse', 'balance', 'openingBalance'));
+    }
+
+    /**
+     * Compute and attach running balances for a paginated or collected set of ledgers in descending order.
+     */
+    private function attachRunningBalances($query, $ledgers, $warehouseId, $itemId, Request $request, bool $isPaginated = true): float
+    {
+        // 1. Balance prior to start_date if start_date filter is present
+        $priorBalance = 0;
+        if ($request->filled('start_date')) {
+            $priorBalance = Ledger::where('warehouse_id', $warehouseId)
+                ->where('item_id', $itemId)
+                ->whereDate('entry_date', '<', $request->start_date)
+                ->when($request->filled('allocation_id'), function ($q) use ($request) {
+                    $q->where('allocation_id', $request->allocation_id);
                 })
-                ->oldest('entry_date')
-                ->oldest('created_at')
-                ->get()
+                ->get(['type', 'quantity'])
                 ->reduce(function ($carry, $ledger) {
                     return $ledger->type === 'IN' ? $carry + $ledger->quantity : $carry - $ledger->quantity;
                 }, 0);
         }
 
-        return view($this->getRoleView('print_item_history'), compact('ledgers', 'item', 'warehouse', 'balance', 'openingBalance'));
+        // 2. Sum of all matching records in the filtered query
+        $filteredSum = (clone $query)
+            ->without(['item', 'warehouse', 'project', 'allocation', 'sourceWarehouse', 'destinationWarehouse', 'linkedLedger'])
+            ->get(['type', 'quantity'])
+            ->reduce(function ($carry, $ledger) {
+                return $ledger->type === 'IN' ? $carry + $ledger->quantity : $carry - $ledger->quantity;
+            }, 0);
+
+        $totalBalance = (float) $priorBalance + (float) $filteredSum;
+
+        // 3. For paginated results, deduct movements of records newer than this page (skipped records)
+        $skippedCount = 0;
+        if ($isPaginated && $ledgers instanceof LengthAwarePaginator) {
+            $skippedCount = ($ledgers->currentPage() - 1) * $ledgers->perPage();
+        }
+
+        $skippedSum = 0;
+        if ($skippedCount > 0) {
+            $skippedSum = (clone $query)
+                ->without(['item', 'warehouse', 'project', 'allocation', 'sourceWarehouse', 'destinationWarehouse', 'linkedLedger'])
+                ->latest('entry_date')
+                ->latest('created_at')
+                ->latest('id')
+                ->take($skippedCount)
+                ->get(['type', 'quantity'])
+                ->reduce(function ($carry, $ledger) {
+                    return $ledger->type === 'IN' ? $carry + $ledger->quantity : $carry - $ledger->quantity;
+                }, 0);
+        }
+
+        $pageStartingBalance = (float) $totalBalance - (float) $skippedSum;
+
+        // 4. Attach running_balance to each ledger entry on this page
+        $currentBal = $pageStartingBalance;
+        foreach ($ledgers as $ledger) {
+            $ledger->running_balance = $currentBal;
+            $currentBal -= ($ledger->type === 'IN' ? $ledger->quantity : -$ledger->quantity);
+        }
+
+        return (float) $pageStartingBalance;
     }
 
     public function show(Ledger $ledger)

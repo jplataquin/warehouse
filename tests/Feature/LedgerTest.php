@@ -1160,4 +1160,216 @@ class LedgerTest extends TestCase
         $response->assertStatus(403);
         $this->assertNull($ledger->fresh()->deleted_at);
     }
+
+    public function test_warehouse_item_ledger_history_defaults_to_descending_order_by_date()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Steel Rods', 'unit' => 'Pieces']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main WH', 'status' => 'ACTIVE']);
+
+        $ledger1 = Ledger::create([
+            'entry_date' => '2026-01-05',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'First entry',
+        ]);
+
+        $ledger2 = Ledger::create([
+            'entry_date' => '2026-02-15',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 20,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Second entry',
+        ]);
+
+        $ledger3 = Ledger::create([
+            'entry_date' => '2026-03-25',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 30,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Third entry',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+        ]));
+
+        $response->assertStatus(200);
+        $ledgers = $response->viewData('ledgers');
+        $this->assertEquals($ledger3->id, $ledgers[0]->id);
+        $this->assertEquals($ledger2->id, $ledgers[1]->id);
+        $this->assertEquals($ledger1->id, $ledgers[2]->id);
+        $response->assertSeeInOrder(['Mar 25, 2026', 'Feb 15, 2026', 'Jan 05, 2026']);
+    }
+
+    public function test_warehouse_item_ledger_print_history_defaults_to_descending_order_by_date()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Steel Rods', 'unit' => 'Pieces']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main WH', 'status' => 'ACTIVE']);
+
+        $ledger1 = Ledger::create([
+            'entry_date' => '2026-01-05',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+        ]);
+
+        $ledger2 = Ledger::create([
+            'entry_date' => '2026-02-15',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 20,
+            'warehouse_id' => $warehouse->id,
+        ]);
+
+        $ledger3 = Ledger::create([
+            'entry_date' => '2026-03-25',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 30,
+            'warehouse_id' => $warehouse->id,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('ledgers.item_history.print', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+        ]));
+
+        $response->assertStatus(200);
+        $ledgers = $response->viewData('ledgers');
+        $this->assertEquals($ledger3->id, $ledgers[0]->id);
+        $this->assertEquals($ledger2->id, $ledgers[1]->id);
+        $this->assertEquals($ledger1->id, $ledgers[2]->id);
+        $response->assertSeeInOrder(['2026-03-25', '2026-02-15', '2026-01-05']);
+    }
+
+    public function test_warehouse_item_ledger_index_defaults_to_descending_order_by_date()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Steel Rods', 'unit' => 'Pieces']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main WH', 'status' => 'ACTIVE']);
+        $logger->warehouses()->attach($warehouse);
+
+        $ledger1 = Ledger::create([
+            'entry_date' => '2026-01-05',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+        ]);
+
+        $ledger2 = Ledger::create([
+            'entry_date' => '2026-02-15',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 20,
+            'warehouse_id' => $warehouse->id,
+        ]);
+
+        $ledger3 = Ledger::create([
+            'entry_date' => '2026-03-25',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 30,
+            'warehouse_id' => $warehouse->id,
+        ]);
+
+        $response = $this->actingAs($logger)->get(route('ledgers.index', [
+            'warehouse_id' => $warehouse->id,
+            'item_id' => $item->id,
+        ]));
+
+        $response->assertStatus(200);
+        $ledgers = $response->viewData('ledgers');
+        $this->assertEquals($ledger3->id, $ledgers[0]->id);
+        $this->assertEquals($ledger2->id, $ledgers[1]->id);
+        $this->assertEquals($ledger1->id, $ledgers[2]->id);
+        $response->assertSeeInOrder(['Mar 25, 2026', 'Feb 15, 2026', 'Jan 05, 2026']);
+    }
+
+    public function test_warehouse_item_ledger_descending_running_balance_calculation()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Paint', 'unit' => 'Gallons']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main WH', 'status' => 'ACTIVE']);
+
+        // Jan 1: IN 100 -> balance 100
+        $ledger1 = Ledger::create([
+            'entry_date' => '2026-01-01',
+            'type' => 'IN',
+            'action' => 'INITIAL_STOCK',
+            'item_id' => $item->id,
+            'quantity' => 100,
+            'warehouse_id' => $warehouse->id,
+        ]);
+
+        // Jan 5: IN 50 -> balance 150
+        $ledger2 = Ledger::create([
+            'entry_date' => '2026-01-05',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 50,
+            'warehouse_id' => $warehouse->id,
+        ]);
+
+        // Jan 10: OUT 30 -> balance 120
+        $ledger3 = Ledger::create([
+            'entry_date' => '2026-01-10',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item->id,
+            'quantity' => 30,
+            'warehouse_id' => $warehouse->id,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+        ]));
+
+        $response->assertStatus(200);
+        $ledgers = $response->viewData('ledgers');
+        $this->assertCount(3, $ledgers);
+
+        // In descending order:
+        // Index 0: Jan 10, OUT 30 -> running balance after transaction is 120
+        $this->assertEquals($ledger3->id, $ledgers[0]->id);
+        $this->assertEquals(120, $ledgers[0]->running_balance);
+
+        // Index 1: Jan 5, IN 50 -> running balance after transaction is 150
+        $this->assertEquals($ledger2->id, $ledgers[1]->id);
+        $this->assertEquals(150, $ledgers[1]->running_balance);
+
+        // Index 2: Jan 1, IN 100 -> running balance after transaction is 100
+        $this->assertEquals($ledger1->id, $ledgers[2]->id);
+        $this->assertEquals(100, $ledgers[2]->running_balance);
+
+        // Also check the print view has the same running balances
+        $printResponse = $this->actingAs($admin)->get(route('ledgers.item_history.print', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+        ]));
+        $printResponse->assertStatus(200);
+        $printLedgers = $printResponse->viewData('ledgers');
+        $this->assertEquals(120, $printLedgers[0]->running_balance);
+        $this->assertEquals(150, $printLedgers[1]->running_balance);
+        $this->assertEquals(100, $printLedgers[2]->running_balance);
+    }
 }

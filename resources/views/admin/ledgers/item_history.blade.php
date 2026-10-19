@@ -140,10 +140,11 @@
                     @php $runningBal = $openingBalance; @endphp
                     @forelse($ledgers as $ledger)
                     @php
+                        $displayBal = $ledger->running_balance ?? $runningBal;
                         if ($ledger->type === 'IN') {
-                            $runningBal += $ledger->quantity;
-                        } else {
                             $runningBal -= $ledger->quantity;
+                        } else {
+                            $runningBal += $ledger->quantity;
                         }
                     @endphp
                     <tr onclick="window.location='{{ route('ledgers.show', $ledger) }}'" style="cursor: pointer;" class="hover-bg-light">
@@ -177,7 +178,7 @@
                             {{ $ledger->quantity }} <small class="text-muted fw-normal">{{ $item->unit }}</small>
                         </td>
                         <td class="fw-bold text-primary">
-                            {{ number_format($runningBal, 2) }} <small class="text-muted fw-normal">{{ $item->unit }}</small>
+                            {{ number_format($displayBal, 2) }} <small class="text-muted fw-normal">{{ $item->unit }}</small>
                         </td>
                         <td>
                             @if($ledger->po_number)
