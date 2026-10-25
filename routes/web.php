@@ -16,6 +16,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\TestMqmsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiCredentialController;
+use App\Http\Controllers\McpTokenController;
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\ItemTypeController;
 use App\Http\Controllers\WarehouseController;
@@ -132,6 +133,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['admin'])->group(function () {
         Route::resource('users', UserController::class);
         Route::resource('api-credentials', ApiCredentialController::class);
+        Route::resource('mcp-tokens', McpTokenController::class)->only(['index', 'store', 'destroy']);
         Route::resource('item-types', ItemTypeController::class);
         Route::get('settings', [AdminSettingsController::class, 'index'])->name('admin.settings');
         Route::post('ledgers/{ledger}/approve', [LedgerController::class, 'approve'])->name('ledgers.approve');
