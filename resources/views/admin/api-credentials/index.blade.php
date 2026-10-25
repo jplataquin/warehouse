@@ -1,14 +1,19 @@
-@extends('layouts.app')
+@extends('layouts.logger')
 
-@section('content')
+@section('inner_content')
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0 fw-bold text-secondary"><i class="bi bi-key-fill me-2 text-primary"></i>API Credentials</h2>
-                <a href="{{ route('api-credentials.create') }}" class="btn btn-primary d-flex align-items-center gap-1">
-                    <i class="bi bi-plus-circle"></i> Add API Credential
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('api-credentials.create') }}" class="btn btn-primary d-flex align-items-center gap-1">
+                        <i class="bi bi-plus-circle"></i> Add API Credential
+                    </a>
+                    <a href="{{ route('admin.settings') }}" class="btn btn-outline-secondary d-flex align-items-center gap-1">
+                        <i class="bi bi-arrow-left"></i> Back to Settings
+                    </a>
+                </div>
             </div>
 
             <div class="card border-0 shadow-sm">
