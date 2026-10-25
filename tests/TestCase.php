@@ -18,5 +18,7 @@ abstract class TestCase extends BaseTestCase
         if (config('database.default') !== 'sqlite') {
             throw new \Exception('Tests MUST use the sqlite connection.');
         }
+
+        $this->withoutVite();
     }
 }
