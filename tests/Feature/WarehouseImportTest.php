@@ -11,38 +11,47 @@ class WarehouseImportTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected $supervisor;
+    protected $admin;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->supervisor = User::factory()->create(['role' => 'supervisor']);
+        $this->admin = User::factory()->create(['role' => 'admin']);
     }
 
-    public function test_supervisor_can_view_warehouse_import_form()
+    public function test_supervisor_cannot_access_warehouse_import_form()
     {
-        $response = $this->actingAs($this->supervisor)
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $response = $this->actingAs($supervisor)
+            ->get(route('warehouses.import.form'));
+
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_view_warehouse_import_form()
+    {
+        $response = $this->actingAs($this->admin)
             ->get(route('warehouses.import.form'));
 
         $response->assertStatus(200);
         $response->assertSee('Bulk Warehouse Import');
     }
 
-    public function test_supervisor_can_download_warehouse_import_template()
+    public function test_admin_can_download_warehouse_import_template()
     {
-        $response = $this->actingAs($this->supervisor)
+        $response = $this->actingAs($this->admin)
             ->get(route('warehouses.import.template'));
 
         $response->assertStatus(200);
         $response->assertHeader('Content-Disposition', 'attachment; filename=warehouse_import_template.xlsx');
     }
 
-    public function test_supervisor_can_preview_warehouse_import()
+    public function test_admin_can_preview_warehouse_import()
     {
         $content = "name,type\nSite Warehouse A,SITE\nCentral Warehouse B,CENTRAL";
         $file = UploadedFile::fake()->createWithContent('warehouses.csv', $content);
 
-        $response = $this->actingAs($this->supervisor)
+        $response = $this->actingAs($this->admin)
             ->post(route('warehouses.import.preview'), [
                 'file' => $file,
             ]);
@@ -52,7 +61,7 @@ class WarehouseImportTest extends TestCase
         $response->assertSee('Central Warehouse B');
     }
 
-    public function test_supervisor_can_store_warehouse_import()
+    public function test_admin_can_store_warehouse_import()
     {
         $previewData = [
             [
@@ -77,7 +86,7 @@ class WarehouseImportTest extends TestCase
 
         session(['warehouse_import_data' => $previewData]);
 
-        $response = $this->actingAs($this->supervisor)
+        $response = $this->actingAs($this->admin)
             ->post(route('warehouses.import.store'));
 
         $response->assertRedirect(route('warehouses.index'));

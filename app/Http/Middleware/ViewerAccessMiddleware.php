@@ -18,7 +18,6 @@ class ViewerAccessMiddleware
         if (auth()->check() && (
             auth()->user()->isViewer() || 
             auth()->user()->isLogger() || 
-            auth()->user()->isSupervisor() || 
             auth()->user()->isAdmin()
         )) {
             return $next($request);

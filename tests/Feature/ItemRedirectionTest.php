@@ -13,7 +13,7 @@ class ItemRedirectionTest extends TestCase
 
     public function test_edit_link_preserves_search_and_filter_query_params()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create([
             'type' => 'CONSUMABLE',
             'name' => 'Cement Extra',
@@ -21,7 +21,7 @@ class ItemRedirectionTest extends TestCase
             'unit' => 'Bags',
         ]);
 
-        $response = $this->actingAs($supervisor)
+        $response = $this->actingAs($admin)
             ->get(route('items.index', [
                 'search' => 'Cement',
                 'type' => 'CONSUMABLE',
@@ -41,7 +41,7 @@ class ItemRedirectionTest extends TestCase
 
     public function test_edit_view_preserves_query_params_in_form_action_and_cancel_button()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create([
             'type' => 'CONSUMABLE',
             'name' => 'Cement Extra',
@@ -49,7 +49,7 @@ class ItemRedirectionTest extends TestCase
             'unit' => 'Bags',
         ]);
 
-        $response = $this->actingAs($supervisor)
+        $response = $this->actingAs($admin)
             ->get(route('items.edit', [
                 'item' => $item->id,
                 'search' => 'Cement',
@@ -79,7 +79,7 @@ class ItemRedirectionTest extends TestCase
 
     public function test_updating_item_redirects_back_to_list_with_query_params()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create([
             'type' => 'CONSUMABLE',
             'name' => 'Cement Extra',
@@ -88,7 +88,7 @@ class ItemRedirectionTest extends TestCase
         ]);
 
         // Send put request with query parameters (which should be in the route/action URL)
-        $response = $this->actingAs($supervisor)
+        $response = $this->actingAs($admin)
             ->put(route('items.update', [
                 'item' => $item->id,
                 'search' => 'Cement',
@@ -117,7 +117,7 @@ class ItemRedirectionTest extends TestCase
 
     public function test_pagination_renders_using_bootstrap_five_styling()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
 
         // Create 55 items to force pagination (since pagination limit is 50)
         for ($i = 1; $i <= 55; $i++) {
@@ -129,7 +129,7 @@ class ItemRedirectionTest extends TestCase
             ]);
         }
 
-        $response = $this->actingAs($supervisor)
+        $response = $this->actingAs($admin)
             ->get(route('items.index'));
 
         $response->assertStatus(200);
@@ -140,9 +140,18 @@ class ItemRedirectionTest extends TestCase
         $response->assertSee('class="page-link"', false);
     }
 
-    public function test_show_route_redirects_to_edit_route()
+    public function test_supervisor_cannot_access_items_index()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        $response = $this->actingAs($supervisor)->get(route('items.index'));
+
+        $response->assertStatus(403);
+    }
+
+    public function test_show_route_redirects_to_edit_route()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create([
             'type' => 'CONSUMABLE',
             'name' => 'Cement Extra',
@@ -150,7 +159,7 @@ class ItemRedirectionTest extends TestCase
             'unit' => 'Bags',
         ]);
 
-        $response = $this->actingAs($supervisor)
+        $response = $this->actingAs($admin)
             ->get(route('items.show', $item));
 
         $response->assertRedirect(route('items.edit', $item));

@@ -87,7 +87,7 @@ class ItemTest extends TestCase
 
     public function test_cannot_create_duplicate_item_with_same_name_spec_unit()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
         Item::create([
             'type' => 'CONSUMABLE',
             'name' => 'Deformed Bar',
@@ -95,7 +95,7 @@ class ItemTest extends TestCase
             'unit' => 'length',
         ]);
 
-        $response = $this->actingAs($supervisor)->post(route('items.store'), [
+        $response = $this->actingAs($admin)->post(route('items.store'), [
             'type' => 'CONSUMABLE',
             'name' => 'Deformed Bar',
             'specification' => '16mm x 6m',
@@ -108,7 +108,7 @@ class ItemTest extends TestCase
 
     public function test_cannot_update_item_to_create_duplicate_with_same_name_spec_unit()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
         
         $item1 = Item::create([
             'type' => 'CONSUMABLE',
@@ -124,7 +124,7 @@ class ItemTest extends TestCase
             'unit' => 'length',
         ]);
 
-        $response = $this->actingAs($supervisor)->put(route('items.update', $item2), [
+        $response = $this->actingAs($admin)->put(route('items.update', $item2), [
             'type' => 'CONSUMABLE',
             'name' => 'Deformed Bar 1', // Change name to match item1, creating a duplicate
             'specification' => '16mm x 6m',
@@ -352,7 +352,7 @@ class ItemTest extends TestCase
         ]);
     }
 
-    public function test_supervisor_can_approve_unapproved_item()
+    public function test_supervisor_cannot_approve_unapproved_item()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
         $item = Item::create([
@@ -363,6 +363,20 @@ class ItemTest extends TestCase
         ]);
 
         $response = $this->actingAs($supervisor)->post(route('items.approve', $item));
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_approve_unapproved_item()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create([
+            'type' => 'CONSUMABLE',
+            'name' => 'Logger Item',
+            'unit' => 'Pcs',
+            'is_approved' => false,
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('items.approve', $item));
 
         $response->assertRedirect();
         $this->assertTrue($item->fresh()->is_approved);
@@ -411,15 +425,15 @@ class ItemTest extends TestCase
         $response->assertSee('1'); // badge count
     }
 
-    public function test_supervisor_can_create_item_with_photo_file()
+    public function test_admin_can_create_item_with_photo_file()
     {
         \Illuminate\Support\Facades\Storage::fake('public');
 
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
         
         $file = \Illuminate\Http\UploadedFile::fake()->create('item.jpg', 100);
 
-        $response = $this->actingAs($supervisor)->post(route('items.store'), [
+        $response = $this->actingAs($admin)->post(route('items.store'), [
             'type' => 'CONSUMABLE',
             'name' => 'Drill DCD771',
             'specification' => '20V Max',
@@ -438,7 +452,7 @@ class ItemTest extends TestCase
 
     public function test_similar_items_endpoint_returns_view_with_similar_items()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
 
         $item1 = Item::create([
             'type' => 'CONSUMABLE',
@@ -465,7 +479,7 @@ class ItemTest extends TestCase
         ]);
 
         // Request similar items for item2 (should find item1 since item2's concat is "Deformed Bar" and item1's concat matches it)
-        $response = $this->actingAs($supervisor)->get(route('items.similar', $item2));
+        $response = $this->actingAs($admin)->get(route('items.similar', $item2));
 
         $response->assertStatus(200);
         $response->assertViewIs('supervisor.items._similar');
@@ -481,11 +495,11 @@ class ItemTest extends TestCase
     {
         \Illuminate\Support\Facades\Storage::fake('public');
         
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
         
         // Chunk 1
         $file1 = \Illuminate\Http\UploadedFile::fake()->create('chunk1.jpg', 10);
-        $response1 = $this->actingAs($supervisor)->post(route('chunk.upload'), [
+        $response1 = $this->actingAs($admin)->post(route('chunk.upload'), [
             'file_id' => 'test_upload_123',
             'chunk_index' => 0,
             'total_chunks' => 2,
@@ -497,7 +511,7 @@ class ItemTest extends TestCase
 
         // Chunk 2
         $file2 = \Illuminate\Http\UploadedFile::fake()->create('chunk2.jpg', 10);
-        $response2 = $this->actingAs($supervisor)->post(route('chunk.upload'), [
+        $response2 = $this->actingAs($admin)->post(route('chunk.upload'), [
             'file_id' => 'test_upload_123',
             'chunk_index' => 1,
             'total_chunks' => 2,
@@ -510,7 +524,7 @@ class ItemTest extends TestCase
         $tempFileName = $response2->json('temp_file_name');
         
         // Submit item form with temp_photo_file
-        $responseStore = $this->actingAs($supervisor)->post(route('items.store'), [
+        $responseStore = $this->actingAs($admin)->post(route('items.store'), [
             'type' => 'CONSUMABLE',
             'name' => 'Chunked Item Test',
             'unit' => 'Pcs',
@@ -558,11 +572,11 @@ class ItemTest extends TestCase
     {
         \Illuminate\Support\Facades\Storage::fake('public');
 
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
         
         $file = \Illuminate\Http\UploadedFile::fake()->image('item.jpg');
 
-        $response = $this->actingAs($supervisor)->post(route('items.store'), [
+        $response = $this->actingAs($admin)->post(route('items.store'), [
             'type' => 'CONSUMABLE',
             'name' => 'Drill DCD771 Webp',
             'specification' => '20V Max',
@@ -587,11 +601,11 @@ class ItemTest extends TestCase
     {
         \Illuminate\Support\Facades\Storage::fake('public');
 
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
         
         $file = \Illuminate\Http\UploadedFile::fake()->image('item.gif');
 
-        $response = $this->actingAs($supervisor)->post(route('items.store'), [
+        $response = $this->actingAs($admin)->post(route('items.store'), [
             'type' => 'CONSUMABLE',
             'name' => 'Drill DCD771 GIF',
             'specification' => '20V Max',
@@ -608,11 +622,11 @@ class ItemTest extends TestCase
     {
         \Illuminate\Support\Facades\Storage::fake('public');
 
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
         
         $file = \Illuminate\Http\UploadedFile::fake()->image('item.png')->size(6000);
 
-        $response = $this->actingAs($supervisor)->post(route('items.store'), [
+        $response = $this->actingAs($admin)->post(route('items.store'), [
             'type' => 'CONSUMABLE',
             'name' => 'Drill DCD771 Huge',
             'specification' => '20V Max',
@@ -627,7 +641,7 @@ class ItemTest extends TestCase
 
     public function test_supervisor_can_filter_items_by_item_type_id()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
 
         $typeHeavy = \App\Models\ItemType::create(['name' => 'Heavy Equipment', 'base_behavior' => 'ASSET']);
         $typeHand = \App\Models\ItemType::create(['name' => 'Hand Tools', 'base_behavior' => 'ASSET']);
@@ -649,7 +663,7 @@ class ItemTest extends TestCase
         ]);
 
         // Filter by Heavy Equipment
-        $response = $this->actingAs($supervisor)
+        $response = $this->actingAs($admin)
             ->get(route('items.index', ['type' => $typeHeavy->id]));
         $response->assertStatus(200);
         $response->assertSee('Heavy Crane');

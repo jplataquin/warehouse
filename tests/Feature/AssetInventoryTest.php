@@ -136,7 +136,8 @@ class AssetInventoryTest extends TestCase
         $response->assertSee('Operational');
 
         // Update status to 'Out of Order'
-        $response = $this->actingAs($this->supervisor)
+        $admin = User::factory()->create(['role' => 'admin']);
+        $response = $this->actingAs($admin)
             ->put(route('items.update', $asset), [
                 'type' => 'ASSET',
                 'name' => 'Bulldozer B2',

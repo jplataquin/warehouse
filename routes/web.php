@@ -81,8 +81,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('ledgers/bulk-destroy', [LedgerController::class, 'bulkDestroy'])->name('ledgers.bulk_destroy')->middleware('admin');
     Route::resource('ledgers', LedgerController::class);
 
-    // Supervisor + Admin routes
-    Route::middleware(['supervisor'])->group(function () {
+    // Admin only routes
+    Route::middleware(['admin'])->group(function () {
         // Bulk Project Import
         Route::get('projects/bulk-import', [ProjectImportController::class, 'showUploadForm'])->name('projects.import.form');
         Route::get('projects/bulk-import/template', [ProjectImportController::class, 'downloadTemplate'])->name('projects.import.template');

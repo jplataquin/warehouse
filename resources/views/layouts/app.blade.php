@@ -47,7 +47,7 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('ledgers.index') }}">Ledger</a>
                             </li>
-                            @if(Auth::user()->isAdmin() || Auth::user()->isSupervisor())
+                            @if(Auth::user()->isAdmin())
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ route('projects.index') }}">Projects</a>
                                 </li>
@@ -57,15 +57,18 @@
                                 <li class="nav-item">
                                     <a class="nav-link d-flex align-items-center gap-1" href="{{ route('items.index') }}">
                                         Items
-                                        @if(Auth::user()->isAdmin())
-                                            @php
-                                                $pendingCount = \App\Models\Item::where('is_approved', false)->count();
-                                            @endphp
-                                            @if($pendingCount > 0)
-                                                <span class="badge bg-danger rounded-pill" style="font-size: 0.75rem; padding: 0.25em 0.5em;">{{ $pendingCount }}</span>
-                                            @endif
+                                        @php
+                                            $pendingCount = \App\Models\Item::where('is_approved', false)->count();
+                                        @endphp
+                                        @if($pendingCount > 0)
+                                            <span class="badge bg-danger rounded-pill" style="font-size: 0.75rem; padding: 0.25em 0.5em;">{{ $pendingCount }}</span>
                                         @endif
                                     </a>
+                                </li>
+                            @endif
+                            @if(Auth::user()->isAdmin() || Auth::user()->isSupervisor())
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ route('items.assets') }}">Assets</a>
                                 </li>
                             @endif
                             @if(Auth::user()->isAdmin())

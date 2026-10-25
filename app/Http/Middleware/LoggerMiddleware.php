@@ -15,7 +15,7 @@ class LoggerMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check() && (auth()->user()->isLogger() || auth()->user()->isSupervisor() || auth()->user()->isAdmin())) {
+        if (auth()->check() && (auth()->user()->isLogger() || auth()->user()->isAdmin())) {
             return $next($request);
         }
 

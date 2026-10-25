@@ -18,7 +18,7 @@ class MqmsComponentImportTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user = User::factory()->create(['role' => 'supervisor']);
+        $this->user = User::factory()->create(['role' => 'admin']);
         $this->project = Project::create([
             'name' => 'MQMS Project',
             'mapped_to_project_id' => 'MQ-123',
@@ -29,6 +29,19 @@ class MqmsComponentImportTest extends TestCase
             'project_id' => $this->project->id,
             'status' => 'ACTIVE',
         ]);
+    }
+
+    public function test_supervisor_cannot_import_components()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        $response = $this->actingAs($supervisor)
+            ->get(route('warehouses.import-components.preview', [
+                'warehouse' => $this->warehouse,
+                'section_id' => 'S1',
+            ]));
+
+        $response->assertStatus(403);
     }
 
     public function test_sections_endpoint_returns_json()

@@ -137,13 +137,13 @@ class ItemTypeTest extends TestCase
     /** @test */
     public function test_can_create_item_with_custom_item_type()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
         $customType = ItemType::create([
             'name' => 'Plumbing',
             'base_behavior' => 'CONSUMABLE',
         ]);
 
-        $response = $this->actingAs($supervisor)->post(route('items.store'), [
+        $response = $this->actingAs($admin)->post(route('items.store'), [
             'type' => $customType->id,
             'name' => 'PVC Pipe 2 inch',
             'specification' => 'Schedule 40',

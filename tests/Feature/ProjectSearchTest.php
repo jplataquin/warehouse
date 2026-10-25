@@ -11,12 +11,22 @@ class ProjectSearchTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected $supervisor;
+    protected $admin;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->supervisor = User::factory()->create(['role' => 'supervisor']);
+        $this->admin = User::factory()->create(['role' => 'admin']);
+    }
+
+    public function test_supervisor_cannot_access_projects_index()
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        $response = $this->actingAs($supervisor)
+            ->get(route('projects.index'));
+
+        $response->assertStatus(403);
     }
 
     public function test_project_index_search_filters_results()
@@ -24,7 +34,7 @@ class ProjectSearchTest extends TestCase
         Project::create(['name' => 'Alpha Project']);
         Project::create(['name' => 'Beta Project']);
 
-        $response = $this->actingAs($this->supervisor)
+        $response = $this->actingAs($this->admin)
             ->get(route('projects.index', ['search' => 'Alpha']));
 
         $response->assertStatus(200);
@@ -37,7 +47,7 @@ class ProjectSearchTest extends TestCase
         Project::create(['name' => 'Alpha Project']);
         Project::create(['name' => 'Beta Project']);
 
-        $response = $this->actingAs($this->supervisor)
+        $response = $this->actingAs($this->admin)
             ->get(route('projects.index'));
 
         $response->assertStatus(200);

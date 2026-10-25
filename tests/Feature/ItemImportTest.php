@@ -19,17 +19,24 @@ class ItemImportTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_supervisor_can_access_import_form()
+    public function test_supervisor_cannot_access_import_form()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
         $response = $this->actingAs($supervisor)->get(route('items.import.form'));
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_access_import_form()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $response = $this->actingAs($admin)->get(route('items.import.form'));
         $response->assertStatus(200);
         $response->assertSee('Bulk Item Import');
     }
 
     public function test_preview_parses_csv_data()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
 
         $content = "type,name,specification,unit\n";
         $content .= "CONSUMABLE,Cement,40kg,Bags\n";
@@ -37,7 +44,7 @@ class ItemImportTest extends TestCase
 
         $file = UploadedFile::fake()->createWithContent('items.csv', $content);
 
-        $response = $this->actingAs($supervisor)->post(route('items.import.preview'), [
+        $response = $this->actingAs($admin)->post(route('items.import.preview'), [
             'file' => $file,
         ]);
 
@@ -50,7 +57,7 @@ class ItemImportTest extends TestCase
 
     public function test_store_saves_valid_items()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
 
         $importData = [
             [
@@ -73,7 +80,7 @@ class ItemImportTest extends TestCase
 
         session(['item_import_data' => $importData]);
 
-        $response = $this->actingAs($supervisor)->post(route('items.import.store'));
+        $response = $this->actingAs($admin)->post(route('items.import.store'));
 
         $response->assertRedirect(route('items.index'));
         $this->assertDatabaseHas('items', ['name' => 'Imported Item 1']);
@@ -82,7 +89,7 @@ class ItemImportTest extends TestCase
 
     public function test_uniqueness_is_enforced_in_preview()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
 
         Item::create([
             'type' => 'CONSUMABLE',
@@ -96,7 +103,7 @@ class ItemImportTest extends TestCase
 
         $file = UploadedFile::fake()->createWithContent('items.csv', $content);
 
-        $response = $this->actingAs($supervisor)->post(route('items.import.preview'), [
+        $response = $this->actingAs($admin)->post(route('items.import.preview'), [
             'file' => $file,
         ]);
 
@@ -109,7 +116,7 @@ class ItemImportTest extends TestCase
 
     public function test_internal_file_duplicates_are_detected()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
 
         $content = "type,name,specification,unit\n";
         $content .= "CONSUMABLE,Item X,Spec X,Unit X\n";
@@ -117,7 +124,7 @@ class ItemImportTest extends TestCase
 
         $file = UploadedFile::fake()->createWithContent('items.csv', $content);
 
-        $response = $this->actingAs($supervisor)->post(route('items.import.preview'), [
+        $response = $this->actingAs($admin)->post(route('items.import.preview'), [
             'file' => $file,
         ]);
 

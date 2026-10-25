@@ -12,17 +12,26 @@ class ProjectImportTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected $supervisor;
+    protected $admin;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->supervisor = User::factory()->create(['role' => 'supervisor']);
+        $this->admin = User::factory()->create(['role' => 'admin']);
     }
 
-    public function test_supervisor_can_view_project_import_form()
+    public function test_supervisor_cannot_access_project_import_form()
     {
-        $response = $this->actingAs($this->supervisor)
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $response = $this->actingAs($supervisor)
+            ->get(route('projects.import.form'));
+
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_view_project_import_form()
+    {
+        $response = $this->actingAs($this->admin)
             ->get(route('projects.import.form'));
 
         $response->assertStatus(200);
@@ -30,22 +39,22 @@ class ProjectImportTest extends TestCase
         $response->assertSee('Download Template');
     }
 
-    public function test_supervisor_can_download_project_import_template()
+    public function test_admin_can_download_project_import_template()
     {
-        $response = $this->actingAs($this->supervisor)
+        $response = $this->actingAs($this->admin)
             ->get(route('projects.import.template'));
 
         $response->assertStatus(200);
         $response->assertHeader('Content-Disposition', 'attachment; filename=project_import_template.xlsx');
     }
 
-    public function test_supervisor_can_preview_project_import()
+    public function test_admin_can_preview_project_import()
     {
         // Create a real CSV file for testing
         $content = "name,create_warehouse\nProject Alpha,YES\nProject Beta,NO";
         $file = UploadedFile::fake()->createWithContent('projects.csv', $content);
 
-        $response = $this->actingAs($this->supervisor)
+        $response = $this->actingAs($this->admin)
             ->post(route('projects.import.preview'), [
                 'file' => $file,
             ]);
@@ -55,7 +64,7 @@ class ProjectImportTest extends TestCase
         $response->assertSee('Project Beta');
     }
 
-    public function test_supervisor_can_store_project_import()
+    public function test_admin_can_store_project_import()
     {
         $previewData = [
             [
@@ -69,7 +78,7 @@ class ProjectImportTest extends TestCase
 
         session(['project_import_data' => $previewData]);
 
-        $response = $this->actingAs($this->supervisor)
+        $response = $this->actingAs($this->admin)
             ->post(route('projects.import.store'));
 
         $response->assertRedirect(route('projects.index'));

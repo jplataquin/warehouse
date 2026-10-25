@@ -11,12 +11,22 @@ class LoggerAssignmentTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_supervisor_can_access_edit_assignments_page_for_logger()
+    public function test_supervisor_cannot_access_edit_assignments_page()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
         $logger = User::factory()->create(['role' => 'logger']);
 
         $response = $this->actingAs($supervisor)->get(route('users.assignments.edit', $logger));
+
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_access_edit_assignments_page_for_logger()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $logger = User::factory()->create(['role' => 'logger']);
+
+        $response = $this->actingAs($admin)->get(route('users.assignments.edit', $logger));
 
         $response->assertStatus(200);
         $response->assertSee("Assign Warehouses to {$logger->name}");
@@ -32,9 +42,9 @@ class LoggerAssignmentTest extends TestCase
         $response->assertStatus(403); // Unauthorized because logger role cannot manage assignments
     }
 
-    public function test_supervisor_can_sync_warehouses_for_logger()
+    public function test_admin_can_sync_warehouses_for_logger()
     {
-        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $admin = User::factory()->create(['role' => 'admin']);
         $logger = User::factory()->create(['role' => 'logger']);
 
         $warehouse1 = Warehouse::create([
@@ -48,7 +58,7 @@ class LoggerAssignmentTest extends TestCase
             'status' => 'ACTIVE',
         ]);
 
-        $response = $this->actingAs($supervisor)->post(route('users.assignments.update', $logger), [
+        $response = $this->actingAs($admin)->post(route('users.assignments.update', $logger), [
             'warehouse_ids' => [$warehouse1->id, $warehouse2->id],
         ]);
 

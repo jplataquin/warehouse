@@ -15,6 +15,7 @@ class StockLevelThresholdTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected $admin;
     protected $supervisor;
     protected $logger;
     protected $warehouse;
@@ -24,6 +25,7 @@ class StockLevelThresholdTest extends TestCase
     {
         parent::setUp();
 
+        $this->admin = User::factory()->create(['role' => 'admin']);
         $this->supervisor = User::factory()->create(['role' => 'supervisor']);
         $this->logger = User::factory()->create(['role' => 'logger']);
 
@@ -48,9 +50,20 @@ class StockLevelThresholdTest extends TestCase
         ]);
     }
 
-    public function test_supervisor_can_set_stock_threshold()
+    public function test_supervisor_cannot_set_stock_threshold()
     {
         $response = $this->actingAs($this->supervisor)
+            ->post(route('warehouses.thresholds.store', $this->warehouse), [
+                'item_id' => $this->item->id,
+                'threshold' => 15.50,
+            ]);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_set_stock_threshold()
+    {
+        $response = $this->actingAs($this->admin)
             ->post(route('warehouses.thresholds.store', $this->warehouse), [
                 'item_id' => $this->item->id,
                 'threshold' => 15.50,
@@ -81,7 +94,7 @@ class StockLevelThresholdTest extends TestCase
         ]);
     }
 
-    public function test_supervisor_can_delete_stock_threshold()
+    public function test_admin_can_delete_stock_threshold()
     {
         $threshold = StockLevelRegistry::create([
             'warehouse_id' => $this->warehouse->id,
@@ -89,7 +102,7 @@ class StockLevelThresholdTest extends TestCase
             'threshold' => 10.00,
         ]);
 
-        $response = $this->actingAs($this->supervisor)
+        $response = $this->actingAs($this->admin)
             ->delete(route('warehouses.thresholds.destroy', [$this->warehouse, $threshold]));
 
         $response->assertRedirect(route('warehouses.show', $this->warehouse));
