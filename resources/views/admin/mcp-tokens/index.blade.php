@@ -21,11 +21,11 @@
                     <h5 class="alert-heading fw-bold d-flex align-items-center mb-2">
                         <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i> Please copy your new MCP Token
                     </h5>
-                    <p class="mb-2">This token will <strong>never be shown again</strong>. Please copy it immediately and store it in your AI client configuration (e.g. Claude Desktop, Cursor).</p>
+                    <p class="mb-2">This token will <strong>never be shown again</strong>. Please copy it immediately and store it in your AI client configuration along with the endpoint URL: <code>{{ url('/mcp') }}</code>.</p>
                     <div class="input-group">
                         <input type="text" id="plainTextToken" class="form-control font-monospace bg-white" value="{{ session('new_token') }}" readonly>
                         <button class="btn btn-dark" type="button" onclick="navigator.clipboard.writeText(document.getElementById('plainTextToken').value); this.innerText = 'Copied!';">
-                            <i class="bi bi-clipboard me-1"></i> Copy
+                            <i class="bi bi-clipboard me-1"></i> Copy Token
                         </button>
                     </div>
                 </div>
@@ -37,6 +37,60 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
+
+            <!-- MCP Server Endpoint Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                        <h5 class="card-title fw-bold mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-link-45deg text-primary fs-4"></i> MCP Server Endpoint
+                        </h5>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                            <i class="bi bi-shield-check me-1"></i> Requires Bearer Token
+                        </span>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        Connect AI clients (such as Claude Desktop, Cursor, or custom AI agents) to this server using the endpoint URL below with a generated Bearer token.
+                    </p>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text bg-light text-muted font-monospace"><i class="bi bi-globe me-1"></i> POST</span>
+                        <input type="text" id="mcpEndpointUrl" class="form-control font-monospace bg-white" value="{{ url('/mcp') }}" readonly>
+                        <button class="btn btn-outline-primary d-flex align-items-center gap-1" type="button" onclick="navigator.clipboard.writeText(document.getElementById('mcpEndpointUrl').value); const btn = this; const orig = btn.innerHTML; btn.innerHTML = '<i class=\'bi bi-check2\'></i> Copied!'; setTimeout(() => btn.innerHTML = orig, 2000);">
+                            <i class="bi bi-clipboard"></i> Copy URL
+                        </button>
+                    </div>
+
+                    <div class="accordion accordion-flush" id="mcpConfigAccordion">
+                        <div class="accordion-item border rounded-2">
+                            <h2 class="accordion-header" id="headingConfig">
+                                <button class="accordion-button collapsed py-2 px-3 small text-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfig" aria-expanded="false" aria-controls="collapseConfig">
+                                    <i class="bi bi-code-slash me-2 text-primary"></i> Example AI Client Configuration (JSON)
+                                </button>
+                            </h2>
+                            <div id="collapseConfig" class="accordion-collapse collapse" aria-labelledby="headingConfig" data-bs-parent="#mcpConfigAccordion">
+                                <div class="accordion-body bg-light p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small text-muted">Format for Claude Desktop, Cursor, or MCP clients:</span>
+                                        <button class="btn btn-sm btn-outline-secondary py-0 px-2 font-monospace" type="button" onclick="navigator.clipboard.writeText(document.getElementById('mcpConfigJson').innerText); this.innerText = 'Copied!'; setTimeout(() => this.innerText = 'Copy JSON', 2000);">
+                                            Copy JSON
+                                        </button>
+                                    </div>
+                                    <pre class="mb-0 p-3 bg-dark text-light rounded-2 small font-monospace"><code id="mcpConfigJson">{
+  "mcpServers": {
+    "warehouse": {
+      "url": "{{ url('/mcp') }}",
+      "headers": {
+        "Authorization": "Bearer &lt;YOUR_MCP_TOKEN&gt;"
+      }
+    }
+  }
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Generate Token Card -->
             <div class="card border-0 shadow-sm mb-4">

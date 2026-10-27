@@ -27,6 +27,8 @@ class McpTokenTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('MCP Access Tokens');
+        $response->assertSee(url('/mcp'));
+        $response->assertSee('MCP Server Endpoint');
         $this->assertDatabaseHas('users', [
             'email' => 'mcp-service@system.local',
             'role' => 'admin',
