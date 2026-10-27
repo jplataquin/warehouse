@@ -9,7 +9,7 @@ class Item extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['type', 'item_type_id', 'name', 'specification', 'unit', 'current_warehouse_id', 'status', 'is_asset_utilized', 'is_approved', 'photo'];
+    protected $fillable = ['type', 'item_type_id', 'category_id', 'name', 'specification', 'unit', 'current_warehouse_id', 'status', 'is_asset_utilized', 'is_approved', 'photo'];
 
     protected $attributes = [
         'status' => 'Operational',
@@ -44,6 +44,11 @@ class Item extends Model
     public function itemType()
     {
         return $this->belongsTo(ItemType::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(ItemCategory::class, 'category_id');
     }
 
     public function ledgers()

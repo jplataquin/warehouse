@@ -19,6 +19,7 @@ use App\Http\Controllers\ApiCredentialController;
 use App\Http\Controllers\McpTokenController;
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\ItemTypeController;
+use App\Http\Controllers\ItemCategoryController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseImportController;
 use App\Http\Controllers\StockLevelRegistryController;
@@ -135,6 +136,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('api-credentials', ApiCredentialController::class);
         Route::resource('mcp-tokens', McpTokenController::class)->only(['index', 'store', 'destroy']);
         Route::resource('item-types', ItemTypeController::class);
+        Route::resource('item-categories', ItemCategoryController::class);
         Route::get('settings', [AdminSettingsController::class, 'index'])->name('admin.settings');
         Route::post('ledgers/{ledger}/approve', [LedgerController::class, 'approve'])->name('ledgers.approve');
         Route::get('items/{item}/merge/search', [ItemController::class, 'searchMergeTargets'])->name('items.merge.search');

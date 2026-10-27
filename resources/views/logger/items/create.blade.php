@@ -57,6 +57,27 @@
                     </select>
                 </div>
 
+                <div class="mb-3" id="category-group" style="display: none;">
+                    <label class="form-label fw-bold">Category <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="text" id="category_search" class="form-control @error('category_id') is-invalid @enderror" placeholder="Type to search or select category..." list="category-options" autocomplete="off" value="{{ old('category_name') }}">
+                        <button class="btn btn-outline-secondary" type="button" id="clear-category-btn" title="Clear selection">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    <datalist id="category-options">
+                        @foreach($categories as $category)
+                            <option value="{{ $category->name }}" data-id="{{ $category->id }}"></option>
+                        @endforeach
+                    </datalist>
+                    <input type="hidden" name="category_id" id="category_id" value="{{ old('category_id') }}">
+                    @error('category_id')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @else
+                        <div class="form-text">Required for Asset item types. Select from the dropdown or type to filter.</div>
+                    @enderror
+                </div>
+
                 <div class="mb-3">
                     <label class="form-label fw-bold">Specification</label>
                     <input type="text" name="specification" class="form-control" value="{{ old('specification', request('specification')) }}" placeholder="e.g. 10m, 50kg, 1/2 inch (Optional)">
@@ -117,19 +138,63 @@
 document.addEventListener('DOMContentLoaded', function() {
     const typeSelect = document.querySelector('select[name="type"]');
     const statusGroup = document.getElementById('status-group');
+    const categoryGroup = document.getElementById('category-group');
+    const categorySearch = document.getElementById('category_search');
+    const categoryIdInput = document.getElementById('category_id');
+    const categoryDatalist = document.getElementById('category-options');
+    const clearCategoryBtn = document.getElementById('clear-category-btn');
 
-    function toggleStatusField() {
+    function toggleAssetFields() {
         const selectedOption = typeSelect.options[typeSelect.selectedIndex];
         const behavior = selectedOption ? selectedOption.getAttribute('data-behavior') : '';
         if (behavior === 'ASSET') {
             statusGroup.style.display = 'block';
+            categoryGroup.style.display = 'block';
+            categorySearch.required = true;
         } else {
             statusGroup.style.display = 'none';
+            categoryGroup.style.display = 'none';
+            categorySearch.required = false;
         }
     }
 
-    typeSelect.addEventListener('change', toggleStatusField);
-    toggleStatusField(); // Run on load
+    typeSelect.addEventListener('change', toggleAssetFields);
+    toggleAssetFields(); // Run on load
+
+    function syncCategory() {
+        const val = categorySearch.value.trim().toLowerCase();
+        let matchedId = '';
+        if (val) {
+            for (let option of categoryDatalist.options) {
+                if (option.value.toLowerCase() === val) {
+                    matchedId = option.getAttribute('data-id');
+                    break;
+                }
+            }
+        }
+        categoryIdInput.value = matchedId;
+    }
+
+    categorySearch.addEventListener('input', syncCategory);
+    categorySearch.addEventListener('change', syncCategory);
+
+    if (clearCategoryBtn) {
+        clearCategoryBtn.addEventListener('click', function() {
+            categorySearch.value = '';
+            categoryIdInput.value = '';
+            categorySearch.focus();
+        });
+    }
+
+    // Pre-populate categorySearch if category_id exists (e.g. from validation failure)
+    if (categoryIdInput.value && !categorySearch.value) {
+        for (let option of categoryDatalist.options) {
+            if (option.getAttribute('data-id') === categoryIdInput.value) {
+                categorySearch.value = option.value;
+                break;
+            }
+        }
+    }
 
     // Photo Preview & Search Logic
     const photoFileInput = document.getElementById('photo_file');
