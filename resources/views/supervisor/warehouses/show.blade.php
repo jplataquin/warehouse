@@ -156,7 +156,7 @@
                                     <p class="small text-muted">Select a section from <strong>{{ $warehouse->project->name }}</strong> to fetch approved components.</p>
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">Select Section</label>
-                                        <select name="section_id" id="mqmsSectionSelect" class="form-select" required disabled>
+                                        <select name="section_id" id="mqmsSectionSelect" class="form-select" required disabled data-custom-tomselect="true">
                                             <option value="">Loading sections...</option>
                                         </select>
                                     </div>
@@ -456,6 +456,7 @@
             const sectionSelect = document.getElementById('mqmsSectionSelect');
             const previewBtn = document.getElementById('mqmsPreviewBtn');
             let sectionsLoaded = false;
+            let sectionTomSelect = null;
 
             importModal.addEventListener('show.bs.modal', function() {
                 if (sectionsLoaded) return;
@@ -476,6 +477,18 @@
                             sectionSelect.disabled = false;
                             previewBtn.disabled = false;
                             sectionsLoaded = true;
+
+                            const TS = window.TomSelect || TomSelect;
+                            if (TS) {
+                                sectionTomSelect = new TS(sectionSelect, {
+                                    create: false,
+                                    placeholder: "Choose a section...",
+                                    sortField: {
+                                        field: "text",
+                                        direction: "asc"
+                                    }
+                                });
+                            }
                         }
                     })
                     .catch(error => {

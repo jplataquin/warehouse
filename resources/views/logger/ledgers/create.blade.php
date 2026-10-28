@@ -1,11 +1,5 @@
 @extends('layouts.logger')
 
-@push('styles')
-    <!-- Tom Select CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
-@endpush
-
 @section('inner_content')
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
@@ -150,7 +144,7 @@
 
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-uppercase text-muted">Movement Type</label>
-                    <select name="entries[__INDEX__][type]" class="form-select type-select shadow-sm" required>
+                    <select name="entries[__INDEX__][type]" class="form-select type-select shadow-sm" required data-custom-tomselect="true">
                         <option value="IN">Log IN (Entry)</option>
                         <option value="OUT">Log OUT (Withdrawal)</option>
                     </select>
@@ -158,7 +152,7 @@
 
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-uppercase text-muted">Action</label>
-                    <select name="entries[__INDEX__][action]" class="form-select action-select shadow-sm" required>
+                    <select name="entries[__INDEX__][action]" class="form-select action-select shadow-sm" required data-custom-tomselect="true">
                         <option value="">Select Type First...</option>
                     </select>
                 </div>
@@ -177,7 +171,7 @@
                 {{-- IN TRANSFER: Source --}}
                 <div class="col-md-6 in-transfer-fields" style="display: none;">
                     <label class="form-label small fw-bold text-uppercase text-muted">Transfer Source (FROM)</label>
-                    <select name="entries[__INDEX__][source_warehouse_id]" class="form-select shadow-sm border-success border-opacity-25">
+                    <select name="entries[__INDEX__][source_warehouse_id]" class="form-select shadow-sm border-success border-opacity-25" data-custom-tomselect="true">
                         <option value="">Select Source Warehouse...</option>
                         @foreach($warehouses as $wh)
                             @if($wh->id != $selectedWarehouseId)
@@ -197,7 +191,7 @@
                 {{-- OUT TRANSFER: Destination --}}
                 <div class="col-md-6 out-transfer-fields" style="display: none;">
                     <label class="form-label small fw-bold text-uppercase text-muted">Transfer Destination (TO)</label>
-                    <select name="entries[__INDEX__][destination_warehouse_id]" class="form-select shadow-sm border-danger border-opacity-25 dest-warehouse-select">
+                    <select name="entries[__INDEX__][destination_warehouse_id]" class="form-select shadow-sm border-danger border-opacity-25 dest-warehouse-select" data-custom-tomselect="true">
                         <option value="">Select Destination Warehouse...</option>
                         @foreach($warehouses as $wh)
                             @if($wh->id != $selectedWarehouseId)
@@ -217,7 +211,7 @@
                 {{-- OUT ALLOCATE: Allocation --}}
                 <div class="col-md-6 out-allocate-fields" style="display: none;">
                     <label class="form-label small fw-bold text-uppercase text-muted">Allocation Target</label>
-                    <select name="entries[__INDEX__][allocation_id]" class="form-select allocation-select shadow-sm border-danger border-opacity-25">
+                    <select name="entries[__INDEX__][allocation_id]" class="form-select allocation-select shadow-sm border-danger border-opacity-25" data-custom-tomselect="true">
                         <option value="">Select Target Allocation...</option>
                         @foreach($allocations as $allocation)
                             @php
@@ -485,16 +479,66 @@ document.addEventListener('DOMContentLoaded', function() {
         
         container.appendChild(element);
 
+        const TS = window.TomSelect || TomSelect;
+
         // Initialize Tom Select for Destination select tag to be searchable
         const destSelect = element.querySelector('.dest-warehouse-select');
         if (destSelect) {
-            new TomSelect(destSelect, {
+            new TS(destSelect, {
                 create: false,
+                placeholder: "Select Destination Warehouse...",
                 sortField: {
                     field: "text",
                     direction: "asc"
                 }
             });
+        }
+
+        // Initialize Tom Select for Source select tag to be searchable
+        const sourceSelect = element.querySelector('select[name*="[source_warehouse_id]"]');
+        if (sourceSelect) {
+            new TS(sourceSelect, {
+                create: false,
+                allowEmptyOption: true,
+                placeholder: "Select Source Warehouse...",
+                sortField: {
+                    field: "text",
+                    direction: "asc"
+                }
+            });
+        }
+
+        // Initialize Tom Select for Allocation select tag to be searchable
+        if (allocSelect) {
+            const allocTomSelect = new TS(allocSelect, {
+                create: false,
+                allowEmptyOption: true,
+                placeholder: "Select Target Allocation...",
+                sortField: {
+                    field: "text",
+                    direction: "asc"
+                }
+            });
+            element._allocTomSelect = allocTomSelect;
+        }
+
+        // Initialize Tom Select for Type select tag
+        if (typeSelect) {
+            new TS(typeSelect, {
+                create: false,
+                sortField: [{ field: '$order' }]
+            });
+        }
+
+        // Initialize Tom Select for Action select tag to be searchable
+        if (actionSelect) {
+            const actionTomSelect = new TS(actionSelect, {
+                create: false,
+                allowEmptyOption: true,
+                placeholder: "Select Action...",
+                sortField: [{ field: '$order' }]
+            });
+            element._actionTomSelect = actionTomSelect;
         }
 
         updateActionOptions(element);
@@ -508,8 +552,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const actionSelect = row.querySelector('.action-select');
         const type = typeSelect.value;
         const currentAction = actionSelect.value;
-        
-        actionSelect.innerHTML = '<option value="">Select Action...</option>';
         
         let options = [];
         if (type === 'IN') {
@@ -548,13 +590,25 @@ document.addEventListener('DOMContentLoaded', function() {
             options.push({ value: 'CORRECTION', text: 'CORRECTION' });
         }
 
-        options.forEach(opt => {
-            const el = document.createElement('option');
-            el.value = opt.value;
-            el.textContent = opt.text;
-            if (opt.value === currentAction) el.selected = true;
-            actionSelect.appendChild(el);
-        });
+        if (row._actionTomSelect) {
+            const currentActionVal = row._actionTomSelect.getValue() || currentAction;
+            row._actionTomSelect.clear();
+            row._actionTomSelect.clearOptions();
+            row._actionTomSelect.addOptions(options);
+            const match = options.find(opt => opt.value === currentActionVal);
+            if (match) {
+                row._actionTomSelect.setValue(match.value);
+            }
+        } else {
+            actionSelect.innerHTML = '<option value="">Select Action...</option>';
+            options.forEach(opt => {
+                const el = document.createElement('option');
+                el.value = opt.value;
+                el.textContent = opt.text;
+                if (opt.value === currentAction) el.selected = true;
+                actionSelect.appendChild(el);
+            });
+        }
 
         toggleFields(row);
     }
