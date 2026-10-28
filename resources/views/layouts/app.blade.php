@@ -51,13 +51,15 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('ledgers.index') }}">Ledger</a>
                             </li>
-                            @if(Auth::user()->isAdmin())
+                            @if(Auth::user()->isAdmin() || Auth::user()->isSupervisor())
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ route('projects.index') }}">Projects</a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ route('warehouses.index') }}">Warehouses</a>
                                 </li>
+                            @endif
+                            @if(Auth::user()->isAdmin())
                                 <li class="nav-item">
                                     <a class="nav-link d-flex align-items-center gap-1" href="{{ route('items.index') }}">
                                         Items

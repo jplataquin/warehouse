@@ -19,13 +19,13 @@ class WarehouseImportTest extends TestCase
         $this->admin = User::factory()->create(['role' => 'admin']);
     }
 
-    public function test_supervisor_cannot_access_warehouse_import_form()
+    public function test_supervisor_can_access_warehouse_import_form()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
         $response = $this->actingAs($supervisor)
             ->get(route('warehouses.import.form'));
 
-        $response->assertStatus(403);
+        $response->assertStatus(200);
     }
 
     public function test_admin_can_view_warehouse_import_form()

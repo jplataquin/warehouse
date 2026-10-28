@@ -99,6 +99,12 @@
                         <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('ledgers.index') }}">Ledger</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('projects.index') }}">Projects</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('warehouses.index') }}">Warehouses</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('items.assets') }}">Assets</a>
                     </li>
                 @endif

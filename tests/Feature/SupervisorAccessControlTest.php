@@ -38,16 +38,16 @@ class SupervisorAccessControlTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_supervisor_cannot_access_projects()
+    public function test_supervisor_can_access_projects()
     {
         $response = $this->actingAs($this->supervisor)->get(route('projects.index'));
-        $response->assertStatus(403);
+        $response->assertStatus(200);
     }
 
-    public function test_supervisor_cannot_access_warehouses()
+    public function test_supervisor_can_access_warehouses()
     {
         $response = $this->actingAs($this->supervisor)->get(route('warehouses.index'));
-        $response->assertStatus(403);
+        $response->assertStatus(200);
     }
 
     public function test_supervisor_cannot_access_items_index()
@@ -84,7 +84,7 @@ class SupervisorAccessControlTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_navbar_only_shows_reports_ledger_and_assets_for_supervisor()
+    public function test_navbar_shows_warehouses_and_projects_for_supervisor()
     {
         $response = $this->actingAs($this->supervisor)->get(route('reports.index'));
 
@@ -92,10 +92,13 @@ class SupervisorAccessControlTest extends TestCase
         $response->assertSee('Reports');
         $response->assertSee('Ledger');
         $response->assertSee('Assets');
+        $response->assertSee('Projects');
+        $response->assertSee('Warehouses');
         
+        $response->assertSee('href="' . route('projects.index') . '"', false);
+        $response->assertSee('href="' . route('warehouses.index') . '"', false);
+
         // Restricted navigation links should not be shown
-        $response->assertDontSee('href="' . route('projects.index') . '"', false);
-        $response->assertDontSee('href="' . route('warehouses.index') . '"', false);
         $response->assertDontSee('href="' . route('items.index') . '"', false);
         $response->assertDontSee('href="' . route('users.index') . '"', false);
         $response->assertDontSee('href="' . route('admin.settings') . '"', false);

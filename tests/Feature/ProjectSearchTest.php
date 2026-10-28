@@ -19,14 +19,14 @@ class ProjectSearchTest extends TestCase
         $this->admin = User::factory()->create(['role' => 'admin']);
     }
 
-    public function test_supervisor_cannot_access_projects_index()
+    public function test_supervisor_can_access_projects_index()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
 
         $response = $this->actingAs($supervisor)
             ->get(route('projects.index'));
 
-        $response->assertStatus(403);
+        $response->assertStatus(200);
     }
 
     public function test_project_index_search_filters_results()

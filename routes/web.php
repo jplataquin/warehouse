@@ -82,8 +82,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('ledgers/bulk-destroy', [LedgerController::class, 'bulkDestroy'])->name('ledgers.bulk_destroy')->middleware('admin');
     Route::resource('ledgers', LedgerController::class);
 
-    // Admin only routes
-    Route::middleware(['admin'])->group(function () {
+    // Supervisor and Admin routes
+    Route::middleware(['supervisor'])->group(function () {
         // Bulk Project Import
         Route::get('projects/bulk-import', [ProjectImportController::class, 'showUploadForm'])->name('projects.import.form');
         Route::get('projects/bulk-import/template', [ProjectImportController::class, 'downloadTemplate'])->name('projects.import.template');
@@ -115,6 +115,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('warehouses/{warehouse}/import-components/preview', [MqmsComponentImportController::class, 'preview'])->name('warehouses.import-components.preview');
         Route::post('warehouses/{warehouse}/import-components/store', [MqmsComponentImportController::class, 'store'])->name('warehouses.import-components.store');
 
+        Route::resource('allocations', AllocationController::class)->except(['index', 'create']);
+    });
+
+    // Admin only routes
+    Route::middleware(['admin'])->group(function () {
         // Bulk Item Import (Must be above resource to avoid being caught by {item})
         Route::get('items/bulk-import', [ItemImportController::class, 'showUploadForm'])->name('items.import.form');
         Route::get('items/bulk-import/template', [ItemImportController::class, 'downloadTemplate'])->name('items.import.template');
@@ -124,14 +129,10 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('items', ItemController::class);
         Route::post('items/{item}/approve', [ItemController::class, 'approve'])->name('items.approve');
         Route::get('items/{item}/similar', [ItemController::class, 'similar'])->name('items.similar');
-        Route::resource('allocations', AllocationController::class)->except(['index', 'create']);
 
         Route::get('users/{user}/assignments', [LoggerAssignmentController::class, 'edit'])->name('users.assignments.edit');
         Route::post('users/{user}/assignments', [LoggerAssignmentController::class, 'update'])->name('users.assignments.update');
-    });
 
-    // Admin only routes
-    Route::middleware(['admin'])->group(function () {
         Route::resource('users', UserController::class);
         Route::resource('api-credentials', ApiCredentialController::class);
         Route::resource('mcp-tokens', McpTokenController::class)->only(['index', 'store', 'destroy']);

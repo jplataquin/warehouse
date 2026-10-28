@@ -31,9 +31,16 @@ class MqmsComponentImportTest extends TestCase
         ]);
     }
 
-    public function test_supervisor_cannot_import_components()
+    public function test_supervisor_can_import_components()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $mockClient = Mockery::mock(MqmsApiClient::class);
+        $mockClient->shouldReceive('getComponents')
+            ->with(['section_id' => 'S1', 'status' => 'APRV'])
+            ->once()
+            ->andReturn(['data' => [['id' => 'C1', 'name' => 'Component 1']]]);
+
+        $this->app->instance(MqmsApiClient::class, $mockClient);
 
         $response = $this->actingAs($supervisor)
             ->get(route('warehouses.import-components.preview', [
@@ -41,7 +48,8 @@ class MqmsComponentImportTest extends TestCase
                 'section_id' => 'S1',
             ]));
 
-        $response->assertStatus(403);
+        $response->assertStatus(200);
+        $response->assertSee('Component 1');
     }
 
     public function test_sections_endpoint_returns_json()

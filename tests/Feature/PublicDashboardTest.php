@@ -14,7 +14,7 @@ class PublicDashboardTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_supervisor_cannot_generate_or_revoke_public_token()
+    public function test_supervisor_can_generate_and_revoke_public_token()
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
         $warehouse = Warehouse::create([
@@ -23,13 +23,24 @@ class PublicDashboardTest extends TestCase
             'status' => 'ACTIVE',
         ]);
 
+        $this->assertNull($warehouse->public_token);
+
+        // Generate Token
         $response = $this->actingAs($supervisor)
             ->post(route('warehouses.public_token.generate', $warehouse));
-        $response->assertStatus(403);
 
+        $response->assertRedirect(route('warehouses.show', $warehouse));
+        $warehouse->refresh();
+        $this->assertNotNull($warehouse->public_token);
+        $this->assertEquals(32, strlen($warehouse->public_token));
+
+        // Revoke Token
         $response = $this->actingAs($supervisor)
             ->post(route('warehouses.public_token.revoke', $warehouse));
-        $response->assertStatus(403);
+
+        $response->assertRedirect(route('warehouses.show', $warehouse));
+        $warehouse->refresh();
+        $this->assertNull($warehouse->public_token);
     }
 
     public function test_admin_can_generate_and_revoke_public_token()

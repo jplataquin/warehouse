@@ -58,7 +58,7 @@ class SearchableDropdownViewsTest extends TestCase
         ]);
 
         // Create view
-        $response = $this->actingAs($this->admin)->get(route('warehouses.create'));
+        $response = $this->actingAs($this->supervisor)->get(route('warehouses.create'));
         $response->assertStatus(200);
         $response->assertSee('select name="type"', false);
         $response->assertSee('select name="project_id"', false);
@@ -66,7 +66,7 @@ class SearchableDropdownViewsTest extends TestCase
         $response->assertSee('select name="status"', false);
 
         // Edit view
-        $response = $this->actingAs($this->admin)->get(route('warehouses.edit', $parentWh));
+        $response = $this->actingAs($this->supervisor)->get(route('warehouses.edit', $parentWh));
         $response->assertStatus(200);
         $response->assertSee('select name="type"', false);
         $response->assertSee('select name="project_id"', false);
