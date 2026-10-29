@@ -50,6 +50,39 @@ class McpServerTest extends TestCase
         ]);
 
         $response->assertStatus(200);
+
+        $toolNames = collect($response->json('result.tools'))->pluck('name')->all();
+        $this->assertEqualsCanonicalizing([
+            'list_ledgers',
+            'list_warehouses',
+            'list_warehouse_projects',
+            'list_assets',
+        ], $toolNames);
+    }
+
+    public function test_mcp_tool_can_be_called_via_jsonrpc_using_snake_case_name(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        Project::create(['name' => 'Metro Terminal Construction']);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'MCP-Protocol-Version' => '2025-11-25',
+            'Mcp-Method' => 'tools/call',
+        ])->postJson('/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 2,
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'list_warehouse_projects',
+                'arguments' => ['search' => 'Metro'],
+            ],
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertSee('Metro Terminal Construction');
     }
 
     public function test_all_mcp_tools_are_registered(): void

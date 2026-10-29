@@ -8,8 +8,12 @@ use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\Name;
+use Laravel\Mcp\Server\Attributes\Title;
 use Laravel\Mcp\Server\Tool;
 
+#[Name('list_assets')]
+#[Title('List Assets')]
 #[Description('List and search asset items. Supports wildcard search and filtering by warehouse or status. Read-only.')]
 class ListAssetsTool extends Tool
 {
