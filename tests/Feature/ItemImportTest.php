@@ -39,7 +39,7 @@ class ItemImportTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $content = "type,name,specification,unit\n";
-        $content .= "CONSUMABLE,Cement,40kg,Bags\n";
+        $content .= "BULK,Cement,40kg,Bags\n";
         $content .= "ASSET,Drill,Brushless,Units\n";
 
         $file = UploadedFile::fake()->createWithContent('items.csv', $content);
@@ -61,7 +61,7 @@ class ItemImportTest extends TestCase
 
         $importData = [
             [
-                'type' => 'CONSUMABLE',
+                'type' => 'BULK',
                 'name' => 'Imported Item 1',
                 'specification' => 'Spec 1',
                 'unit' => 'Unit 1',
@@ -92,14 +92,14 @@ class ItemImportTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Existing Item',
             'specification' => 'Existing Spec',
             'unit' => 'Existing Unit',
         ]);
 
         $content = "type,name,specification,unit\n";
-        $content .= "CONSUMABLE,Existing Item,Existing Spec,Existing Unit\n";
+        $content .= "BULK,Existing Item,Existing Spec,Existing Unit\n";
 
         $file = UploadedFile::fake()->createWithContent('items.csv', $content);
 
@@ -119,8 +119,8 @@ class ItemImportTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $content = "type,name,specification,unit\n";
-        $content .= "CONSUMABLE,Item X,Spec X,Unit X\n";
-        $content .= "CONSUMABLE,Item X,Spec X,Unit X\n"; // Duplicate
+        $content .= "BULK,Item X,Spec X,Unit X\n";
+        $content .= "BULK,Item X,Spec X,Unit X\n"; // Duplicate
 
         $file = UploadedFile::fake()->createWithContent('items.csv', $content);
 

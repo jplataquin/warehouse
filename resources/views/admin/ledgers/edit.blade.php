@@ -1,5 +1,11 @@
 @extends('layouts.logger')
 
+@push('styles')
+    <!-- Tom Select CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+@endpush
+
 @section('inner_content')
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
@@ -41,7 +47,7 @@
                             {{-- Item Selection --}}
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Item</label>
-                                <select name="item_id" id="item_id" class="form-select shadow-sm" required data-custom-tomselect="true">
+                                <select name="item_id" id="item_id" class="form-select shadow-sm" required>
                                     @foreach($items as $item)
                                         <option value="{{ $item->id }}" data-type="{{ $item->type }}" data-unit="{{ $item->unit }}" {{ $ledger->item_id == $item->id ? 'selected' : '' }}>
                                             {{ $item->name }} {{ $item->specification ? ' ' . $item->specification : '' }} ({{ $item->type }})
@@ -53,7 +59,7 @@
                             {{-- Warehouse Selection --}}
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Warehouse</label>
-                                <select name="warehouse_id" id="warehouse_id" class="form-select shadow-sm" required data-custom-tomselect="true">
+                                <select name="warehouse_id" id="warehouse_id" class="form-select shadow-sm" required>
                                     @foreach($warehouses as $wh)
                                         <option value="{{ $wh->id }}" data-is-central="{{ $wh->type !== 'SITE' ? 'true' : 'false' }}" {{ $ledger->warehouse_id == $wh->id ? 'selected' : '' }}>
                                             @if($wh->parent)
@@ -75,7 +81,7 @@
                             {{-- Movement Type --}}
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Movement Type</label>
-                                <select name="type" id="type" class="form-select shadow-sm" required data-custom-tomselect="true">
+                                <select name="type" id="type" class="form-select shadow-sm" required>
                                     <option value="IN" {{ $ledger->type === 'IN' ? 'selected' : '' }}>Log IN (Entry)</option>
                                     <option value="OUT" {{ $ledger->type === 'OUT' ? 'selected' : '' }}>Log OUT (Withdrawal)</option>
                                 </select>
@@ -84,7 +90,7 @@
                             {{-- Action --}}
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Action</label>
-                                <select name="action" id="action" class="form-select shadow-sm" required data-custom-tomselect="true">
+                                <select name="action" id="action" class="form-select shadow-sm" required>
                                     {{-- Will be populated dynamically by JS --}}
                                 </select>
                             </div>
@@ -104,7 +110,7 @@
                             {{-- IN TRANSFER: Source --}}
                             <div class="col-md-6" id="in-transfer-fields" style="display: none;">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Transfer Source (FROM)</label>
-                                <select name="source_warehouse_id" id="source_warehouse_id" class="form-select shadow-sm border-success border-opacity-25" data-custom-tomselect="true">
+                                <select name="source_warehouse_id" id="source_warehouse_id" class="form-select shadow-sm border-success border-opacity-25">
                                     <option value="">Select Source Warehouse...</option>
                                     @foreach($warehouses as $wh)
                                         <option value="{{ $wh->id }}" {{ $ledger->source_warehouse_id == $wh->id ? 'selected' : '' }}>
@@ -121,7 +127,7 @@
                             {{-- OUT TRANSFER: Destination --}}
                             <div class="col-md-6" id="out-transfer-fields" style="display: none;">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Transfer Destination (TO)</label>
-                                <select name="destination_warehouse_id" id="destination_warehouse_id" class="form-select shadow-sm border-danger border-opacity-25 dest-warehouse-select" data-custom-tomselect="true">
+                                <select name="destination_warehouse_id" id="destination_warehouse_id" class="form-select shadow-sm border-danger border-opacity-25 dest-warehouse-select">
                                     <option value="">Select Destination Warehouse...</option>
                                     @foreach($warehouses as $wh)
                                         <option value="{{ $wh->id }}" {{ $ledger->destination_warehouse_id == $wh->id ? 'selected' : '' }}>
@@ -138,7 +144,7 @@
                             {{-- OUT ALLOCATE: Allocation --}}
                             <div class="col-md-6" id="out-allocate-fields" style="display: none;">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Allocation Target</label>
-                                <select name="allocation_id" id="allocation_id" class="form-select shadow-sm border-danger border-opacity-25" data-custom-tomselect="true">
+                                <select name="allocation_id" id="allocation_id" class="form-select shadow-sm border-danger border-opacity-25">
                                     <option value="">Select Target Allocation...</option>
                                     @foreach($allocations as $allocation)
                                         <option value="{{ $allocation->id }}" {{ $ledger->allocation_id == $allocation->id ? 'selected' : '' }}>{{ $allocation->name }}</option>
@@ -149,7 +155,7 @@
                             {{-- Project --}}
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Project (Optional)</label>
-                                <select name="project_id" id="project_id" class="form-select shadow-sm" data-custom-tomselect="true">
+                                <select name="project_id" id="project_id" class="form-select shadow-sm">
                                     <option value="">Select Project...</option>
                                     @foreach($projects as $p)
                                         <option value="{{ $p->id }}" {{ $ledger->project_id == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
@@ -248,39 +254,10 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const TS = window.TomSelect || TomSelect;
-
     const destSelect = document.querySelector('.dest-warehouse-select');
     if (destSelect) {
-        new TS(destSelect, {
+        new TomSelect(destSelect, {
             create: false,
-            placeholder: "Select Destination Warehouse...",
-            sortField: {
-                field: "text",
-                direction: "asc"
-            }
-        });
-    }
-
-    const sourceSelect = document.getElementById('source_warehouse_id');
-    if (sourceSelect) {
-        new TS(sourceSelect, {
-            create: false,
-            allowEmptyOption: true,
-            placeholder: "Select Source Warehouse...",
-            sortField: {
-                field: "text",
-                direction: "asc"
-            }
-        });
-    }
-
-    const projectSelect = document.getElementById('project_id');
-    if (projectSelect) {
-        new TS(projectSelect, {
-            create: false,
-            allowEmptyOption: true,
-            placeholder: "Select Project...",
             sortField: {
                 field: "text",
                 direction: "asc"
@@ -289,53 +266,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const itemSelect = document.getElementById('item_id');
-    if (itemSelect) {
-        new TS(itemSelect, {
-            create: false,
-            placeholder: "Select Item...",
-            sortField: {
-                field: "text",
-                direction: "asc"
-            }
-        });
-    }
-
     const warehouseSelect = document.getElementById('warehouse_id');
-    if (warehouseSelect) {
-        new TS(warehouseSelect, {
-            create: false,
-            placeholder: "Select Warehouse...",
-            sortField: {
-                field: "text",
-                direction: "asc"
-            }
-        });
-    }
-
     const typeSelect = document.getElementById('type');
-    if (typeSelect) {
-        new TS(typeSelect, {
-            create: false,
-            sortField: [{ field: '$order' }]
-        });
-    }
-
     const actionSelect = document.getElementById('action');
-    let actionTomSelect = null;
-    if (actionSelect) {
-        actionTomSelect = new TS(actionSelect, {
-            create: false,
-            placeholder: "Select Action...",
-            sortField: [{ field: '$order' }]
-        });
-    }
-
     const unitDisplay = document.getElementById('unit-display');
     const allocationSelect = document.getElementById('allocation_id');
 
     let allocationTomSelect = null;
     if (allocationSelect) {
-        allocationTomSelect = new TS(allocationSelect, {
+        allocationTomSelect = new TomSelect(allocationSelect, {
             create: false,
             placeholder: "Select Target Allocation...",
             sortField: {
@@ -386,6 +325,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const warehouseOption = warehouseSelect.options[warehouseSelect.selectedIndex];
         const isCentral = warehouseOption ? warehouseOption.getAttribute('data-is-central') === 'true' : false;
 
+        // Clear existing action options
+        actionSelect.innerHTML = '';
+
         let options = [];
 
         if (movementType === 'IN') {
@@ -409,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 { value: 'UTILIZE', text: 'UTILIZE (Use/Consume)' }
             ];
 
-            if (itemType === 'CONSUMABLE') {
+            if (itemType === 'BULK') {
                 options = options.filter(opt => opt.value !== 'MAINTENANCE');
             }
 
@@ -419,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (isCentral) {
                 options = options.filter(opt => opt.value !== 'ALLOCATE');
-            } else if (itemType === 'CONSUMABLE') {
+            } else if (itemType === 'BULK') {
                 options.push({ value: 'ALLOCATE', text: 'ALLOCATE (Direct to Allocation)' });
             }
         }
@@ -427,27 +369,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add CORRECTION since we are Admins
         options.push({ value: 'CORRECTION', text: 'CORRECTION' });
 
-        if (actionTomSelect) {
-            const currentActionVal = actionTomSelect.getValue() || initialAction;
-            actionTomSelect.clear();
-            actionTomSelect.clearOptions();
-            actionTomSelect.addOptions(options.map(opt => ({ value: opt.value, text: opt.text })));
-            const match = options.find(opt => opt.value === currentActionVal) || options.find(opt => opt.value === initialAction);
-            if (match) {
-                actionTomSelect.setValue(match.value);
+        options.forEach(opt => {
+            const el = document.createElement('option');
+            el.value = opt.value;
+            el.textContent = opt.text;
+            if (opt.value === initialAction) {
+                el.selected = true;
             }
-        } else {
-            actionSelect.innerHTML = '';
-            options.forEach(opt => {
-                const el = document.createElement('option');
-                el.value = opt.value;
-                el.textContent = opt.text;
-                if (opt.value === initialAction) {
-                    el.selected = true;
-                }
-                actionSelect.appendChild(el);
-            });
-        }
+            actionSelect.appendChild(el);
+        });
 
         // Trigger toggleFields
         toggleFields();
@@ -499,7 +429,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (assignedAsterisk) assignedAsterisk.style.display = 'none';
 
         if (type === 'IN') {
-            if (itemType === 'CONSUMABLE' && action === 'DELIVERY' && !isCentral) {
+            if (itemType === 'BULK' && action === 'DELIVERY' && !isCentral) {
                 outAllocate.style.display = 'block';
             }
 
@@ -513,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Requirements for receipts and plate no
-            const isMandatory = ['CONSUMABLE', 'ASSET'].includes(itemType) && action === 'DELIVERY';
+            const isMandatory = ['BULK', 'ASSET'].includes(itemType) && action === 'DELIVERY';
 
             if (isMandatory) {
                 plateInput.required = true;

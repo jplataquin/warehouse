@@ -20,11 +20,11 @@
 
                     <div class="mb-4">
                         <label for="name" class="form-label fw-bold text-muted text-uppercase small">Type Name</label>
-                        <input type="text" name="name" id="name" class="form-control form-control-lg @error('name') is-invalid @enderror" value="{{ old('name', $itemType->name) }}" placeholder="e.g., Vehicles, IT Equipment" required autofocus {{ in_array(strtolower($itemType->name), ['consumable', 'asset']) ? 'disabled' : '' }}>
+                        <input type="text" name="name" id="name" class="form-control form-control-lg @error('name') is-invalid @enderror" value="{{ old('name', $itemType->name) }}" placeholder="e.g., Vehicles, IT Equipment" required autofocus {{ in_array(strtolower($itemType->name), ['bulk', 'asset']) ? 'disabled' : '' }}>
                         @error('name')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @else
-                            @if(in_array(strtolower($itemType->name), ['consumable', 'asset']))
+                            @if(in_array(strtolower($itemType->name), ['bulk', 'asset']))
                                 <div class="form-text text-warning"><i class="bi bi-exclamation-triangle-fill"></i> System-default item type name cannot be edited.</div>
                                 <input type="hidden" name="name" value="{{ $itemType->name }}">
                             @else
@@ -35,14 +35,14 @@
 
                     <div class="mb-4">
                         <label for="base_behavior" class="form-label fw-bold text-muted text-uppercase small">Base Behavior</label>
-                        <select name="base_behavior" id="base_behavior" class="form-select form-select-lg @error('base_behavior') is-invalid @enderror" required {{ in_array(strtolower($itemType->name), ['consumable', 'asset']) ? 'disabled' : '' }}>
-                            <option value="CONSUMABLE" {{ old('base_behavior', $itemType->base_behavior) === 'CONSUMABLE' ? 'selected' : '' }}>CONSUMABLE (Bulk quantities, non-serialized)</option>
+                        <select name="base_behavior" id="base_behavior" class="form-select form-select-lg @error('base_behavior') is-invalid @enderror" required {{ in_array(strtolower($itemType->name), ['bulk', 'asset']) ? 'disabled' : '' }}>
+                            <option value="BULK" {{ old('base_behavior', $itemType->base_behavior) === 'BULK' ? 'selected' : '' }}>BULK (Bulk quantities, non-serialized)</option>
                             <option value="ASSET" {{ old('base_behavior', $itemType->base_behavior) === 'ASSET' ? 'selected' : '' }}>ASSET (Individually tracked, serialized/unique)</option>
                         </select>
                         @error('base_behavior')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @else
-                            @if(in_array(strtolower($itemType->name), ['consumable', 'asset']))
+                            @if(in_array(strtolower($itemType->name), ['bulk', 'asset']))
                                 <div class="form-text text-warning"><i class="bi bi-exclamation-triangle-fill"></i> System-default base behavior cannot be edited.</div>
                                 <input type="hidden" name="base_behavior" value="{{ $itemType->base_behavior }}">
                             @else

@@ -10,7 +10,7 @@ class ItemController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Item::with(['itemType', 'category']);
+        $query = Item::query();
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -83,7 +83,7 @@ class ItemController extends Controller
     {
         $query = Item::whereHas('itemType', function ($q) {
             $q->where('base_behavior', 'ASSET');
-        })->with(['currentWarehouse', 'latestUtilizeLedger', 'category']);
+        })->with(['currentWarehouse', 'latestUtilizeLedger']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -116,31 +116,13 @@ class ItemController extends Controller
         return view('supervisor.items.assets', compact('assets', 'warehouses', 'assetTypes'));
     }
 
-    private function isAssetType($typeVal): bool
-    {
-        if (is_numeric($typeVal)) {
-            $itemType = \App\Models\ItemType::find($typeVal);
-            return $itemType && $itemType->base_behavior === 'ASSET';
-        }
-        if ($typeVal) {
-            $itemType = \App\Models\ItemType::where('base_behavior', $typeVal)
-                ->orWhere('name', $typeVal)
-                ->first();
-            return $itemType && $itemType->base_behavior === 'ASSET';
-        }
-        return false;
-    }
-
     public function create()
     {
-        $categories = \App\Models\ItemCategory::orderBy('name')->get();
-        return view('supervisor.items.create', compact('categories'));
+        return view('supervisor.items.create');
     }
 
     public function store(Request $request)
     {
-        $isAsset = $this->isAssetType($request->input('type'));
-
         $validated = $request->validate([
             'type' => [
                 'required',
@@ -156,21 +138,13 @@ class ItemController extends Controller
                     }
                 }
             ],
-            'category_id' => $isAsset ? ['required', 'exists:item_categories,id'] : ['nullable', 'exists:item_categories,id'],
             'name' => 'required|string|max:255',
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
             'status' => 'nullable|in:Operational,Out of Order',
             'photo_file' => 'nullable|image|mimes:jpeg,jpg,png|max:5120',
             'temp_photo_file' => 'nullable|string',
-        ], [
-            'category_id.required' => 'The category field is required for asset item types.',
-            'category_id.exists' => 'The selected category is invalid.',
         ]);
-
-        if (!$isAsset && empty($validated['category_id'])) {
-            $validated['category_id'] = null;
-        }
 
         $exists = Item::withTrashed()
             ->where('name', $validated['name'])
@@ -194,8 +168,7 @@ class ItemController extends Controller
 
     public function edit(Item $item)
     {
-        $categories = \App\Models\ItemCategory::orderBy('name')->get();
-        return view('supervisor.items.edit', compact('item', 'categories'));
+        return view('supervisor.items.edit', compact('item'));
     }
 
     public function show(Item $item)
@@ -205,8 +178,6 @@ class ItemController extends Controller
 
     public function update(Request $request, Item $item)
     {
-        $isAsset = $this->isAssetType($request->input('type'));
-
         $validated = $request->validate([
             'type' => [
                 'required',
@@ -222,21 +193,13 @@ class ItemController extends Controller
                     }
                 }
             ],
-            'category_id' => $isAsset ? ['required', 'exists:item_categories,id'] : ['nullable', 'exists:item_categories,id'],
             'name' => 'required|string|max:255',
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
             'status' => 'nullable|in:Operational,Out of Order',
             'photo_file' => 'nullable|image|mimes:jpeg,jpg,png|max:5120',
             'temp_photo_file' => 'nullable|string',
-        ], [
-            'category_id.required' => 'The category field is required for asset item types.',
-            'category_id.exists' => 'The selected category is invalid.',
         ]);
-
-        if (!$isAsset && empty($validated['category_id'])) {
-            $validated['category_id'] = null;
-        }
 
         $existingItem = Item::withTrashed()
             ->where('name', $validated['name'])
@@ -383,14 +346,11 @@ class ItemController extends Controller
     public function loggerCreate(Request $request)
     {
         $warehouseId = $request->query('warehouse_id');
-        $categories = \App\Models\ItemCategory::orderBy('name')->get();
-        return view('logger.items.create', compact('warehouseId', 'categories'));
+        return view('logger.items.create', compact('warehouseId'));
     }
 
     public function loggerStore(Request $request)
     {
-        $isAsset = $this->isAssetType($request->input('type'));
-
         $validated = $request->validate([
             'type' => [
                 'required',
@@ -406,7 +366,6 @@ class ItemController extends Controller
                     }
                 }
             ],
-            'category_id' => $isAsset ? ['required', 'exists:item_categories,id'] : ['nullable', 'exists:item_categories,id'],
             'name' => 'required|string|max:255',
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
@@ -414,14 +373,7 @@ class ItemController extends Controller
             'photo_file' => 'nullable|image|mimes:jpeg,jpg,png|max:5120',
             'photo' => 'nullable|string',
             'temp_photo_file' => 'nullable|string',
-        ], [
-            'category_id.required' => 'The category field is required for asset item types.',
-            'category_id.exists' => 'The selected category is invalid.',
         ]);
-
-        if (!$isAsset && empty($validated['category_id'])) {
-            $validated['category_id'] = null;
-        }
 
         $exists = Item::withTrashed()
             ->where('name', $validated['name'])

@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Item;
-use App\Models\ItemCategory;
 use App\Models\Ledger;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -38,9 +37,9 @@ class AssetInventoryTest extends TestCase
             'current_warehouse_id' => $warehouse->id,
         ]);
 
-        $consumable = Item::create([
+        $bulkItem = Item::create([
             'name' => 'Cement',
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'specification' => '40kg',
             'unit' => 'BAG',
         ]);
@@ -121,12 +120,10 @@ class AssetInventoryTest extends TestCase
 
     public function test_asset_status_defaults_to_operational_and_can_be_updated_to_out_of_order()
     {
-        $category = ItemCategory::firstOrCreate(['name' => 'Machinery']);
         $asset = Item::create([
             'name' => 'Bulldozer B2',
             'type' => 'ASSET',
             'unit' => 'UNIT',
-            'category_id' => $category->id,
         ]);
 
         // Default should be Operational
@@ -146,7 +143,6 @@ class AssetInventoryTest extends TestCase
                 'name' => 'Bulldozer B2',
                 'unit' => 'UNIT',
                 'status' => 'Out of Order',
-                'category_id' => $category->id,
             ]);
 
         $response->assertRedirect(route('items.index'));

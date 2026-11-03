@@ -288,8 +288,8 @@ class LedgerService
             throw new Exception('Delivery action must be of type IN.');
         }
 
-        // Rule: Mandatory fields for DELIVERY IN (Consumable and Asset)
-        if ($type === 'IN' && $action === 'DELIVERY' && in_array($item->type, ['CONSUMABLE', 'ASSET'])) {
+        // Rule: Mandatory fields for DELIVERY IN (Bulk and Asset)
+        if ($type === 'IN' && $action === 'DELIVERY' && in_array($item->type, ['BULK', 'ASSET'])) {
             if (empty($data['po_number'])) {
                 throw new Exception('PO Number is required for item deliveries.');
             }
@@ -328,10 +328,10 @@ class LedgerService
             }
         }
 
-        // Rule: ALLOCATE is for CONSUMABLE items logged out
+        // Rule: ALLOCATE is for BULK items logged out
         if ($action === 'ALLOCATE') {
-            if ($item->type !== 'CONSUMABLE') {
-                throw new Exception('Allocate action can only be performed on CONSUMABLE items.');
+            if ($item->type !== 'BULK') {
+                throw new Exception('Allocate action can only be performed on BULK items.');
             }
             if ($type !== 'OUT') {
                 throw new Exception('Allocate action must be of type OUT.');

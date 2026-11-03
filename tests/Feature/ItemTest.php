@@ -17,7 +17,7 @@ class ItemTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'To Be Deleted',
             'specification' => 'Spec',
             'unit' => 'Pcs',
@@ -35,7 +35,7 @@ class ItemTest extends TestCase
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
         $item = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Should Not Be Deleted',
             'specification' => 'Spec',
             'unit' => 'Pcs',
@@ -54,7 +54,7 @@ class ItemTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Cement',
             'unit' => 'Bags',
         ]);
@@ -89,14 +89,14 @@ class ItemTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Deformed Bar',
             'specification' => '16mm x 6m',
             'unit' => 'length',
         ]);
 
         $response = $this->actingAs($admin)->post(route('items.store'), [
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Deformed Bar',
             'specification' => '16mm x 6m',
             'unit' => 'length',
@@ -111,21 +111,21 @@ class ItemTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         
         $item1 = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Deformed Bar 1',
             'specification' => '16mm x 6m',
             'unit' => 'length',
         ]);
 
         $item2 = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Deformed Bar 2',
             'specification' => '16mm x 6m',
             'unit' => 'length',
         ]);
 
         $response = $this->actingAs($admin)->put(route('items.update', $item2), [
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Deformed Bar 1', // Change name to match item1, creating a duplicate
             'specification' => '16mm x 6m',
             'unit' => 'length',
@@ -141,12 +141,12 @@ class ItemTest extends TestCase
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
         $item1 = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Item 1',
             'unit' => 'Pcs',
         ]);
         $item2 = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Item 2',
             'unit' => 'Pcs',
         ]);
@@ -165,7 +165,7 @@ class ItemTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $item1 = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Item 1',
             'unit' => 'Pcs',
         ]);
@@ -181,13 +181,13 @@ class ItemTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $item1 = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Deformed Bar',
             'specification' => '16mm x 6m',
             'unit' => 'length',
         ]);
         $item2 = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Cement Extra',
             'specification' => '40kg',
             'unit' => 'Bags',
@@ -220,12 +220,12 @@ class ItemTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $item1 = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Item 1 (Wrong)',
             'unit' => 'Pcs',
         ]);
         $item2 = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Item 2 (Correct)',
             'unit' => 'Pcs',
         ]);
@@ -271,7 +271,7 @@ class ItemTest extends TestCase
     {
         $logger = User::factory()->create(['role' => 'logger']);
         $response = $this->actingAs($logger)->post(route('logger.items.store'), [
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Brand New Rare Item',
             'specification' => 'None',
             'unit' => 'Boxes',
@@ -288,14 +288,14 @@ class ItemTest extends TestCase
     {
         $logger = User::factory()->create(['role' => 'logger']);
         Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Exact Item Match',
             'specification' => '100g',
             'unit' => 'g',
         ]);
 
         $response = $this->actingAs($logger)->post(route('logger.items.store'), [
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Exact Item Match',
             'specification' => '100g',
             'unit' => 'g',
@@ -308,14 +308,14 @@ class ItemTest extends TestCase
     {
         $logger = User::factory()->create(['role' => 'logger']);
         Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Super Steel Pipe 10m',
             'specification' => 'Heavy',
             'unit' => 'Meters',
         ]);
 
         $response = $this->actingAs($logger)->post(route('logger.items.store'), [
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Super Steel Pipe 10m',
             'specification' => 'Light', // similar but not exact
             'unit' => 'Meters',
@@ -330,14 +330,14 @@ class ItemTest extends TestCase
     {
         $logger = User::factory()->create(['role' => 'logger']);
         Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Super Steel Pipe 10m',
             'specification' => 'Heavy',
             'unit' => 'Meters',
         ]);
 
         $response = $this->actingAs($logger)->post(route('logger.items.store'), [
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Super Steel Pipe 10m',
             'specification' => 'Light',
             'unit' => 'Meters',
@@ -356,7 +356,7 @@ class ItemTest extends TestCase
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
         $item = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Logger Item',
             'unit' => 'Pcs',
             'is_approved' => false,
@@ -370,7 +370,7 @@ class ItemTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Logger Item',
             'unit' => 'Pcs',
             'is_approved' => false,
@@ -386,13 +386,13 @@ class ItemTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Unapproved Item',
             'unit' => 'Pcs',
             'is_approved' => false,
         ]);
         Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Some Approved Product',
             'unit' => 'Pcs',
             'is_approved' => true,
@@ -414,7 +414,7 @@ class ItemTest extends TestCase
         $response->assertDontSee('badge bg-danger rounded-pill'); // initially hidden when 0
         
         Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Logger Item',
             'unit' => 'Pcs',
             'is_approved' => false,
@@ -434,7 +434,7 @@ class ItemTest extends TestCase
         $file = \Illuminate\Http\UploadedFile::fake()->create('item.jpg', 100);
 
         $response = $this->actingAs($admin)->post(route('items.store'), [
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Drill DCD771',
             'specification' => '20V Max',
             'unit' => 'Pcs',
@@ -455,7 +455,7 @@ class ItemTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $item1 = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Deformed Bar 16mm',
             'specification' => '16mm x 6m',
             'unit' => 'length',
@@ -463,7 +463,7 @@ class ItemTest extends TestCase
         ]);
 
         $item2 = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Deformed Bar',
             'specification' => '',
             'unit' => 'length',
@@ -471,7 +471,7 @@ class ItemTest extends TestCase
         ]);
 
         $item3 = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Completely Different Cement',
             'specification' => 'Portland',
             'unit' => 'Bags',
@@ -525,7 +525,7 @@ class ItemTest extends TestCase
         
         // Submit item form with temp_photo_file
         $responseStore = $this->actingAs($admin)->post(route('items.store'), [
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Chunked Item Test',
             'unit' => 'Pcs',
             'temp_photo_file' => $tempFileName,
@@ -577,7 +577,7 @@ class ItemTest extends TestCase
         $file = \Illuminate\Http\UploadedFile::fake()->image('item.jpg');
 
         $response = $this->actingAs($admin)->post(route('items.store'), [
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Drill DCD771 Webp',
             'specification' => '20V Max',
             'unit' => 'Pcs',
@@ -606,7 +606,7 @@ class ItemTest extends TestCase
         $file = \Illuminate\Http\UploadedFile::fake()->image('item.gif');
 
         $response = $this->actingAs($admin)->post(route('items.store'), [
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Drill DCD771 GIF',
             'specification' => '20V Max',
             'unit' => 'Pcs',
@@ -627,7 +627,7 @@ class ItemTest extends TestCase
         $file = \Illuminate\Http\UploadedFile::fake()->image('item.png')->size(6000);
 
         $response = $this->actingAs($admin)->post(route('items.store'), [
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Drill DCD771 Huge',
             'specification' => '20V Max',
             'unit' => 'Pcs',

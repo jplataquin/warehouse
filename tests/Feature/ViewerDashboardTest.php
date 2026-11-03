@@ -48,7 +48,7 @@ class ViewerDashboardTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee($warehouse->name);
         $response->assertSee('Dashboard');
-        $response->assertSee('data-filter="CONSUMABLE"', false);
+        $response->assertSee('data-filter="BULK"', false);
         $response->assertSee('data-filter="ASSET"', false);
         $response->assertSee('filter-btn');
     }

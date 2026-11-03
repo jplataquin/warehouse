@@ -16,10 +16,6 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <!-- Tom Select CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
-
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 
@@ -51,15 +47,13 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('ledgers.index') }}">Ledger</a>
                             </li>
-                            @if(Auth::user()->isAdmin() || Auth::user()->isSupervisor())
+                            @if(Auth::user()->isAdmin())
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ route('projects.index') }}">Projects</a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ route('warehouses.index') }}">Warehouses</a>
                                 </li>
-                            @endif
-                            @if(Auth::user()->isAdmin())
                                 <li class="nav-item">
                                     <a class="nav-link d-flex align-items-center gap-1" href="{{ route('items.index') }}">
                                         Items
@@ -149,6 +143,5 @@
             @yield('content')
         </main>
     </div>
-    @stack('scripts')
 </body>
 </html>

@@ -62,7 +62,7 @@
                     <label class="form-label small fw-bold text-muted text-uppercase">Item Type</label>
                     <select name="item_type" class="form-select" onchange="this.form.submit()">
                         <option value="">All Types</option>
-                        <option value="CONSUMABLE" {{ request('item_type') === 'CONSUMABLE' ? 'selected' : '' }}>Consumable</option>
+                        <option value="BULK" {{ request('item_type') === 'BULK' ? 'selected' : '' }}>Bulk</option>
                         <option value="ASSET" {{ request('item_type') === 'ASSET' ? 'selected' : '' }}>Asset</option>
                         
                     </select>
@@ -100,8 +100,8 @@
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h6 class="card-title fw-bold text-truncate mb-0" title="{{ $sItem->name }} {{ $sItem->specification }}">
-                            @if($sItem->type === 'CONSUMABLE')
-                                <span class="badge bg-danger me-1">C</span>
+                            @if($sItem->type === 'BULK')
+                                <span class="badge bg-danger me-1">B</span>
                             
                             @elseif($sItem->type === 'ASSET')
                                 <span class="badge bg-success me-1">A</span>

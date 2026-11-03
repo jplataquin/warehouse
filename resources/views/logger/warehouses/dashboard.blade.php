@@ -107,7 +107,7 @@
         background-color: #fff !important;
         border-color: #dee2e6 #dee2e6 #fff !important;
     }
-    #item-type-tabs .nav-link[data-filter="CONSUMABLE"].active {
+    #item-type-tabs .nav-link[data-filter="BULK"].active {
         border-top: 3px solid #dc3545 !important;
         color: #212529 !important;
     }
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button class="nav-link active filter-btn text-secondary fw-bold" type="button" data-filter="ALL">All</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link filter-btn text-danger fw-bold" type="button" data-filter="CONSUMABLE">Consumable</button>
+                <button class="nav-link filter-btn text-danger fw-bold" type="button" data-filter="BULK">Bulk</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link filter-btn text-success fw-bold" type="button" data-filter="ASSET">Asset</button>
@@ -200,8 +200,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="card-body p-3">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <h6 class="card-title fw-bold text-truncate mb-0" title="{{ $item->name }} {{ $item->specification }}">
-                                @if($item->type === 'CONSUMABLE')
-                                    <span class="badge bg-danger me-1">C</span>
+                                @if($item->type === 'BULK')
+                                    <span class="badge bg-danger me-1">B</span>
                                 
                                 @elseif($item->type === 'ASSET')
                                     <span class="badge bg-success me-1">A</span>

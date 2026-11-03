@@ -13,12 +13,12 @@ class LedgerViewTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_consumable_item_shows_up_in_create_ledger_view()
+    public function test_bulk_item_shows_up_in_create_ledger_view()
     {
         $user = User::factory()->create(['role' => 'logger']);
         $item = Item::create([
-            'name' => 'Consumable Item Test',
-            'type' => 'CONSUMABLE',
+            'name' => 'Bulk Item Test',
+            'type' => 'BULK',
             'unit' => 'Units',
         ]);
         $warehouse = Warehouse::create(['name' => 'Test WH', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
@@ -27,7 +27,7 @@ class LedgerViewTest extends TestCase
         $response = $this->actingAs($user)->get(route('ledgers.create', ['warehouse_id' => $warehouse->id]));
 
         $response->assertStatus(200);
-        $response->assertSee('Consumable Item Test Units (CONSUMABLE)');
+        $response->assertSee('Bulk Item Test Units (BULK)');
     }
 
     public function test_admin_can_search_items_in_ledger_after_selecting_warehouse()
@@ -43,7 +43,7 @@ class LedgerViewTest extends TestCase
 
         $item2 = Item::create([
             'name' => 'Safety Gloves',
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'unit' => 'PAIR',
         ]);
 
@@ -122,7 +122,7 @@ class LedgerViewTest extends TestCase
 
         $item = Item::create([
             'name' => 'Test Item',
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'unit' => 'Units',
         ]);
 

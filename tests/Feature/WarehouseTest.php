@@ -305,7 +305,7 @@ class WarehouseTest extends TestCase
             'status' => 'ACTIVE',
         ]);
         $item = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Steel Rebar',
             'unit' => 'Pcs',
         ]);
@@ -338,7 +338,7 @@ class WarehouseTest extends TestCase
             'status' => 'ACTIVE',
         ]);
         $item = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Steel Rebar',
             'unit' => 'Pcs',
         ]);
@@ -387,7 +387,7 @@ class WarehouseTest extends TestCase
             'parent_id' => $parentWarehouse->id,
         ]);
         $item = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Sand',
             'unit' => 'm3',
         ]);

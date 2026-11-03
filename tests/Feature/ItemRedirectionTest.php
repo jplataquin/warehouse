@@ -15,7 +15,7 @@ class ItemRedirectionTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Cement Extra',
             'specification' => '40kg',
             'unit' => 'Bags',
@@ -24,7 +24,7 @@ class ItemRedirectionTest extends TestCase
         $response = $this->actingAs($admin)
             ->get(route('items.index', [
                 'search' => 'Cement',
-                'type' => 'CONSUMABLE',
+                'type' => 'BULK',
             ]));
 
         $response->assertStatus(200);
@@ -33,7 +33,7 @@ class ItemRedirectionTest extends TestCase
         $expectedEditUrl = route('items.edit', [
             'item' => $item->id,
             'search' => 'Cement',
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
         ]);
 
         $response->assertSee(e($expectedEditUrl), false);
@@ -43,7 +43,7 @@ class ItemRedirectionTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Cement Extra',
             'specification' => '40kg',
             'unit' => 'Bags',
@@ -53,7 +53,7 @@ class ItemRedirectionTest extends TestCase
             ->get(route('items.edit', [
                 'item' => $item->id,
                 'search' => 'Cement',
-                'type' => 'CONSUMABLE',
+                'type' => 'BULK',
                 'page' => 2,
             ]));
 
@@ -63,7 +63,7 @@ class ItemRedirectionTest extends TestCase
         $expectedUpdateUrl = route('items.update', [
             'item' => $item->id,
             'search' => 'Cement',
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'page' => 2,
         ]);
         $response->assertSee(e($expectedUpdateUrl), false);
@@ -71,7 +71,7 @@ class ItemRedirectionTest extends TestCase
         // Assert Cancel button contains the query parameters
         $expectedCancelUrl = route('items.index', [
             'search' => 'Cement',
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'page' => 2,
         ]);
         $response->assertSee(e($expectedCancelUrl), false);
@@ -81,7 +81,7 @@ class ItemRedirectionTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Cement Extra',
             'specification' => '40kg',
             'unit' => 'Bags',
@@ -92,18 +92,18 @@ class ItemRedirectionTest extends TestCase
             ->put(route('items.update', [
                 'item' => $item->id,
                 'search' => 'Cement',
-                'type' => 'CONSUMABLE',
+                'type' => 'BULK',
                 'page' => 2,
             ]), [
                 'name' => 'Cement Extra Premium',
-                'type' => 'CONSUMABLE',
+                'type' => 'BULK',
                 'specification' => '50kg',
                 'unit' => 'Bags',
             ]);
 
         $expectedRedirectUrl = route('items.index', [
             'search' => 'Cement',
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'page' => 2,
         ]);
 
@@ -122,7 +122,7 @@ class ItemRedirectionTest extends TestCase
         // Create 55 items to force pagination (since pagination limit is 50)
         for ($i = 1; $i <= 55; $i++) {
             Item::create([
-                'type' => 'CONSUMABLE',
+                'type' => 'BULK',
                 'name' => "Cement Block {$i}",
                 'specification' => 'Standard',
                 'unit' => 'Pieces',
@@ -153,7 +153,7 @@ class ItemRedirectionTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Cement Extra',
             'specification' => '40kg',
             'unit' => 'Bags',

@@ -25,7 +25,7 @@ class GlobalSearchTest extends TestCase
 
         $item = Item::create([
             'name' => 'Test Item',
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'unit' => 'PCS',
         ]);
 
@@ -93,7 +93,7 @@ class GlobalSearchTest extends TestCase
 
         $item = Item::create([
             'name' => 'Searchable Item',
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'unit' => 'PCS',
         ]);
 

@@ -59,7 +59,7 @@ class InitialSeeder extends Seeder
 
         // Items
         Item::create([
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'name' => 'Cement',
             'specification' => '40kg Bag',
             'unit' => 'Bags',

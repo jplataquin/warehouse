@@ -18,7 +18,7 @@ class ItemStockTest extends TestCase
     public function test_get_stock_returns_correct_balance()
     {
         $user = User::factory()->create();
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $project = Project::create(['name' => 'Test Project']);
         $warehouse = Warehouse::create(['name' => 'Main Warehouse', 'type' => 'CENTRAL', 'status' => 'ACTIVE', 'project_id' => $project->id]);
 
@@ -74,7 +74,7 @@ class ItemStockTest extends TestCase
     public function test_get_stock_without_warehouse_id_returns_global_balance()
     {
         $user = User::factory()->create();
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse1 = Warehouse::create(['name' => 'WH 1', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
         $warehouse2 = Warehouse::create(['name' => 'WH 2', 'type' => 'SITE', 'status' => 'ACTIVE']);
 

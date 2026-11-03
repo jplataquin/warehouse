@@ -29,7 +29,7 @@
                     <select name="type" class="form-select" onchange="this.form.submit()">
                         <option value="">All Types</option>
                         <optgroup label="Broad Categories">
-                            <option value="CONSUMABLE" {{ request('type') === 'CONSUMABLE' ? 'selected' : '' }}>Consumable</option>
+                            <option value="BULK" {{ request('type') === 'BULK' ? 'selected' : '' }}>Bulk</option>
                             <option value="ASSET" {{ request('type') === 'ASSET' ? 'selected' : '' }}>Asset</option>
                         </optgroup>
                         @if($itemTypes->count() > 0)
@@ -102,13 +102,6 @@
                             </td>
                             <td>
                                 <span class="badge bg-light text-dark border">{{ $item->itemType ? $item->itemType->name : $item->type }}</span>
-                                @if($item->category)
-                                    <div class="mt-1">
-                                        <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.7rem;">
-                                            <i class="bi bi-folder2-open me-1"></i>{{ $item->category->name }}
-                                        </span>
-                                    </div>
-                                @endif
                             </td>
                             <td>{{ $item->unit }}</td>
                             <td class="text-end">

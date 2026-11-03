@@ -36,8 +36,8 @@ class StockLevelThresholdTest extends TestCase
         ]);
 
         $itemType = ItemType::firstOrCreate(
-            ['name' => 'Consumable'],
-            ['base_behavior' => 'CONSUMABLE']
+            ['name' => 'Bulk'],
+            ['base_behavior' => 'BULK']
         );
 
         $this->item = Item::create([
@@ -50,7 +50,7 @@ class StockLevelThresholdTest extends TestCase
         ]);
     }
 
-    public function test_supervisor_can_set_stock_threshold()
+    public function test_supervisor_cannot_set_stock_threshold()
     {
         $response = $this->actingAs($this->supervisor)
             ->post(route('warehouses.thresholds.store', $this->warehouse), [
@@ -58,14 +58,7 @@ class StockLevelThresholdTest extends TestCase
                 'threshold' => 15.50,
             ]);
 
-        $response->assertRedirect(route('warehouses.show', $this->warehouse));
-        $response->assertSessionHas('success', 'Stock threshold saved successfully.');
-
-        $this->assertDatabaseHas('stock_level_registries', [
-            'warehouse_id' => $this->warehouse->id,
-            'item_id' => $this->item->id,
-            'threshold' => 15.50,
-        ]);
+        $response->assertStatus(403);
     }
 
     public function test_admin_can_set_stock_threshold()

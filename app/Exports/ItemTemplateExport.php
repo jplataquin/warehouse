@@ -14,7 +14,7 @@ class ItemTemplateExport implements FromCollection, WithEvents, WithHeadings
     {
         return collect([
             [
-                'type' => 'CONSUMABLE',
+                'type' => 'BULK',
                 'name' => 'Sample Item',
                 'specification' => 'Sample Spec',
                 'unit' => 'PCS',
@@ -39,7 +39,7 @@ class ItemTemplateExport implements FromCollection, WithEvents, WithHeadings
                 $sheet = $event->sheet->getDelegate();
 
                 // Define the options for the dropdown
-                $options = ['CONSUMABLE', 'ASSET'];
+                $options = ['BULK', 'ASSET'];
 
                 // Set the validation for the 'type' column (Column A) from row 2 to 1000
                 $validation = $sheet->getCell('A2')->getDataValidation();

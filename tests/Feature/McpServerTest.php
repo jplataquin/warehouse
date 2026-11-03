@@ -145,9 +145,9 @@ class McpServerTest extends TestCase
             'base_behavior' => 'ASSET',
         ]);
 
-        $consumableType = ItemType::create([
+        $bulkType = ItemType::create([
             'name' => 'Construction Material',
-            'base_behavior' => 'CONSUMABLE',
+            'base_behavior' => 'BULK',
         ]);
 
         $warehouse1 = Warehouse::create([
@@ -180,15 +180,15 @@ class McpServerTest extends TestCase
             'status' => 'Damaged',
         ]);
 
-        $consumable = Item::create([
+        $bulkItem = Item::create([
             'name' => 'Portland Cement 50kg',
             'specification' => 'Type 1',
             'unit' => 'bag',
-            'item_type_id' => $consumableType->id,
+            'item_type_id' => $bulkType->id,
             'current_warehouse_id' => $warehouse1->id,
         ]);
 
-        // Ensure consumable is not returned by list_assets
+        // Ensure bulk item is not returned by list_assets
         WarehouseServer::tool(ListAssetsTool::class, [])
             ->assertOk()
             ->assertSee('Excavator Cat 320')
@@ -232,8 +232,8 @@ class McpServerTest extends TestCase
         ]);
 
         $itemType = ItemType::create([
-            'name' => 'Consumable General',
-            'base_behavior' => 'CONSUMABLE',
+            'name' => 'Bulk General',
+            'base_behavior' => 'BULK',
         ]);
 
         $item1 = Item::create([

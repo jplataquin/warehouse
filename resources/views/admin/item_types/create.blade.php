@@ -31,7 +31,7 @@
                         <label for="base_behavior" class="form-label fw-bold text-muted text-uppercase small">Base Behavior</label>
                         <select name="base_behavior" id="base_behavior" class="form-select form-select-lg @error('base_behavior') is-invalid @enderror" required>
                             <option value="" disabled selected>Select base behavior...</option>
-                            <option value="CONSUMABLE" {{ old('base_behavior') === 'CONSUMABLE' ? 'selected' : '' }}>CONSUMABLE (Bulk quantities, non-serialized)</option>
+                            <option value="BULK" {{ old('base_behavior') === 'BULK' ? 'selected' : '' }}>BULK (Bulk quantities, non-serialized)</option>
                             <option value="ASSET" {{ old('base_behavior') === 'ASSET' ? 'selected' : '' }}>ASSET (Individually tracked, serialized/unique)</option>
                         </select>
                         @error('base_behavior')

@@ -17,11 +17,11 @@ class ItemTypeTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
-        // Default types 'Consumable' and 'Asset' are seeded by the migrations
+        // Default types 'Bulk' and 'Asset' are seeded by the migrations
         $response = $this->actingAs($admin)->get(route('item-types.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('Consumable');
+        $response->assertSee('Bulk');
         $response->assertSee('Asset');
     }
 
@@ -63,7 +63,7 @@ class ItemTypeTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $customType = ItemType::create([
             'name' => 'Power Tools',
-            'base_behavior' => 'CONSUMABLE',
+            'base_behavior' => 'BULK',
         ]);
 
         $response = $this->actingAs($admin)->put(route('item-types.update', $customType->id), [
@@ -85,13 +85,13 @@ class ItemTypeTest extends TestCase
     public function test_cannot_delete_default_item_types()
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $consumableType = ItemType::where('name', 'Consumable')->first();
+        $bulkType = ItemType::where('name', 'Bulk')->first();
 
-        $response = $this->actingAs($admin)->delete(route('item-types.destroy', $consumableType->id));
+        $response = $this->actingAs($admin)->delete(route('item-types.destroy', $bulkType->id));
 
         $response->assertRedirect();
         $response->assertSessionHas('error', 'Cannot delete default system item types.');
-        $this->assertDatabaseHas('item_types', ['id' => $consumableType->id]);
+        $this->assertDatabaseHas('item_types', ['id' => $bulkType->id]);
     }
 
     /** @test */
@@ -124,7 +124,7 @@ class ItemTypeTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $customType = ItemType::create([
             'name' => 'Office Supplies',
-            'base_behavior' => 'CONSUMABLE',
+            'base_behavior' => 'BULK',
         ]);
 
         $response = $this->actingAs($admin)->delete(route('item-types.destroy', $customType->id));
@@ -140,7 +140,7 @@ class ItemTypeTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $customType = ItemType::create([
             'name' => 'Plumbing',
-            'base_behavior' => 'CONSUMABLE',
+            'base_behavior' => 'BULK',
         ]);
 
         $response = $this->actingAs($admin)->post(route('items.store'), [

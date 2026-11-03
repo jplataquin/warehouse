@@ -31,7 +31,7 @@ class ProjectAllocationSummaryTest extends TestCase
         ]);
         $this->item = Item::create([
             'name' => 'Test Item',
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'unit' => 'Pcs',
         ]);
     }
@@ -91,7 +91,7 @@ class ProjectAllocationSummaryTest extends TestCase
         // Create Second Item
         $item2 = Item::create([
             'name' => 'Second Item',
-            'type' => 'CONSUMABLE',
+            'type' => 'BULK',
             'unit' => 'Bags',
         ]);
 

@@ -27,7 +27,7 @@
                     <tr>
                         <th class="py-3">Action</th>
                         <th class="py-3">Type</th>
-                        <th class="py-3 text-center">Consumable</th>
+                        <th class="py-3 text-center">Bulk</th>
                         <th class="py-3 text-center">Asset</th>
                         <th class="py-3">Usage</th>
                     </tr>
@@ -125,7 +125,7 @@
             <ul class="mb-0 text-muted small ps-3">
                 <li class="mb-1"><strong>Asset Quantity Constraint:</strong> Asset items can only be processed **one at a time** (quantity must always be **exactly 1.00** per entry).</li>
                 <li class="mb-1"><strong>Stock Level Check:</strong> You cannot log out (`OUT`) more quantity than what is currently available in the active warehouse.</li>
-                <li><strong>Central vs. Site Rules:</strong> Central warehouses deal with deliveries and bulk transfers; Site warehouses can allocate consumables down to specific project tasks.</li>
+                <li><strong>Central vs. Site Rules:</strong> Central warehouses deal with deliveries and bulk transfers; Site warehouses can allocate bulk goods down to specific project tasks.</li>
             </ul>
         </div>
     </div>

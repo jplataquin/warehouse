@@ -31,7 +31,7 @@ class ItemTypeController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:item_types,name',
-            'base_behavior' => 'required|in:CONSUMABLE,ASSET',
+            'base_behavior' => 'required|in:BULK,ASSET',
         ]);
 
         ItemType::create($validated);
@@ -54,7 +54,7 @@ class ItemTypeController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:item_types,name,' . $itemType->id,
-            'base_behavior' => 'required|in:CONSUMABLE,ASSET',
+            'base_behavior' => 'required|in:BULK,ASSET',
         ]);
 
         $itemType->update($validated);
@@ -72,7 +72,7 @@ class ItemTypeController extends Controller
         }
 
         // Prevent deleting default/core types if they are still needed
-        if (in_array(strtolower($itemType->name), ['consumable', 'asset'])) {
+        if (in_array(strtolower($itemType->name), ['bulk', 'asset'])) {
             return back()->with('error', 'Cannot delete default system item types.');
         }
 

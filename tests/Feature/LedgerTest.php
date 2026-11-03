@@ -19,7 +19,7 @@ class LedgerTest extends TestCase
     public function test_delivery_must_be_in_type()
     {
         $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         // Add some stock first so we don't hit the "no stock" validation
@@ -50,7 +50,7 @@ class LedgerTest extends TestCase
         $response->assertSessionHas('error', 'Delivery action must be of type IN.');
     }
 
-    public function test_allocate_must_be_consumable()
+    public function test_allocate_must_be_bulk()
     {
         $user = User::factory()->create(['role' => 'logger']);
         $item = Item::create(['type' => 'ASSET', 'name' => 'Drill', 'unit' => 'Units']);
@@ -88,13 +88,13 @@ class LedgerTest extends TestCase
             ],
         ]);
 
-        $response->assertSessionHas('error', 'Allocate action can only be performed on CONSUMABLE items.');
+        $response->assertSessionHas('error', 'Allocate action can only be performed on BULK items.');
     }
 
-    public function test_consumable_delivery_requires_receipt_fields()
+    public function test_bulk_delivery_requires_receipt_fields()
     {
         $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         $response = $this->actingAs($user)->post('/ledgers', [
@@ -137,10 +137,10 @@ class LedgerTest extends TestCase
         $response->assertSessionHas('error', 'PO Number is required for item deliveries.');
     }
 
-    public function test_official_receipt_is_optional_for_consumable_delivery()
+    public function test_official_receipt_is_optional_for_bulk_delivery()
     {
         $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         $response = $this->actingAs($user)->post('/ledgers', [
@@ -195,7 +195,7 @@ class LedgerTest extends TestCase
     public function test_out_movement_requires_existing_stock()
     {
         $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         // Attempting OUT without any IN record first
@@ -218,7 +218,7 @@ class LedgerTest extends TestCase
     public function test_dispose_requires_remarks()
     {
         $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         // Add stock
@@ -274,10 +274,10 @@ class LedgerTest extends TestCase
         $response->assertSessionHas('error', 'Asset items can only be processed one at a time (quantity must be 1).');
     }
 
-    public function test_asset_return_not_allowed_for_consumable()
+    public function test_asset_return_not_allowed_for_bulk()
     {
         $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         $response = $this->actingAs($user)->post('/ledgers', [
@@ -300,7 +300,7 @@ class LedgerTest extends TestCase
     public function test_initial_stock_requires_remarks()
     {
         $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         $response = $this->actingAs($user)->post('/ledgers', [
@@ -323,7 +323,7 @@ class LedgerTest extends TestCase
     public function test_initial_stock_must_be_in_type()
     {
         $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         $response = $this->actingAs($user)->post('/ledgers', [
@@ -346,7 +346,7 @@ class LedgerTest extends TestCase
     public function test_initial_stock_successful()
     {
         $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         $response = $this->actingAs($user)->post('/ledgers', [
@@ -376,7 +376,7 @@ class LedgerTest extends TestCase
     public function test_ledger_can_be_filtered_by_type_and_action()
     {
         $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         // Create entries of different types and actions
@@ -409,7 +409,7 @@ class LedgerTest extends TestCase
     public function test_cannot_enter_future_date()
     {
         $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         $futureDate = now()->addDay()->format('Y-m-d');
@@ -436,7 +436,7 @@ class LedgerTest extends TestCase
     public function test_item_history_page_is_accessible()
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         $response = $this->actingAs($admin)->get(route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $item->id]));
@@ -449,7 +449,7 @@ class LedgerTest extends TestCase
     public function test_admin_can_see_edit_links_on_item_history_page()
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
         $ledger = Ledger::create([
             'entry_date' => now(),
@@ -471,7 +471,7 @@ class LedgerTest extends TestCase
     public function test_logger_cannot_see_edit_links_on_item_history_page()
     {
         $logger = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
         $ledger = Ledger::create([
             'entry_date' => now(),
@@ -492,7 +492,7 @@ class LedgerTest extends TestCase
     public function test_item_history_print_page_is_accessible()
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Gravel', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Gravel', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'North', 'status' => 'ACTIVE']);
         $ledger = Ledger::create([
             'entry_date' => now(),
@@ -515,7 +515,7 @@ class LedgerTest extends TestCase
     public function test_utilize_action_rules()
     {
         $user = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         // 1. UTILIZE must be OUT type
@@ -767,7 +767,7 @@ class LedgerTest extends TestCase
     public function test_admin_can_access_edit_ledger_page()
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
         $ledger = Ledger::create([
             'entry_date' => now(),
@@ -788,7 +788,7 @@ class LedgerTest extends TestCase
     public function test_non_admin_cannot_access_edit_ledger_page()
     {
         $logger = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
         $ledger = Ledger::create([
             'entry_date' => now(),
@@ -808,7 +808,7 @@ class LedgerTest extends TestCase
     public function test_admin_can_update_ledger_entry_and_records_updated_by()
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
         $ledger = Ledger::create([
             'entry_date' => now(),
@@ -839,7 +839,7 @@ class LedgerTest extends TestCase
     public function test_admin_update_bypasses_stock_limits_validation()
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
         
         // Initial stock of 10
@@ -882,7 +882,7 @@ class LedgerTest extends TestCase
     public function test_logger_can_access_item_history_print_page()
     {
         $logger = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'South', 'status' => 'ACTIVE']);
 
         $response = $this->actingAs($logger)->get(route('ledgers.item_history.print', ['warehouse' => $warehouse->id, 'item' => $item->id]));
@@ -899,7 +899,7 @@ class LedgerTest extends TestCase
 
         $admin = User::factory()->create(['role' => 'admin']);
         $logger = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
         $ledger = Ledger::create([
             'entry_date' => now(),
@@ -927,7 +927,7 @@ class LedgerTest extends TestCase
         $this->withMiddleware();
 
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
         $ledger = Ledger::create([
             'entry_date' => now(),
@@ -964,7 +964,7 @@ class LedgerTest extends TestCase
         $this->withMiddleware();
 
         $logger = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
         $ledger = Ledger::create([
             'entry_date' => now(),
@@ -989,7 +989,7 @@ class LedgerTest extends TestCase
         $this->withMiddleware();
 
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
         $ledger = Ledger::create([
             'entry_date' => now(),
@@ -1015,7 +1015,7 @@ class LedgerTest extends TestCase
         $this->withMiddleware();
 
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
         
         // Add IN entry of 10
@@ -1060,7 +1060,7 @@ class LedgerTest extends TestCase
         $this->withMiddleware();
 
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
         
         // Add IN entry of 10
@@ -1099,7 +1099,7 @@ class LedgerTest extends TestCase
         $this->withMiddleware();
 
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         $ledger1 = Ledger::create([
@@ -1139,7 +1139,7 @@ class LedgerTest extends TestCase
         $this->withMiddleware();
 
         $logger = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Cement', 'unit' => 'Bags']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
 
         $ledger = Ledger::create([
@@ -1164,7 +1164,7 @@ class LedgerTest extends TestCase
     public function test_warehouse_item_ledger_history_defaults_to_descending_order_by_date()
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Steel Rods', 'unit' => 'Pieces']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Steel Rods', 'unit' => 'Pieces']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main WH', 'status' => 'ACTIVE']);
 
         $ledger1 = Ledger::create([
@@ -1213,7 +1213,7 @@ class LedgerTest extends TestCase
     public function test_warehouse_item_ledger_print_history_defaults_to_descending_order_by_date()
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Steel Rods', 'unit' => 'Pieces']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Steel Rods', 'unit' => 'Pieces']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main WH', 'status' => 'ACTIVE']);
 
         $ledger1 = Ledger::create([
@@ -1259,7 +1259,7 @@ class LedgerTest extends TestCase
     public function test_warehouse_item_ledger_index_defaults_to_descending_order_by_date()
     {
         $logger = User::factory()->create(['role' => 'logger']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Steel Rods', 'unit' => 'Pieces']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Steel Rods', 'unit' => 'Pieces']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main WH', 'status' => 'ACTIVE']);
         $logger->warehouses()->attach($warehouse);
 
@@ -1306,7 +1306,7 @@ class LedgerTest extends TestCase
     public function test_warehouse_item_ledger_descending_running_balance_calculation()
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $item = Item::create(['type' => 'CONSUMABLE', 'name' => 'Paint', 'unit' => 'Gallons']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Paint', 'unit' => 'Gallons']);
         $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main WH', 'status' => 'ACTIVE']);
 
         // Jan 1: IN 100 -> balance 100

@@ -67,33 +67,11 @@
                         <h4 class="card-title mb-0 fw-bold">Item Types</h4>
                     </div>
                     <p class="card-text text-muted flex-grow-1">
-                        Create and manage custom item categories, specifying if they behave as consumable bulk goods or unique assets.
+                        Create and manage custom item categories, specifying if they behave as bulk goods or unique assets.
                     </p>
                     <div class="mt-4">
                         <a href="{{ route('item-types.index') }}" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
                             <i class="bi bi-gear"></i> Configure Types
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Item Categories Management Card -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                <div class="card-body d-flex flex-column p-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-primary-subtle text-primary p-3 rounded-3 me-3">
-                            <i class="bi bi-folder2-open fs-4"></i>
-                        </div>
-                        <h4 class="card-title mb-0 fw-bold">Item Categories</h4>
-                    </div>
-                    <p class="card-text text-muted flex-grow-1">
-                        Maintain categories for items (e.g. Heavy Equipment, Power Tools) required for assets.
-                    </p>
-                    <div class="mt-4">
-                        <a href="{{ route('item-categories.index') }}" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-gear"></i> Configure Categories
                         </a>
                     </div>
                 </div>
