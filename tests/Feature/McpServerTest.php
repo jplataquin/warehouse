@@ -4,10 +4,11 @@ namespace Tests\Feature;
 
 use App\Mcp\Servers\WarehouseServer;
 use App\Mcp\Tools\ListAssetsTool;
-use App\Mcp\Tools\ListItemTypesTool;
 use App\Mcp\Tools\ListItemsTool;
+use App\Mcp\Tools\ListItemTypesTool;
 use App\Mcp\Tools\ListLedgersTool;
 use App\Mcp\Tools\ListProjectsTool;
+use App\Mcp\Tools\ListStockLevelsTool;
 use App\Mcp\Tools\ListWarehousesTool;
 use App\Models\Item;
 use App\Models\ItemType;
@@ -61,6 +62,7 @@ class McpServerTest extends TestCase
             'list_assets',
             'list_items',
             'list_item_types',
+            'list_stock_levels',
         ], $toolNames);
     }
 
@@ -96,6 +98,7 @@ class McpServerTest extends TestCase
             ListWarehousesTool::class,
             ListProjectsTool::class,
             ListAssetsTool::class,
+            ListStockLevelsTool::class,
         ]);
     }
 
@@ -518,5 +521,237 @@ class McpServerTest extends TestCase
             ->assertOk()
             ->assertSee('Electrical Supplies')
             ->assertDontSee('Heavy Vehicles');
+    }
+
+    public function test_list_stock_levels_tool_aggregates_stock_and_filters(): void
+    {
+        $warehouse1 = Warehouse::create([
+            'name' => 'Main Depot',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+
+        $warehouse2 = Warehouse::create([
+            'name' => 'Secondary Yard',
+            'type' => 'SECONDARY',
+            'status' => 'ACTIVE',
+        ]);
+
+        $bulkType = ItemType::create([
+            'name' => 'Raw Materials',
+            'base_behavior' => 'BULK',
+        ]);
+
+        $assetType = ItemType::create([
+            'name' => 'Heavy Equipment',
+            'base_behavior' => 'ASSET',
+        ]);
+
+        $item1 = Item::create([
+            'name' => 'Steel Rebar 10mm',
+            'specification' => 'Grade 40',
+            'unit' => 'pcs',
+            'item_type_id' => $bulkType->id,
+        ]);
+
+        $item2 = Item::create([
+            'name' => 'Cement Portland',
+            'specification' => 'Type 1 40kg',
+            'unit' => 'bag',
+            'item_type_id' => $bulkType->id,
+        ]);
+
+        $item3 = Item::create([
+            'name' => 'Generator 5kVA',
+            'specification' => 'Diesel Silent',
+            'unit' => 'unit',
+            'item_type_id' => $assetType->id,
+        ]);
+
+        // Warehouse 1 ledger entries for item 1: IN 100, OUT 30 => Net 70.00
+        Ledger::create([
+            'warehouse_id' => $warehouse1->id,
+            'item_id' => $item1->id,
+            'quantity' => 100,
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'entry_date' => '2026-10-01',
+        ]);
+        Ledger::create([
+            'warehouse_id' => $warehouse1->id,
+            'item_id' => $item1->id,
+            'quantity' => 30,
+            'type' => 'OUT',
+            'action' => 'DISPATCH',
+            'entry_date' => '2026-10-15',
+        ]);
+
+        // Warehouse 1 ledger entries for item 2: IN 50, OUT 10 => Net 40.00
+        Ledger::create([
+            'warehouse_id' => $warehouse1->id,
+            'item_id' => $item2->id,
+            'quantity' => 50,
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'entry_date' => '2026-10-20',
+        ]);
+        Ledger::create([
+            'warehouse_id' => $warehouse1->id,
+            'item_id' => $item2->id,
+            'quantity' => 10,
+            'type' => 'OUT',
+            'action' => 'DISPATCH',
+            'entry_date' => '2026-11-01',
+        ]);
+
+        // Warehouse 1 ledger entries for item 3: IN 5 => Net 5.00
+        Ledger::create([
+            'warehouse_id' => $warehouse1->id,
+            'item_id' => $item3->id,
+            'quantity' => 5,
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'entry_date' => '2026-10-10',
+        ]);
+
+        // Warehouse 2 ledger entry (different warehouse, should NOT affect warehouse 1)
+        Ledger::create([
+            'warehouse_id' => $warehouse2->id,
+            'item_id' => $item1->id,
+            'quantity' => 200,
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'entry_date' => '2026-10-05',
+        ]);
+
+        // 1. Missing warehouse_id should fail validation
+        WarehouseServer::tool(ListStockLevelsTool::class, [])
+            ->assertHasErrors(['The warehouse id field is required.']);
+
+        // 2. Query warehouse 1 with no optional filters (should return all 3 items with correct aggregated stock and last_entry_date)
+        WarehouseServer::tool(ListStockLevelsTool::class, [
+            'warehouse_id' => $warehouse1->id,
+        ])
+            ->assertOk()
+            ->assertSee('Steel Rebar 10mm')
+            ->assertSee('70.00')
+            ->assertSee('2026-10-15')
+            ->assertSee('Raw Materials')
+            ->assertSee('BULK')
+            ->assertSee('Cement Portland')
+            ->assertSee('40.00')
+            ->assertSee('2026-11-01')
+            ->assertSee('Generator 5kVA')
+            ->assertSee('5.00')
+            ->assertSee('2026-10-10')
+            ->assertSee('Heavy Equipment')
+            ->assertSee('ASSET');
+
+        // 3. Verify tool call and exact JSON structure via JSON-RPC endpoint
+        $user = User::factory()->create();
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $jsonRpcResponse = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'MCP-Protocol-Version' => '2025-11-25',
+            'Mcp-Method' => 'tools/call',
+        ])->postJson('/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 3,
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'list_stock_levels',
+                'arguments' => ['warehouse_id' => $warehouse1->id],
+            ],
+        ]);
+
+        $jsonRpcResponse->assertStatus(200);
+        $content = json_decode($jsonRpcResponse->json('result.content.0.text'), true);
+        $this->assertCount(3, $content);
+
+        $item1Data = collect($content)->firstWhere('item_id', $item1->id);
+        $this->assertNotNull($item1Data);
+        $this->assertEquals('Steel Rebar 10mm', $item1Data['name']);
+        $this->assertEquals('Grade 40', $item1Data['specification']);
+        $this->assertEquals('pcs', $item1Data['unit']);
+        $this->assertEquals('Raw Materials', $item1Data['item_type']);
+        $this->assertEquals('BULK', $item1Data['base_behavior']);
+        $this->assertEquals('70.00', $item1Data['current_stock']);
+        $this->assertEquals('2026-10-15', $item1Data['last_entry_date']);
+
+        $item2Data = collect($content)->firstWhere('item_id', $item2->id);
+        $this->assertNotNull($item2Data);
+        $this->assertEquals('Cement Portland', $item2Data['name']);
+        $this->assertEquals('40.00', $item2Data['current_stock']);
+        $this->assertEquals('2026-11-01', $item2Data['last_entry_date']);
+
+        $item3Data = collect($content)->firstWhere('item_id', $item3->id);
+        $this->assertNotNull($item3Data);
+        $this->assertEquals('Heavy Equipment', $item3Data['item_type']);
+        $this->assertEquals('ASSET', $item3Data['base_behavior']);
+        $this->assertEquals('5.00', $item3Data['current_stock']);
+        $this->assertEquals('2026-10-10', $item3Data['last_entry_date']);
+
+        // 4. Filter by item_id
+        WarehouseServer::tool(ListStockLevelsTool::class, [
+            'warehouse_id' => $warehouse1->id,
+            'item_id' => $item2->id,
+        ])
+            ->assertOk()
+            ->assertSee('Cement Portland')
+            ->assertDontSee('Steel Rebar 10mm')
+            ->assertDontSee('Generator 5kVA');
+
+        // 5. Wildcard filter by name
+        WarehouseServer::tool(ListStockLevelsTool::class, [
+            'warehouse_id' => $warehouse1->id,
+            'name' => 'Steel',
+        ])
+            ->assertOk()
+            ->assertSee('Steel Rebar 10mm')
+            ->assertDontSee('Cement Portland')
+            ->assertDontSee('Generator 5kVA');
+
+        // 6. Filter by as_of_date (before OUT 30 on 2026-10-15, item1 had 100.00; item2 had 0 entries before 2026-10-10)
+        WarehouseServer::tool(ListStockLevelsTool::class, [
+            'warehouse_id' => $warehouse1->id,
+            'as_of_date' => '2026-10-10',
+        ])
+            ->assertOk()
+            ->assertSee('Steel Rebar 10mm')
+            ->assertSee('100.00')
+            ->assertSee('2026-10-01')
+            ->assertSee('Generator 5kVA')
+            ->assertSee('5.00')
+            ->assertDontSee('Cement Portland');
+
+        // 7. Filter by item_type
+        WarehouseServer::tool(ListStockLevelsTool::class, [
+            'warehouse_id' => $warehouse1->id,
+            'item_type' => 'Heavy Equipment',
+        ])
+            ->assertOk()
+            ->assertSee('Generator 5kVA')
+            ->assertDontSee('Steel Rebar 10mm')
+            ->assertDontSee('Cement Portland');
+
+        // 8. Filter by base_behavior
+        WarehouseServer::tool(ListStockLevelsTool::class, [
+            'warehouse_id' => $warehouse1->id,
+            'base_behavior' => 'BULK',
+        ])
+            ->assertOk()
+            ->assertSee('Steel Rebar 10mm')
+            ->assertSee('Cement Portland')
+            ->assertDontSee('Generator 5kVA');
+
+        WarehouseServer::tool(ListStockLevelsTool::class, [
+            'warehouse_id' => $warehouse1->id,
+            'base_behavior' => 'ASSET',
+        ])
+            ->assertOk()
+            ->assertSee('Generator 5kVA')
+            ->assertDontSee('Steel Rebar 10mm')
+            ->assertDontSee('Cement Portland');
     }
 }
