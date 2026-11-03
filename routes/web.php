@@ -50,6 +50,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/project-allocation-summary', [\App\Http\Controllers\Reports\ProjectAllocationSummaryController::class, 'index'])->name('project-allocation-summary');
         Route::get('/project-allocation-summary/details', [\App\Http\Controllers\Reports\ProjectAllocationSummaryController::class, 'details'])->name('project-allocation-summary.details');
         Route::get('/project-allocation-summary/print', [\App\Http\Controllers\Reports\ProjectAllocationSummaryController::class, 'print'])->name('project-allocation-summary.print');
+        Route::get('/unreturned-assets', [\App\Http\Controllers\Reports\UnreturnedAssetsReportController::class, 'index'])->name('unreturned-assets');
+        Route::get('/unreturned-assets/print', [\App\Http\Controllers\Reports\UnreturnedAssetsReportController::class, 'print'])->name('unreturned-assets.print');
     });
     Route::get('/warehouses/{warehouse}/dashboard', [DashboardController::class, 'warehouseDashboard'])
         ->name('logger.warehouse.dashboard')

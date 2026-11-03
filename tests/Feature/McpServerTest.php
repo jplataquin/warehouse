@@ -9,6 +9,7 @@ use App\Mcp\Tools\ListItemTypesTool;
 use App\Mcp\Tools\ListLedgersTool;
 use App\Mcp\Tools\ListProjectsTool;
 use App\Mcp\Tools\ListStockLevelsTool;
+use App\Mcp\Tools\ListUnreturnedAssetsTool;
 use App\Mcp\Tools\ListWarehousesTool;
 use App\Models\Item;
 use App\Models\ItemType;
@@ -16,6 +17,7 @@ use App\Models\Ledger;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\Warehouse;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -63,6 +65,7 @@ class McpServerTest extends TestCase
             'list_items',
             'list_item_types',
             'list_stock_levels',
+            'list_unreturned_assets',
         ], $toolNames);
     }
 
@@ -99,6 +102,7 @@ class McpServerTest extends TestCase
             ListProjectsTool::class,
             ListAssetsTool::class,
             ListStockLevelsTool::class,
+            ListUnreturnedAssetsTool::class,
         ]);
     }
 
@@ -753,5 +757,178 @@ class McpServerTest extends TestCase
             ->assertSee('Generator 5kVA')
             ->assertDontSee('Steel Rebar 10mm')
             ->assertDontSee('Cement Portland');
+    }
+
+    public function test_list_unreturned_assets_tool_lists_assets_and_filters(): void
+    {
+        $warehouse1 = Warehouse::create([
+            'name' => 'Main Hub',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+
+        $warehouse2 = Warehouse::create([
+            'name' => 'Field Station',
+            'type' => 'SECONDARY',
+            'status' => 'ACTIVE',
+        ]);
+
+        $assetType = ItemType::create([
+            'name' => 'Site Tools',
+            'base_behavior' => 'ASSET',
+        ]);
+
+        $heavyType = ItemType::create([
+            'name' => 'Heavy Equipment',
+            'base_behavior' => 'ASSET',
+        ]);
+
+        $bulkType = ItemType::create([
+            'name' => 'Hardware',
+            'base_behavior' => 'BULK',
+        ]);
+
+        // Asset 1: OUT UTILIZE from warehouse1 12 days ago
+        $asset1 = Item::create([
+            'name' => 'Demolition Hammer 15kg',
+            'specification' => 'Makita HM1307CB',
+            'unit' => 'unit',
+            'item_type_id' => $assetType->id,
+            'current_warehouse_id' => null,
+        ]);
+        Ledger::create([
+            'warehouse_id' => $warehouse1->id,
+            'item_id' => $asset1->id,
+            'type' => 'OUT',
+            'action' => 'UTILIZE',
+            'assigned_to' => 'Jack Hammer',
+            'plate_no' => 'DH-01',
+            'remarks' => 'Demolition phase 1',
+            'entry_date' => Carbon::today()->subDays(12)->format('Y-m-d'),
+            'quantity' => 1,
+        ]);
+
+        // Asset 2: OUT MAINTENANCE from warehouse2 6 days ago
+        $asset2 = Item::create([
+            'name' => 'Wheel Loader 950M',
+            'specification' => 'CAT Diesel',
+            'unit' => 'unit',
+            'item_type_id' => $heavyType->id,
+            'current_warehouse_id' => null,
+        ]);
+        Ledger::create([
+            'warehouse_id' => $warehouse2->id,
+            'item_id' => $asset2->id,
+            'type' => 'OUT',
+            'action' => 'MAINTENANCE',
+            'assigned_to' => 'CAT Service Center',
+            'plate_no' => 'CAT-950',
+            'remarks' => 'Hydraulic maintenance',
+            'entry_date' => Carbon::today()->subDays(6)->format('Y-m-d'),
+            'quantity' => 1,
+        ]);
+
+        // Asset 3: OUT UTILIZE then ASSET_RETURN IN (Returned, should NOT appear)
+        $asset3 = Item::create([
+            'name' => 'Survey Theodolite',
+            'unit' => 'unit',
+            'item_type_id' => $assetType->id,
+            'current_warehouse_id' => $warehouse1->id,
+        ]);
+        Ledger::create([
+            'warehouse_id' => $warehouse1->id,
+            'item_id' => $asset3->id,
+            'type' => 'OUT',
+            'action' => 'UTILIZE',
+            'entry_date' => Carbon::today()->subDays(20)->format('Y-m-d'),
+            'quantity' => 1,
+        ]);
+        Ledger::create([
+            'warehouse_id' => $warehouse1->id,
+            'item_id' => $asset3->id,
+            'type' => 'IN',
+            'action' => 'ASSET_RETURN',
+            'entry_date' => Carbon::today()->subDays(2)->format('Y-m-d'),
+            'quantity' => 1,
+        ]);
+
+        // 1. Default query returns unreturned assets and includes days_out
+        WarehouseServer::tool(ListUnreturnedAssetsTool::class, [])
+            ->assertOk()
+            ->assertSee('Demolition Hammer 15kg')
+            ->assertSee('Makita HM1307CB')
+            ->assertSee('UTILIZE')
+            ->assertSee('Jack Hammer')
+            ->assertSee('12')
+            ->assertSee('Wheel Loader 950M')
+            ->assertSee('MAINTENANCE')
+            ->assertSee('6')
+            ->assertDontSee('Survey Theodolite');
+
+        // 2. Filter by warehouse_id
+        WarehouseServer::tool(ListUnreturnedAssetsTool::class, [
+            'warehouse_id' => $warehouse1->id,
+        ])
+            ->assertOk()
+            ->assertSee('Demolition Hammer 15kg')
+            ->assertDontSee('Wheel Loader 950M');
+
+        // 3. Filter by item_type
+        WarehouseServer::tool(ListUnreturnedAssetsTool::class, [
+            'item_type' => 'Heavy Equipment',
+        ])
+            ->assertOk()
+            ->assertSee('Wheel Loader 950M')
+            ->assertDontSee('Demolition Hammer 15kg');
+
+        // 4. Filter by search
+        WarehouseServer::tool(ListUnreturnedAssetsTool::class, [
+            'search' => 'Makita',
+        ])
+            ->assertOk()
+            ->assertSee('Demolition Hammer 15kg')
+            ->assertDontSee('Wheel Loader 950M');
+
+        // 5. Filter by min_days_out
+        WarehouseServer::tool(ListUnreturnedAssetsTool::class, [
+            'min_days_out' => 10,
+        ])
+            ->assertOk()
+            ->assertSee('Demolition Hammer 15kg')
+            ->assertDontSee('Wheel Loader 950M');
+
+        // 6. JSON-RPC test over HTTP
+        $user = User::factory()->create();
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'MCP-Protocol-Version' => '2025-11-25',
+            'Mcp-Method' => 'tools/call',
+        ])->postJson('/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 999,
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'list_unreturned_assets',
+                'arguments' => ['min_days_out' => 5],
+            ],
+        ]);
+
+        $response->assertStatus(200);
+        $content = json_decode($response->json('result.content.0.text'), true);
+        $this->assertCount(2, $content);
+
+        $first = $content[0]; // sorted by days_out desc
+        $this->assertEquals($asset1->id, $first['item_id']);
+        $this->assertEquals(12, $first['days_out']);
+        $this->assertEquals('UTILIZE', $first['action']);
+        $this->assertEquals('Main Hub', $first['origin_warehouse']);
+
+        $second = $content[1];
+        $this->assertEquals($asset2->id, $second['item_id']);
+        $this->assertEquals(6, $second['days_out']);
+        $this->assertEquals('MAINTENANCE', $second['action']);
+        $this->assertEquals('Field Station', $second['origin_warehouse']);
     }
 }

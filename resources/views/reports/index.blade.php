@@ -26,15 +26,19 @@
                     </div>
                 </div>
 
-                <!-- Future Reports Placeholder Card -->
+                <!-- Unreturned Assets Card -->
                 <div class="col-md-6 mb-4">
-                    <div class="card h-100 border-dashed bg-light">
-                        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center p-5">
-                            <i class="bi bi-plus-circle text-muted fs-1 mb-3"></i>
-                            <h5 class="card-title fw-bold text-muted">More Reports Coming Soon</h5>
-                            <p class="card-text text-muted max-width-300">
-                                Additional analytics and inventory reports will be added here in the future.
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title fw-bold text-primary">
+                                <i class="bi bi-clock-history me-2"></i>Unreturned Assets
+                            </h5>
+                            <p class="card-text text-muted flex-grow-1">
+                                Track all assets currently logged out for utilization or maintenance and see how many days they have been out of any warehouse.
                             </p>
+                            <a href="{{ route('reports.unreturned-assets') }}" class="btn btn-primary mt-3">
+                                View Report <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
