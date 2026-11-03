@@ -706,10 +706,10 @@ class McpServerTest extends TestCase
             ->assertDontSee('Steel Rebar 10mm')
             ->assertDontSee('Generator 5kVA');
 
-        // 5. Wildcard filter by name
+        // 5. Wildcard filter by search
         WarehouseServer::tool(ListStockLevelsTool::class, [
             'warehouse_id' => $warehouse1->id,
-            'name' => 'Steel',
+            'search' => 'Steel',
         ])
             ->assertOk()
             ->assertSee('Steel Rebar 10mm')

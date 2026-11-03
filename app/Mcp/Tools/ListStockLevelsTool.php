@@ -15,7 +15,7 @@ use Laravel\Mcp\Server\Tool;
 
 #[Name('list_stock_levels')]
 #[Title('List Stock Levels')]
-#[Description('List aggregated stock levels per item for a specific warehouse. Supports filtering by item ID, item name, date, item type, and base behavior. Requires warehouse_id. Read-only.')]
+#[Description('List aggregated stock levels per item for a specific warehouse. Supports filtering by item ID, search term, date, item type, and base behavior. Requires warehouse_id. Read-only.')]
 class ListStockLevelsTool extends Tool
 {
     public function description(): string
@@ -45,8 +45,7 @@ class ListStockLevelsTool extends Tool
         return [
             'warehouse_id' => $schema->integer()->description('The ID of the warehouse (required)')->required(),
             'item_id' => $schema->integer()->description('Filter by specific item ID'),
-            'name' => $schema->string()->description('Wildcard search term for item name'),
-            'search' => $schema->string()->description('Optional wildcard search term for item name or specification'),
+            'search' => $schema->string()->description('Wildcard search term for item name or specification'),
             'as_of_date' => $schema->string()->description('Calculate stock up to this date (YYYY-MM-DD)'),
             'item_type' => $itemTypeField,
             'base_behavior' => $schema->string()
@@ -63,7 +62,6 @@ class ListStockLevelsTool extends Tool
         $request->validate([
             'warehouse_id' => 'required|integer|exists:warehouses,id',
             'item_id' => 'nullable|integer',
-            'name' => 'nullable|string',
             'search' => 'nullable|string',
             'as_of_date' => 'nullable|date',
             'item_type' => 'nullable|string',
@@ -83,13 +81,6 @@ class ListStockLevelsTool extends Tool
 
         if ($request->filled('item_id')) {
             $query->where('item_id', $request->get('item_id'));
-        }
-
-        if ($request->filled('name')) {
-            $nameTerm = $request->get('name');
-            $query->whereHas('item', function ($q) use ($nameTerm) {
-                $q->where('name', 'like', "%{$nameTerm}%");
-            });
         }
 
         if ($request->filled('search')) {
