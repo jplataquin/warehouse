@@ -3,6 +3,7 @@
 namespace App\Mcp\Tools;
 
 use App\Models\Item;
+use App\Models\ItemType;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
@@ -14,12 +15,12 @@ use Laravel\Mcp\Server\Tool;
 
 #[Name('list_items')]
 #[Title('List Items')]
-#[Description('List and search materials/items with item types having the base behavior of type "Bulk". Supports wildcard search filter by name. Read-only.')]
+#[Description('List and search materials/items with item types having the base behavior of type "Bulk". Supports wildcard search filter by name and filter by item type. Read-only.')]
 class ListItemsTool extends Tool
 {
     public function description(): string
     {
-        return 'List materials/items with item types that have the base behavior of type "Bulk". Supports wildcard search filter by name.';
+        return 'List materials/items with item types that have the base behavior of type "Bulk". Supports wildcard search filter by name and filter by item type.';
     }
 
     /**
@@ -29,8 +30,21 @@ class ListItemsTool extends Tool
      */
     public function schema(JsonSchema $schema): array
     {
+        $bulkTypes = [];
+        try {
+            $bulkTypes = ItemType::where('base_behavior', 'BULK')->pluck('name')->toArray();
+        } catch (\Throwable $e) {
+            // Table might not be available in some contexts
+        }
+
+        $itemTypeField = $schema->string()->description('Filter bulk items by item type name');
+        if (!empty($bulkTypes)) {
+            $itemTypeField->enum($bulkTypes);
+        }
+
         return [
             'name' => $schema->string()->description('Wildcard search term for item name'),
+            'item_type' => $itemTypeField,
             'search' => $schema->string()->description('Optional wildcard search term for item name or specification'),
         ];
     }
@@ -42,6 +56,7 @@ class ListItemsTool extends Tool
     {
         $request->validate([
             'name' => 'nullable|string',
+            'item_type' => 'nullable|string',
             'search' => 'nullable|string',
         ]);
 
@@ -50,6 +65,17 @@ class ListItemsTool extends Tool
                 $q->where('base_behavior', 'BULK');
             })
             ->with(['itemType:id,name']);
+
+        if ($request->filled('item_type')) {
+            $itemType = $request->get('item_type');
+            $query->whereHas('itemType', function ($q) use ($itemType) {
+                $q->where('base_behavior', 'BULK')
+                    ->where(function ($sub) use ($itemType) {
+                        $sub->where('name', $itemType)
+                            ->orWhere('id', $itemType);
+                    });
+            });
+        }
 
         if ($request->filled('name')) {
             $nameTerm = $request->get('name');

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mcp\Servers\WarehouseServer;
 use App\Mcp\Tools\ListAssetsTool;
+use App\Mcp\Tools\ListItemTypesTool;
 use App\Mcp\Tools\ListItemsTool;
 use App\Mcp\Tools\ListLedgersTool;
 use App\Mcp\Tools\ListProjectsTool;
@@ -59,6 +60,7 @@ class McpServerTest extends TestCase
             'list_warehouse_projects',
             'list_assets',
             'list_items',
+            'list_item_types',
         ], $toolNames);
     }
 
@@ -423,5 +425,98 @@ class McpServerTest extends TestCase
             ->assertOk()
             ->assertDontSee('Portland Cement Type 1')
             ->assertDontSee('Sand Coarse Grade');
+
+        // Additional bulk type for testing item_type filter
+        $plumbingType = ItemType::create([
+            'name' => 'Plumbing Supplies',
+            'base_behavior' => 'BULK',
+        ]);
+
+        $pipeItem = Item::create([
+            'name' => 'PVC Pipe 2-inch',
+            'specification' => 'Blue 3m',
+            'unit' => 'length',
+            'item_type_id' => $plumbingType->id,
+        ]);
+
+        // Filter by item_type
+        WarehouseServer::tool(ListItemsTool::class, ['item_type' => 'Plumbing Supplies'])
+            ->assertOk()
+            ->assertSee('PVC Pipe 2-inch')
+            ->assertDontSee('Portland Cement Type 1')
+            ->assertDontSee('Sand Coarse Grade');
+
+        // Filter by non-bulk item_type returns nothing
+        WarehouseServer::tool(ListItemsTool::class, ['item_type' => 'Tools & Equipment'])
+            ->assertOk()
+            ->assertDontSee('Concrete Mixer 1-Bagger')
+            ->assertDontSee('PVC Pipe 2-inch');
+
+        // Test that schema exposes only BULK types in the item_type enum
+        $user = User::factory()->create();
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'MCP-Protocol-Version' => '2025-11-25',
+            'Mcp-Method' => 'tools/list',
+        ])->postJson('/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 100,
+            'method' => 'tools/list',
+        ]);
+
+        $response->assertStatus(200);
+
+        $listItemsTool = collect($response->json('result.tools'))->firstWhere('name', 'list_items');
+        $this->assertNotNull($listItemsTool);
+
+        $itemTypeProperty = $listItemsTool['inputSchema']['properties']['item_type'] ?? null;
+        $this->assertNotNull($itemTypeProperty);
+        $this->assertArrayHasKey('enum', $itemTypeProperty);
+
+        // Enum should contain 'Bulk', 'Raw Materials', 'Plumbing Supplies'
+        $this->assertContains('Raw Materials', $itemTypeProperty['enum']);
+        $this->assertContains('Plumbing Supplies', $itemTypeProperty['enum']);
+        // Enum should NOT contain 'Tools & Equipment' or 'Asset'
+        $this->assertNotContains('Tools & Equipment', $itemTypeProperty['enum']);
+        $this->assertNotContains('Asset', $itemTypeProperty['enum']);
+    }
+
+    public function test_list_item_types_tool_returns_all_types_and_filters_by_base_behavior(): void
+    {
+        $assetType = ItemType::create([
+            'name' => 'Heavy Vehicles',
+            'base_behavior' => 'ASSET',
+        ]);
+
+        $bulkType = ItemType::create([
+            'name' => 'Electrical Supplies',
+            'base_behavior' => 'BULK',
+        ]);
+
+        // Default query without filters should return all item types
+        WarehouseServer::tool(ListItemTypesTool::class, [])
+            ->assertOk()
+            ->assertSee('Heavy Vehicles')
+            ->assertSee('Electrical Supplies');
+
+        // Filter by base_behavior = 'BULK'
+        WarehouseServer::tool(ListItemTypesTool::class, ['base_behavior' => 'BULK'])
+            ->assertOk()
+            ->assertSee('Electrical Supplies')
+            ->assertDontSee('Heavy Vehicles');
+
+        // Filter by base_behavior = 'ASSET'
+        WarehouseServer::tool(ListItemTypesTool::class, ['base_behavior' => 'ASSET'])
+            ->assertOk()
+            ->assertSee('Heavy Vehicles')
+            ->assertDontSee('Electrical Supplies');
+
+        // Filter by search name
+        WarehouseServer::tool(ListItemTypesTool::class, ['search' => 'Electrical'])
+            ->assertOk()
+            ->assertSee('Electrical Supplies')
+            ->assertDontSee('Heavy Vehicles');
     }
 }

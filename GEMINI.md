@@ -9,6 +9,14 @@
 - **Primary Database:** MySQL (Connection: `mysql`, Database: `warehouse`).
 - **Migrations:** All new item types or schema changes must be reflected in migrations.
 
+## UI & Styling Guidelines
+- **Restricted Style Classes:** Do NOT use the following style classes unless explicitly specified by the user prompt:
+  - `table-light`
+  - `bg-light`
+  - `bg-white`
+  - `text-white`
+  - `text-light`
+
 ## Parallel Agent Coordination
 You are operating in a multi-agent environment where multiple Gemini sessions run in parallel git worktrees created via `gemini -w <name>`. To prevent merge conflicts and optimize work across concurrent agents, follow this coordination and shipping protocol:
 

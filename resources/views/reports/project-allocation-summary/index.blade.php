@@ -83,7 +83,7 @@
                         @else
                             <div class="table-responsive">
                                 <table class="table table-hover mb-0">
-                                    <thead class="table-light">
+                                    <thead>
                                         <tr>
                                             <th class="ps-4">Allocation Target / Item</th>
                                             <th class="text-end pe-4" style="width: 250px;">Total Quantity Allocated</th>
@@ -95,7 +95,7 @@
                                                 $allocationName = $items->first()->allocation ? $items->first()->allocation->name : 'Unspecified Target';
                                                 $targetTotal = $items->sum('total_quantity');
                                             @endphp
-                                            <tr class="table-light">
+                                            <tr>
                                                 <td colspan="2" class="ps-4 py-3 fw-bold text-dark bg-light border-bottom-0">
                                                     <i class="bi bi-geo-alt-fill text-primary me-2"></i>{{ $allocationName }}
                                                 </td>

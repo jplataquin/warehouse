@@ -79,7 +79,7 @@
                     @else
                         <div class="table-responsive">
                             <table class="table table-hover mb-0 align-middle">
-                                <thead class="table-light">
+                                <thead>
                                     <tr>
                                         <th class="ps-4">Date</th>
                                         <th>Warehouse</th>
