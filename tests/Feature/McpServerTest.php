@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mcp\Servers\WarehouseServer;
 use App\Mcp\Tools\ListAssetsTool;
+use App\Mcp\Tools\ListItemsTool;
 use App\Mcp\Tools\ListLedgersTool;
 use App\Mcp\Tools\ListProjectsTool;
 use App\Mcp\Tools\ListWarehousesTool;
@@ -57,6 +58,7 @@ class McpServerTest extends TestCase
             'list_warehouses',
             'list_warehouse_projects',
             'list_assets',
+            'list_items',
         ], $toolNames);
     }
 
@@ -212,6 +214,64 @@ class McpServerTest extends TestCase
             ->assertOk()
             ->assertSee('Excavator Cat 320')
             ->assertDontSee('Bulldozer Komatsu D65');
+
+        // Second asset type
+        $vehicleType = ItemType::create([
+            'name' => 'Site Vehicles',
+            'base_behavior' => 'ASSET',
+        ]);
+
+        $vehicleItem = Item::create([
+            'name' => 'Pickup Truck Ford Ranger',
+            'specification' => 'Plate ABC-123',
+            'unit' => 'unit',
+            'item_type_id' => $vehicleType->id,
+            'current_warehouse_id' => $warehouse1->id,
+            'status' => 'Operational',
+        ]);
+
+        // Filter by item_type name
+        WarehouseServer::tool(ListAssetsTool::class, ['item_type' => 'Site Vehicles'])
+            ->assertOk()
+            ->assertSee('Pickup Truck Ford Ranger')
+            ->assertDontSee('Excavator Cat 320')
+            ->assertDontSee('Bulldozer Komatsu D65');
+
+        // Filter by non-asset item_type returns nothing
+        WarehouseServer::tool(ListAssetsTool::class, ['item_type' => 'Construction Material'])
+            ->assertOk()
+            ->assertDontSee('Portland Cement 50kg')
+            ->assertDontSee('Pickup Truck Ford Ranger');
+
+        // Test that schema exposes only ASSET types in the item_type enum
+        $user = User::factory()->create();
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'MCP-Protocol-Version' => '2025-11-25',
+            'Mcp-Method' => 'tools/list',
+        ])->postJson('/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 99,
+            'method' => 'tools/list',
+        ]);
+
+        $response->assertStatus(200);
+
+        $listAssetsTool = collect($response->json('result.tools'))->firstWhere('name', 'list_assets');
+        $this->assertNotNull($listAssetsTool);
+
+        $itemTypeProperty = $listAssetsTool['inputSchema']['properties']['item_type'] ?? null;
+        $this->assertNotNull($itemTypeProperty);
+        $this->assertArrayHasKey('enum', $itemTypeProperty);
+
+        // Enum should contain 'Asset', 'Heavy Machinery', 'Site Vehicles'
+        $this->assertContains('Heavy Machinery', $itemTypeProperty['enum']);
+        $this->assertContains('Site Vehicles', $itemTypeProperty['enum']);
+        // Enum should NOT contain 'Construction Material' or 'Bulk'
+        $this->assertNotContains('Construction Material', $itemTypeProperty['enum']);
+        $this->assertNotContains('Bulk', $itemTypeProperty['enum']);
     }
 
     public function test_list_ledgers_tool_requires_warehouse_and_filters(): void
@@ -309,5 +369,59 @@ class McpServerTest extends TestCase
         // Missing required warehouse_id should produce error
         WarehouseServer::tool(ListLedgersTool::class, [])
             ->assertHasErrors(['The warehouse id field is required.']);
+    }
+
+    public function test_list_items_tool_only_returns_bulk_items_and_supports_name_wildcard_search(): void
+    {
+        $assetType = ItemType::create([
+            'name' => 'Tools & Equipment',
+            'base_behavior' => 'ASSET',
+        ]);
+
+        $bulkType = ItemType::create([
+            'name' => 'Raw Materials',
+            'base_behavior' => 'BULK',
+        ]);
+
+        $bulkItem1 = Item::create([
+            'name' => 'Portland Cement Type 1',
+            'specification' => '40kg bag',
+            'unit' => 'bag',
+            'item_type_id' => $bulkType->id,
+        ]);
+
+        $bulkItem2 = Item::create([
+            'name' => 'Sand Coarse Grade',
+            'specification' => 'River sand',
+            'unit' => 'cu.m',
+            'item_type_id' => $bulkType->id,
+        ]);
+
+        $assetItem = Item::create([
+            'name' => 'Concrete Mixer 1-Bagger',
+            'specification' => 'Diesel Engine',
+            'unit' => 'unit',
+            'item_type_id' => $assetType->id,
+        ]);
+
+        // Default query without filters should return all Bulk items and exclude Assets
+        WarehouseServer::tool(ListItemsTool::class, [])
+            ->assertOk()
+            ->assertSee('Portland Cement Type 1')
+            ->assertSee('Sand Coarse Grade')
+            ->assertDontSee('Concrete Mixer 1-Bagger');
+
+        // Filter by name wildcard match
+        WarehouseServer::tool(ListItemsTool::class, ['name' => 'Cement'])
+            ->assertOk()
+            ->assertSee('Portland Cement Type 1')
+            ->assertDontSee('Sand Coarse Grade')
+            ->assertDontSee('Concrete Mixer 1-Bagger');
+
+        // Filter by name with no match
+        WarehouseServer::tool(ListItemsTool::class, ['name' => 'Gravel'])
+            ->assertOk()
+            ->assertDontSee('Portland Cement Type 1')
+            ->assertDontSee('Sand Coarse Grade');
     }
 }

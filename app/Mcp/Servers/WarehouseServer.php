@@ -3,6 +3,7 @@
 namespace App\Mcp\Servers;
 
 use App\Mcp\Tools\ListAssetsTool;
+use App\Mcp\Tools\ListItemsTool;
 use App\Mcp\Tools\ListLedgersTool;
 use App\Mcp\Tools\ListProjectsTool;
 use App\Mcp\Tools\ListWarehousesTool;
@@ -13,7 +14,7 @@ use Laravel\Mcp\Server\Attributes\Version;
 
 #[Name('Warehouse Server')]
 #[Version('1.0.0')]
-#[Instructions('Read-only MCP Server for the Warehouse application to inspect ledgers, warehouses, projects, and assets.')]
+#[Instructions('Read-only MCP Server for the Warehouse application to inspect ledgers, warehouses, projects, assets, and bulk items.')]
 class WarehouseServer extends Server
 {
     protected array $tools = [
@@ -21,6 +22,7 @@ class WarehouseServer extends Server
         ListWarehousesTool::class,
         ListProjectsTool::class,
         ListAssetsTool::class,
+        ListItemsTool::class,
     ];
 
     protected array $resources = [

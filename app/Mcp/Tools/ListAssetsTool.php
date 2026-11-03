@@ -3,6 +3,7 @@
 namespace App\Mcp\Tools;
 
 use App\Models\Item;
+use App\Models\ItemType;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
@@ -14,12 +15,12 @@ use Laravel\Mcp\Server\Tool;
 
 #[Name('list_assets')]
 #[Title('List Assets')]
-#[Description('List and search asset items. Supports wildcard search and filtering by warehouse or status. Read-only.')]
+#[Description('List and search asset items. Supports wildcard search and filtering by warehouse, item type, or status. Read-only.')]
 class ListAssetsTool extends Tool
 {
     public function description(): string
     {
-        return 'List and search assets with optional wildcard search, warehouse filter, and status filter.';
+        return 'List and search assets with optional wildcard search, item type filter, warehouse filter, and status filter.';
     }
 
     /**
@@ -29,8 +30,21 @@ class ListAssetsTool extends Tool
      */
     public function schema(JsonSchema $schema): array
     {
+        $assetTypes = [];
+        try {
+            $assetTypes = ItemType::where('base_behavior', 'ASSET')->pluck('name')->toArray();
+        } catch (\Throwable $e) {
+            // Table might not be available in some contexts
+        }
+
+        $itemTypeField = $schema->string()->description('Filter assets by item type name');
+        if (!empty($assetTypes)) {
+            $itemTypeField->enum($assetTypes);
+        }
+
         return [
             'search' => $schema->string()->description('Wildcard search term for asset name or specification'),
+            'item_type' => $itemTypeField,
             'warehouse_id' => $schema->integer()->description('Filter assets by current warehouse ID'),
             'status' => $schema->string()->description('Filter assets by status (e.g., Operational, Damaged)'),
         ];
@@ -43,6 +57,7 @@ class ListAssetsTool extends Tool
     {
         $request->validate([
             'search' => 'nullable|string',
+            'item_type' => 'nullable|string',
             'warehouse_id' => 'nullable|integer',
             'status' => 'nullable|string',
         ]);
@@ -52,6 +67,17 @@ class ListAssetsTool extends Tool
                 $q->where('base_behavior', 'ASSET');
             })
             ->with(['currentWarehouse:id,name', 'itemType:id,name']);
+
+        if ($request->filled('item_type')) {
+            $itemType = $request->get('item_type');
+            $query->whereHas('itemType', function ($q) use ($itemType) {
+                $q->where('base_behavior', 'ASSET')
+                    ->where(function ($sub) use ($itemType) {
+                        $sub->where('name', $itemType)
+                            ->orWhere('id', $itemType);
+                    });
+            });
+        }
 
         if ($request->filled('search')) {
             $term = $request->get('search');
