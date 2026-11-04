@@ -34,6 +34,27 @@
     </div>
 </div>
 
+@if(isset($negativeBalanceDiagnostic) && $negativeBalanceDiagnostic)
+<div class="alert alert-danger shadow-sm border-0 mb-4" role="alert">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill fs-3 me-3 text-danger"></i>
+            <div>
+                <h5 class="alert-heading fw-bold mb-1">Negative Balance Anomaly Detected</h5>
+                <p class="mb-0">
+                    A diagnostic check detected that the balance became negative at a point in time. The first entry causing a negative balance is Entry <strong>#{{ $negativeBalanceDiagnostic['entry_id'] }}</strong> (Balance: <strong>{{ number_format($negativeBalanceDiagnostic['balance'], 2) }} {{ $item->unit }}</strong>).
+                </p>
+            </div>
+        </div>
+        <div>
+            <a href="{{ route('ledgers.show', $negativeBalanceDiagnostic['entry_id']) }}" class="btn btn-outline-danger btn-sm shadow-sm">
+                <i class="bi bi-box-arrow-up-right me-1"></i> View Entry #{{ $negativeBalanceDiagnostic['entry_id'] }}
+            </a>
+        </div>
+    </div>
+</div>
+@endif
+
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body p-4">
         <form action="{{ route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $item->id]) }}" method="GET" class="row g-3 align-items-end">

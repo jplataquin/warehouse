@@ -1508,4 +1508,145 @@ class LedgerTest extends TestCase
         $response->assertSee("<td>#{$ledger2->id}</td>", false);
         $response->assertDontSee("<td>#{$ledger1->id}</td>", false);
     }
+
+    public function test_negative_balance_diagnostic_detects_first_negative_entry_and_displays_error_banner()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $warehouse = Warehouse::create(['name' => 'Main Warehouse', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $item = Item::create(['name' => 'Pipes', 'type' => 'BULK', 'unit' => 'meters']);
+
+        // Entry 1: IN 10 (balance = 10)
+        $entry1 = Ledger::create([
+            'entry_date' => '2026-01-01',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        // Entry 2: OUT 15 (balance = -5) -> FIRST entry that caused negative balance!
+        $entry2 = Ledger::create([
+            'entry_date' => '2026-01-02',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item->id,
+            'quantity' => 15,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        // Entry 3: IN 20 (balance = 15) -> back to positive
+        $entry3 = Ledger::create([
+            'entry_date' => '2026-01-03',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 20,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        // Entry 4: OUT 40 (balance = -25) -> second time negative
+        $entry4 = Ledger::create([
+            'entry_date' => '2026-01-04',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item->id,
+            'quantity' => 40,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+        ]));
+
+        $response->assertStatus(200);
+        $diagnostic = $response->viewData('negativeBalanceDiagnostic');
+        $this->assertNotNull($diagnostic);
+        $this->assertEquals($entry2->id, $diagnostic['entry_id']);
+        $this->assertEquals(-5.0, (float) $diagnostic['balance']);
+
+        // Banner HTML elements
+        $response->assertSee('Negative Balance Anomaly Detected');
+        $response->assertSee("Entry <strong>#{$entry2->id}</strong>", false);
+        $response->assertSee(route('ledgers.show', $entry2->id));
+    }
+
+    public function test_negative_balance_diagnostic_not_shown_when_stock_always_positive_or_zero()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $warehouse = Warehouse::create(['name' => 'Main Warehouse', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $item = Item::create(['name' => 'Bricks', 'type' => 'BULK', 'unit' => 'pcs']);
+
+        Ledger::create([
+            'entry_date' => '2026-01-01',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        Ledger::create([
+            'entry_date' => '2026-01-02',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+        ]));
+
+        $response->assertStatus(200);
+        $this->assertNull($response->viewData('negativeBalanceDiagnostic'));
+        $response->assertDontSee('Negative Balance Anomaly Detected');
+    }
+
+    public function test_negative_balance_diagnostic_shown_for_logger_and_supervisor()
+    {
+        $warehouse = Warehouse::create(['name' => 'Site Warehouse', 'type' => 'SITE', 'status' => 'ACTIVE']);
+        $item = Item::create(['name' => 'Safety Vests', 'type' => 'BULK', 'unit' => 'pcs']);
+
+        $logger = User::factory()->create(['role' => 'logger']);
+        $logger->warehouses()->attach($warehouse);
+
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        // Direct OUT without prior IN => negative
+        $outEntry = Ledger::create([
+            'entry_date' => '2026-01-01',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item->id,
+            'quantity' => 2,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        $loggerResponse = $this->actingAs($logger)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+        ]));
+        $loggerResponse->assertStatus(200);
+        $loggerResponse->assertSee('Negative Balance Anomaly Detected');
+        $loggerResponse->assertSee("Entry <strong>#{$outEntry->id}</strong>", false);
+
+        $supervisorResponse = $this->actingAs($supervisor)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+        ]));
+        $supervisorResponse->assertStatus(200);
+        $supervisorResponse->assertSee('Negative Balance Anomaly Detected');
+        $supervisorResponse->assertSee("Entry <strong>#{$outEntry->id}</strong>", false);
+    }
 }

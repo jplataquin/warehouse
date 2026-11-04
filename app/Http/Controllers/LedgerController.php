@@ -286,7 +286,43 @@ class LedgerController extends Controller
             ];
         }
 
-        return view($this->getRoleView('item_history'), compact('ledgers', 'item', 'warehouse', 'balance', 'openingBalance', 'allocations', 'lowStockAlert'));
+        $negativeBalanceDiagnostic = $this->checkNegativeBalanceDiagnostic((int) $warehouse->id, (int) $item->id);
+
+        return view($this->getRoleView('item_history'), compact('ledgers', 'item', 'warehouse', 'balance', 'openingBalance', 'allocations', 'lowStockAlert', 'negativeBalanceDiagnostic'));
+    }
+
+    /**
+     * Run a diagnostic check to find the first ledger entry that caused a negative balance for the item in the warehouse.
+     */
+    private function checkNegativeBalanceDiagnostic(int $warehouseId, int $itemId): ?array
+    {
+        $ledgers = Ledger::where('warehouse_id', $warehouseId)
+            ->where('item_id', $itemId)
+            ->orderBy('entry_date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->get(['id', 'entry_date', 'type', 'quantity', 'action']);
+
+        $running = 0.0;
+        foreach ($ledgers as $ledger) {
+            if ($ledger->type === 'IN') {
+                $running += (float) $ledger->quantity;
+            } else {
+                $running -= (float) $ledger->quantity;
+            }
+
+            if (round($running, 4) < 0) {
+                return [
+                    'entry_id' => $ledger->id,
+                    'balance' => $running,
+                    'entry_date' => $ledger->entry_date ? $ledger->entry_date->format('M d, Y') : null,
+                    'action' => $ledger->action,
+                    'quantity' => (float) $ledger->quantity,
+                ];
+            }
+        }
+
+        return null;
     }
 
     public function printItemHistory($warehouseId, $itemId, Request $request)
