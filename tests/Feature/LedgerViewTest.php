@@ -187,4 +187,85 @@ class LedgerViewTest extends TestCase
         $showResponse->assertStatus(200);
         $showResponse->assertSee("#{$ledger->id}");
     }
+
+    public function test_logger_view_item_ledger_shows_error_banner_when_negative_balance_discrepancy_exists()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $warehouse = Warehouse::create(['name' => 'Logger Central', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $logger->warehouses()->attach($warehouse);
+
+        $item = Item::create([
+            'name' => 'Generators',
+            'type' => 'ASSET',
+            'unit' => 'unit',
+        ]);
+
+        // Out movement with no prior in movement => negative balance
+        $negativeLedger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        $response = $this->actingAs($logger)->get(route('ledgers.index', [
+            'warehouse_id' => $warehouse->id,
+            'item_id' => $item->id,
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Item Ledger');
+        $response->assertSee('Negative Balance Anomaly Detected');
+        $response->assertSee("Entry <strong>#{$negativeLedger->id}</strong>", false);
+        $response->assertSee(route('ledgers.show', $negativeLedger->id));
+        $response->assertDontSee('No discrepancy was found');
+    }
+
+    public function test_logger_view_item_ledger_shows_green_banner_when_no_discrepancy_exists()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $warehouse = Warehouse::create(['name' => 'Logger Central 2', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $logger->warehouses()->attach($warehouse);
+
+        $item = Item::create([
+            'name' => 'Safety Boots',
+            'type' => 'BULK',
+            'unit' => 'pairs',
+        ]);
+
+        // In movement followed by partial out movement => balance stays positive
+        Ledger::create([
+            'entry_date' => now()->subDay(),
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        Ledger::create([
+            'entry_date' => now(),
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item->id,
+            'quantity' => 4,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        $response = $this->actingAs($logger)->get(route('ledgers.index', [
+            'warehouse_id' => $warehouse->id,
+            'item_id' => $item->id,
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Item Ledger');
+        $response->assertDontSee('Negative Balance Anomaly Detected');
+        $response->assertSee('Diagnostic Check Passed');
+        $response->assertSee('No discrepancy was found');
+    }
 }

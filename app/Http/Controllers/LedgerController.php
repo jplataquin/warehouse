@@ -137,6 +137,11 @@ class LedgerController extends Controller
                 }
             }
 
+            $negativeBalanceDiagnostic = null;
+            if ($selectedWarehouseId && $request->filled('item_id')) {
+                $negativeBalanceDiagnostic = $this->checkNegativeBalanceDiagnostic((int) $selectedWarehouseId, (int) $request->item_id);
+            }
+
             $allocations = Allocation::where('warehouse_id', $selectedWarehouseId)->orderBy('name', 'asc')->get();
         } else {
             // Return empty pagination if no warehouse selected
@@ -145,9 +150,10 @@ class LedgerController extends Controller
             $balance = 0;
             $openingBalance = 0;
             $allocations = collect();
+            $negativeBalanceDiagnostic = null;
         }
 
-        return view($this->getRoleView('index'), compact('ledgers', 'item', 'balance', 'warehouses', 'selectedWarehouse', 'itemsWithStock', 'openingBalance', 'allocations'));
+        return view($this->getRoleView('index'), compact('ledgers', 'item', 'balance', 'warehouses', 'selectedWarehouse', 'itemsWithStock', 'openingBalance', 'allocations', 'negativeBalanceDiagnostic'));
     }
 
     public function create(Request $request)
