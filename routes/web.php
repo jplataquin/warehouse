@@ -19,6 +19,7 @@ use App\Http\Controllers\ApiCredentialController;
 use App\Http\Controllers\McpTokenController;
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\ItemTypeController;
+use App\Http\Controllers\LedgerDiscrepancyController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseImportController;
 use App\Http\Controllers\StockLevelRegistryController;
@@ -142,5 +143,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('items/{item}/merge/search', [ItemController::class, 'searchMergeTargets'])->name('items.merge.search');
         Route::get('items/{item}/merge', [ItemController::class, 'mergeForm'])->name('items.merge.form');
         Route::post('items/{item}/merge', [ItemController::class, 'merge'])->name('items.merge');
+    });
+
+    // Discrepancy management for Admin & Supervisor
+    Route::middleware(['supervisor'])->group(function () {
+        Route::get('discrepancies', [LedgerDiscrepancyController::class, 'index'])->name('discrepancies.index');
+        Route::patch('discrepancies/{discrepancy}/resolve', [LedgerDiscrepancyController::class, 'resolve'])->name('discrepancies.resolve');
     });
 });

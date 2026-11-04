@@ -7,6 +7,7 @@ use App\Models\Item;
 use App\Models\Ledger;
 use App\Models\Project;
 use App\Models\Warehouse;
+use App\Services\DiscrepancyDiagnosticService;
 use App\Services\LedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -16,10 +17,12 @@ use Illuminate\Validation\ValidationException;
 class LedgerController extends Controller
 {
     protected $ledgerService;
+    protected $diagnosticService;
 
-    public function __construct(LedgerService $ledgerService)
+    public function __construct(LedgerService $ledgerService, DiscrepancyDiagnosticService $diagnosticService)
     {
         $this->ledgerService = $ledgerService;
+        $this->diagnosticService = $diagnosticService;
     }
 
     public function index(Request $request)
@@ -302,33 +305,7 @@ class LedgerController extends Controller
      */
     private function checkNegativeBalanceDiagnostic(int $warehouseId, int $itemId): ?array
     {
-        $ledgers = Ledger::where('warehouse_id', $warehouseId)
-            ->where('item_id', $itemId)
-            ->orderBy('entry_date', 'asc')
-            ->orderBy('created_at', 'asc')
-            ->orderBy('id', 'asc')
-            ->get(['id', 'entry_date', 'type', 'quantity', 'action']);
-
-        $running = 0.0;
-        foreach ($ledgers as $ledger) {
-            if ($ledger->type === 'IN') {
-                $running += (float) $ledger->quantity;
-            } else {
-                $running -= (float) $ledger->quantity;
-            }
-
-            if (round($running, 4) < 0) {
-                return [
-                    'entry_id' => $ledger->id,
-                    'balance' => $running,
-                    'entry_date' => $ledger->entry_date ? $ledger->entry_date->format('M d, Y') : null,
-                    'action' => $ledger->action,
-                    'quantity' => (float) $ledger->quantity,
-                ];
-            }
-        }
-
-        return null;
+        return $this->diagnosticService->checkAndLog($warehouseId, $itemId);
     }
 
     public function printItemHistory($warehouseId, $itemId, Request $request)

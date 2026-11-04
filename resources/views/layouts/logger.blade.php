@@ -89,6 +89,17 @@
                         <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('users.index') }}">Users</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('discrepancies.*') ? 'text-white' : 'text-white-50' }} small fw-bold text-uppercase p-2 d-flex align-items-center gap-1" href="{{ route('discrepancies.index') }}">
+                            Discrepancies
+                            @php
+                                $discrepancyCount = \App\Models\LedgerDiscrepancy::where('status', 'DISCREPANCY')->count();
+                            @endphp
+                            @if($discrepancyCount > 0)
+                                <span class="badge bg-danger rounded-pill" style="font-size: 0.7rem; padding: 0.25em 0.5em;">{{ $discrepancyCount }}</span>
+                            @endif
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('admin.settings') ? 'text-white' : 'text-white-50' }} small fw-bold text-uppercase p-2" href="{{ route('admin.settings') }}">Settings</a>
                     </li>
                 @elseif(Auth::user()->isSupervisor())
@@ -100,6 +111,17 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('items.assets') }}">Assets</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('discrepancies.*') ? 'text-white' : 'text-white-50' }} small fw-bold text-uppercase p-2 d-flex align-items-center gap-1" href="{{ route('discrepancies.index') }}">
+                            Discrepancies
+                            @php
+                                $discrepancyCount = \App\Models\LedgerDiscrepancy::where('status', 'DISCREPANCY')->count();
+                            @endphp
+                            @if($discrepancyCount > 0)
+                                <span class="badge bg-danger rounded-pill" style="font-size: 0.7rem; padding: 0.25em 0.5em;">{{ $discrepancyCount }}</span>
+                            @endif
+                        </a>
                     </li>
                 @endif
                 @if(Auth::user()->isLogger() || Auth::user()->isViewer())

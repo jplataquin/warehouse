@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Ledger;
+use App\Observers\LedgerObserver;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
@@ -23,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        Ledger::observe(LedgerObserver::class);
 
         View::composer('logger.partials.sidebar', function ($view) {
             if (Auth::check() && (Auth::user()->role === 'logger' || Auth::user()->role === 'viewer')) {
