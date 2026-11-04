@@ -487,14 +487,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Initialize Tom Select for Destination select tag to be searchable
         const destSelect = element.querySelector('.dest-warehouse-select');
-        if (destSelect) {
-            new TomSelect(destSelect, {
-                create: false,
-                sortField: {
-                    field: "text",
-                    direction: "asc"
-                }
-            });
+        if (destSelect && !destSelect.tomselect && typeof TomSelect !== 'undefined') {
+            try {
+                new TomSelect(destSelect, {
+                    create: false,
+                    sortField: {
+                        field: "text",
+                        direction: "asc"
+                    }
+                });
+            } catch (e) {
+                console.warn('TomSelect destination warehouse skipped or already initialized:', e);
+            }
         }
 
         updateActionOptions(element);

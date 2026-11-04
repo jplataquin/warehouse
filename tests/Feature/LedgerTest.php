@@ -783,6 +783,10 @@ class LedgerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewIs('admin.ledgers.edit');
+        $response->assertSee('data-custom-tomselect="true"', false);
+        $response->assertSee('data-searchable="false"', false);
+        $response->assertSee('destSelect.tomselect', false);
+        $response->assertSee('allocationSelect.tomselect', false);
     }
 
     public function test_non_admin_cannot_access_edit_ledger_page()

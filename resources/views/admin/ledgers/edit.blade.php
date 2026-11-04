@@ -81,7 +81,7 @@
                             {{-- Movement Type --}}
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Movement Type</label>
-                                <select name="type" id="type" class="form-select shadow-sm" required>
+                                <select name="type" id="type" class="form-select shadow-sm" data-searchable="false" required>
                                     <option value="IN" {{ $ledger->type === 'IN' ? 'selected' : '' }}>Log IN (Entry)</option>
                                     <option value="OUT" {{ $ledger->type === 'OUT' ? 'selected' : '' }}>Log OUT (Withdrawal)</option>
                                 </select>
@@ -90,7 +90,7 @@
                             {{-- Action --}}
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Action</label>
-                                <select name="action" id="action" class="form-select shadow-sm" required>
+                                <select name="action" id="action" class="form-select shadow-sm" data-searchable="false" required>
                                     {{-- Will be populated dynamically by JS --}}
                                 </select>
                             </div>
@@ -127,7 +127,7 @@
                             {{-- OUT TRANSFER: Destination --}}
                             <div class="col-md-6" id="out-transfer-fields" style="display: none;">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Transfer Destination (TO)</label>
-                                <select name="destination_warehouse_id" id="destination_warehouse_id" class="form-select shadow-sm border-danger border-opacity-25 dest-warehouse-select">
+                                <select name="destination_warehouse_id" id="destination_warehouse_id" class="form-select shadow-sm border-danger border-opacity-25 dest-warehouse-select" data-custom-tomselect="true">
                                     <option value="">Select Destination Warehouse...</option>
                                     @foreach($warehouses as $wh)
                                         <option value="{{ $wh->id }}" {{ $ledger->destination_warehouse_id == $wh->id ? 'selected' : '' }}>
@@ -144,7 +144,7 @@
                             {{-- OUT ALLOCATE: Allocation --}}
                             <div class="col-md-6" id="out-allocate-fields" style="display: none;">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Allocation Target</label>
-                                <select name="allocation_id" id="allocation_id" class="form-select shadow-sm border-danger border-opacity-25">
+                                <select name="allocation_id" id="allocation_id" class="form-select shadow-sm border-danger border-opacity-25" data-custom-tomselect="true">
                                     <option value="">Select Target Allocation...</option>
                                     @foreach($allocations as $allocation)
                                         <option value="{{ $allocation->id }}" {{ $ledger->allocation_id == $allocation->id ? 'selected' : '' }}>{{ $allocation->name }}</option>
@@ -255,14 +255,24 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const destSelect = document.querySelector('.dest-warehouse-select');
-    if (destSelect) {
-        new TomSelect(destSelect, {
-            create: false,
-            sortField: {
-                field: "text",
-                direction: "asc"
+    let destTomSelect = null;
+    if (destSelect && typeof TomSelect !== 'undefined') {
+        if (destSelect.tomselect) {
+            destTomSelect = destSelect.tomselect;
+        } else {
+            try {
+                destTomSelect = new TomSelect(destSelect, {
+                    create: false,
+                    sortField: {
+                        field: "text",
+                        direction: "asc"
+                    }
+                });
+            } catch (e) {
+                console.warn('TomSelect destination warehouse skipped or already initialized:', e);
+                destTomSelect = destSelect.tomselect || null;
             }
-        });
+        }
     }
 
     const itemSelect = document.getElementById('item_id');
@@ -273,15 +283,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const allocationSelect = document.getElementById('allocation_id');
 
     let allocationTomSelect = null;
-    if (allocationSelect) {
-        allocationTomSelect = new TomSelect(allocationSelect, {
-            create: false,
-            placeholder: "Select Target Allocation...",
-            sortField: {
-                field: "text",
-                direction: "asc"
+    if (allocationSelect && typeof TomSelect !== 'undefined') {
+        if (allocationSelect.tomselect) {
+            allocationTomSelect = allocationSelect.tomselect;
+        } else {
+            try {
+                allocationTomSelect = new TomSelect(allocationSelect, {
+                    create: false,
+                    placeholder: "Select Target Allocation...",
+                    sortField: {
+                        field: "text",
+                        direction: "asc"
+                    }
+                });
+            } catch (e) {
+                console.warn('TomSelect allocation skipped or already initialized:', e);
+                allocationTomSelect = allocationSelect.tomselect || null;
             }
-        });
+        }
     }
 
     const initialAction = @json($ledger->action);
@@ -378,6 +397,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             actionSelect.appendChild(el);
         });
+
+        if (actionSelect.tomselect) {
+            actionSelect.tomselect.sync();
+        }
 
         // Trigger toggleFields
         toggleFields();
@@ -526,6 +549,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 const allocations = await response.json();
                 
+                if (!allocationTomSelect && allocationSelect && allocationSelect.tomselect) {
+                    allocationTomSelect = allocationSelect.tomselect;
+                }
+
                 if (allocationTomSelect) {
                     allocationTomSelect.clear();
                     allocationTomSelect.clearOptions();
