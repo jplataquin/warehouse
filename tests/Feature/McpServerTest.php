@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mcp\Servers\WarehouseServer;
 use App\Mcp\Tools\ListAssetsTool;
+use App\Mcp\Tools\ListDiscrepancyTool;
 use App\Mcp\Tools\ListItemsTool;
 use App\Mcp\Tools\ListItemTypesTool;
 use App\Mcp\Tools\ListLedgersTool;
@@ -14,6 +15,7 @@ use App\Mcp\Tools\ListWarehousesTool;
 use App\Models\Item;
 use App\Models\ItemType;
 use App\Models\Ledger;
+use App\Models\LedgerDiscrepancy;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -66,6 +68,7 @@ class McpServerTest extends TestCase
             'list_item_types',
             'list_stock_levels',
             'list_unreturned_assets',
+            'list_discrepancy',
         ], $toolNames);
     }
 
@@ -103,6 +106,7 @@ class McpServerTest extends TestCase
             ListAssetsTool::class,
             ListStockLevelsTool::class,
             ListUnreturnedAssetsTool::class,
+            ListDiscrepancyTool::class,
         ]);
     }
 
@@ -930,5 +934,128 @@ class McpServerTest extends TestCase
         $this->assertEquals(6, $second['days_out']);
         $this->assertEquals('MAINTENANCE', $second['action']);
         $this->assertEquals('Field Station', $second['origin_warehouse']);
+    }
+
+    public function test_list_discrepancy_tool_via_jsonrpc(): void
+    {
+        $user = User::factory()->create();
+        $resolver = User::factory()->create(['name' => 'Supervisor Mark']);
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $warehouseA = Warehouse::create(['name' => 'Warehouse Alpha', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $warehouseB = Warehouse::create(['name' => 'Warehouse Beta', 'type' => 'SITE', 'status' => 'ACTIVE']);
+        $item1 = Item::create(['name' => 'Steel Pipes', 'type' => 'BULK', 'unit' => 'pcs']);
+        $item2 = Item::create(['name' => 'Safety Harness', 'type' => 'ASSET', 'unit' => 'pcs']);
+
+        $ledger1 = Ledger::withoutEvents(function () use ($warehouseA, $item1) {
+            return Ledger::create([
+                'entry_date' => '2026-02-01',
+                'type' => 'OUT',
+                'action' => 'ALLOCATE',
+                'item_id' => $item1->id,
+                'quantity' => 5,
+                'warehouse_id' => $warehouseA->id,
+                'status' => 'APPROVED',
+            ]);
+        });
+
+        $ledger2 = Ledger::withoutEvents(function () use ($warehouseB, $item2) {
+            return Ledger::create([
+                'entry_date' => '2026-02-02',
+                'type' => 'OUT',
+                'action' => 'ALLOCATE',
+                'item_id' => $item2->id,
+                'quantity' => 2,
+                'warehouse_id' => $warehouseB->id,
+                'status' => 'APPROVED',
+            ]);
+        });
+
+        $discrepancy1 = LedgerDiscrepancy::create([
+            'warehouse_id' => $warehouseA->id,
+            'item_id' => $item1->id,
+            'ledger_id' => $ledger1->id,
+            'status' => 'DISCREPANCY',
+            'created_at' => '2026-02-01 10:00:00',
+        ]);
+
+        $discrepancy2 = LedgerDiscrepancy::create([
+            'warehouse_id' => $warehouseB->id,
+            'item_id' => $item2->id,
+            'ledger_id' => $ledger2->id,
+            'status' => 'RESOLVED',
+            'resolved_by' => $resolver->id,
+            'resolved_at' => '2026-02-03 12:00:00',
+            'created_at' => '2026-02-02 11:00:00',
+        ]);
+
+        // 1. Call without arguments -> returns both
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'MCP-Protocol-Version' => '2025-11-25',
+            'Mcp-Method' => 'tools/call',
+        ])->postJson('/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 101,
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'list_discrepancy',
+                'arguments' => [],
+            ],
+        ]);
+
+        $response->assertStatus(200);
+        $content = json_decode($response->json('result.content.0.text'), true);
+        $this->assertCount(2, $content);
+
+        // 2. Filter by status: DISCREPANCY
+        $responseDiscrepancyOnly = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'MCP-Protocol-Version' => '2025-11-25',
+            'Mcp-Method' => 'tools/call',
+        ])->postJson('/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 102,
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'list_discrepancy',
+                'arguments' => [
+                    'status' => 'DISCREPANCY',
+                ],
+            ],
+        ]);
+
+        $responseDiscrepancyOnly->assertStatus(200);
+        $contentDiscrepancy = json_decode($responseDiscrepancyOnly->json('result.content.0.text'), true);
+        $this->assertCount(1, $contentDiscrepancy);
+        $this->assertEquals($discrepancy1->id, $contentDiscrepancy[0]['id']);
+        $this->assertEquals('DISCREPANCY', $contentDiscrepancy[0]['status']);
+        $this->assertEquals('Steel Pipes', $contentDiscrepancy[0]['item']['name']);
+
+        // 3. Filter by warehouse_id and status: RESOLVED
+        $responseResolved = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'MCP-Protocol-Version' => '2025-11-25',
+            'Mcp-Method' => 'tools/call',
+        ])->postJson('/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 103,
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'list_discrepancy',
+                'arguments' => [
+                    'warehouse_id' => $warehouseB->id,
+                    'status' => 'RESOLVED',
+                ],
+            ],
+        ]);
+
+        $responseResolved->assertStatus(200);
+        $contentResolved = json_decode($responseResolved->json('result.content.0.text'), true);
+        $this->assertCount(1, $contentResolved);
+        $this->assertEquals($discrepancy2->id, $contentResolved[0]['id']);
+        $this->assertEquals('RESOLVED', $contentResolved[0]['status']);
+        $this->assertEquals('Supervisor Mark', $contentResolved[0]['resolver']['name']);
+        $this->assertEquals('Safety Harness', $contentResolved[0]['item']['name']);
     }
 }

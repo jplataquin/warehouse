@@ -3,6 +3,7 @@
 namespace App\Mcp\Servers;
 
 use App\Mcp\Tools\ListAssetsTool;
+use App\Mcp\Tools\ListDiscrepancyTool;
 use App\Mcp\Tools\ListItemsTool;
 use App\Mcp\Tools\ListItemTypesTool;
 use App\Mcp\Tools\ListLedgersTool;
@@ -17,7 +18,7 @@ use Laravel\Mcp\Server\Attributes\Version;
 
 #[Name('Warehouse Server')]
 #[Version('1.0.0')]
-#[Instructions('Read-only MCP Server for the Warehouse application to inspect ledgers, warehouses, projects, assets, bulk items, item types, stock levels, and unreturned assets.')]
+#[Instructions('Read-only MCP Server for the Warehouse application to inspect ledgers, warehouses, projects, assets, bulk items, item types, stock levels, unreturned assets, and discrepancies.')]
 class WarehouseServer extends Server
 {
     protected array $tools = [
@@ -29,6 +30,7 @@ class WarehouseServer extends Server
         ListItemTypesTool::class,
         ListStockLevelsTool::class,
         ListUnreturnedAssetsTool::class,
+        ListDiscrepancyTool::class,
     ];
 
     protected array $resources = [
