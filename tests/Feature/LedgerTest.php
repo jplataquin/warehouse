@@ -1574,6 +1574,7 @@ class LedgerTest extends TestCase
         $response->assertSee('Negative Balance Anomaly Detected');
         $response->assertSee("Entry <strong>#{$entry2->id}</strong>", false);
         $response->assertSee(route('ledgers.show', $entry2->id));
+        $response->assertDontSee('No discrepancy was found');
     }
 
     public function test_negative_balance_diagnostic_not_shown_when_stock_always_positive_or_zero()
@@ -1610,6 +1611,8 @@ class LedgerTest extends TestCase
         $response->assertStatus(200);
         $this->assertNull($response->viewData('negativeBalanceDiagnostic'));
         $response->assertDontSee('Negative Balance Anomaly Detected');
+        $response->assertSee('Diagnostic Check Passed');
+        $response->assertSee('No discrepancy was found');
     }
 
     public function test_negative_balance_diagnostic_shown_for_logger_and_supervisor()
@@ -1640,6 +1643,7 @@ class LedgerTest extends TestCase
         $loggerResponse->assertStatus(200);
         $loggerResponse->assertSee('Negative Balance Anomaly Detected');
         $loggerResponse->assertSee("Entry <strong>#{$outEntry->id}</strong>", false);
+        $loggerResponse->assertDontSee('No discrepancy was found');
 
         $supervisorResponse = $this->actingAs($supervisor)->get(route('ledgers.item_history', [
             'warehouse' => $warehouse->id,
@@ -1648,5 +1652,43 @@ class LedgerTest extends TestCase
         $supervisorResponse->assertStatus(200);
         $supervisorResponse->assertSee('Negative Balance Anomaly Detected');
         $supervisorResponse->assertSee("Entry <strong>#{$outEntry->id}</strong>", false);
+        $supervisorResponse->assertDontSee('No discrepancy was found');
+    }
+
+    public function test_green_banner_shown_when_no_discrepancy_for_logger_and_supervisor()
+    {
+        $warehouse = Warehouse::create(['name' => 'Site Warehouse 2', 'type' => 'SITE', 'status' => 'ACTIVE']);
+        $item = Item::create(['name' => 'Helmets', 'type' => 'BULK', 'unit' => 'pcs']);
+
+        $logger = User::factory()->create(['role' => 'logger']);
+        $logger->warehouses()->attach($warehouse);
+
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        Ledger::create([
+            'entry_date' => '2026-01-01',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 5,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        $loggerResponse = $this->actingAs($logger)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+        ]));
+        $loggerResponse->assertStatus(200);
+        $loggerResponse->assertSee('Diagnostic Check Passed');
+        $loggerResponse->assertSee('No discrepancy was found');
+
+        $supervisorResponse = $this->actingAs($supervisor)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+        ]));
+        $supervisorResponse->assertStatus(200);
+        $supervisorResponse->assertSee('Diagnostic Check Passed');
+        $supervisorResponse->assertSee('No discrepancy was found');
     }
 }
