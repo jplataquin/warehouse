@@ -257,25 +257,7 @@ class LedgerController extends Controller
             ->where('warehouse_id', $warehouse->id)
             ->where('item_id', $item->id);
 
-        if ($request->has('start_date') && $request->start_date) {
-            $query->whereDate('entry_date', '>=', $request->start_date);
-        }
-
-        if ($request->has('end_date') && $request->end_date) {
-            $query->whereDate('entry_date', '<=', $request->end_date);
-        }
-
-        if ($request->has('type') && $request->type) {
-            $query->where('type', $request->type);
-        }
-
-        if ($request->has('action') && $request->action) {
-            $query->where('action', $request->action);
-        }
-
-        if ($request->filled('allocation_id')) {
-            $query->where('allocation_id', $request->allocation_id);
-        }
+        $this->applyItemHistoryFilters($query, $request);
 
         $baseQuery = clone $query;
         $ledgers = $query->latest('entry_date')
@@ -316,6 +298,26 @@ class LedgerController extends Controller
             ->where('warehouse_id', $warehouse->id)
             ->where('item_id', $item->id);
 
+        $this->applyItemHistoryFilters($query, $request);
+
+        $baseQuery = clone $query;
+        $ledgers = $query->latest('entry_date')
+            ->latest('created_at')
+            ->latest('id')
+            ->get();
+
+        $balance = $item->getBalance($warehouse->id);
+
+        $openingBalance = $this->attachRunningBalances($baseQuery, $ledgers, $warehouse->id, $item->id, $request, false);
+
+        return view($this->getRoleView('print_item_history'), compact('ledgers', 'item', 'warehouse', 'balance', 'openingBalance'));
+    }
+
+    /**
+     * Apply filtering to an item history query.
+     */
+    private function applyItemHistoryFilters($query, Request $request)
+    {
         if ($request->has('start_date') && $request->start_date) {
             $query->whereDate('entry_date', '>=', $request->start_date);
         }
@@ -336,17 +338,36 @@ class LedgerController extends Controller
             $query->where('allocation_id', $request->allocation_id);
         }
 
-        $baseQuery = clone $query;
-        $ledgers = $query->latest('entry_date')
-            ->latest('created_at')
-            ->latest('id')
-            ->get();
+        $entryId = $request->input('entry_id')
+            ?? $request->input('ledger_entry_id')
+            ?? $request->input('ledger_id')
+            ?? $request->input('id');
 
-        $balance = $item->getBalance($warehouse->id);
+        if ($entryId !== null && trim($entryId) !== '') {
+            $rawIds = explode(',', $entryId);
+            $parsedIds = [];
+            $allNumeric = true;
+            foreach ($rawIds as $rawId) {
+                $trimmed = ltrim(trim($rawId), '#');
+                if (is_numeric($trimmed)) {
+                    $parsedIds[] = (int) $trimmed;
+                } else {
+                    $allNumeric = false;
+                }
+            }
 
-        $openingBalance = $this->attachRunningBalances($baseQuery, $ledgers, $warehouse->id, $item->id, $request, false);
+            if (!empty($parsedIds) && $allNumeric) {
+                if (count($parsedIds) === 1) {
+                    $query->where('id', $parsedIds[0]);
+                } else {
+                    $query->whereIn('id', $parsedIds);
+                }
+            } else {
+                $query->whereRaw('0 = 1');
+            }
+        }
 
-        return view($this->getRoleView('print_item_history'), compact('ledgers', 'item', 'warehouse', 'balance', 'openingBalance'));
+        return $query;
     }
 
     /**

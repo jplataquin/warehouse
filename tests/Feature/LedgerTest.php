@@ -1372,4 +1372,136 @@ class LedgerTest extends TestCase
         $this->assertEquals(150, $printLedgers[1]->running_balance);
         $this->assertEquals(100, $printLedgers[2]->running_balance);
     }
+
+    public function test_admin_item_history_view_displays_entry_id_filter_input()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Steel Bar', 'unit' => 'pcs']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main Warehouse', 'status' => 'ACTIVE']);
+
+        $response = $this->actingAs($admin)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Entry ID');
+        $response->assertSee('name="entry_id"', false);
+    }
+
+    public function test_admin_can_filter_item_history_by_ledger_entry_id()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Steel Bar', 'unit' => 'pcs']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main Warehouse', 'status' => 'ACTIVE']);
+
+        $ledger1 = Ledger::create([
+            'entry_date' => '2026-01-01',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Entry One',
+        ]);
+
+        $ledger2 = Ledger::create([
+            'entry_date' => '2026-01-02',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 20,
+            'warehouse_id' => $warehouse->id,
+            'remarks' => 'Entry Two',
+        ]);
+
+        // Filter by exact entry_id
+        $response = $this->actingAs($admin)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+            'entry_id' => $ledger1->id,
+        ]));
+
+        $response->assertStatus(200);
+        $ledgers = $response->viewData('ledgers');
+        $this->assertCount(1, $ledgers);
+        $this->assertEquals($ledger1->id, $ledgers->first()->id);
+        $response->assertSee("#{$ledger1->id}");
+        $response->assertDontSee("#{$ledger2->id}");
+
+        // Filter with '#' prefix
+        $responseHash = $this->actingAs($admin)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+            'entry_id' => "#{$ledger2->id}",
+        ]));
+
+        $responseHash->assertStatus(200);
+        $ledgersHash = $responseHash->viewData('ledgers');
+        $this->assertCount(1, $ledgersHash);
+        $this->assertEquals($ledger2->id, $ledgersHash->first()->id);
+        $responseHash->assertSee("#{$ledger2->id}");
+        $responseHash->assertDontSee("#{$ledger1->id}");
+
+        // Filter using 'id' query parameter fallback
+        $responseId = $this->actingAs($admin)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+            'id' => $ledger1->id,
+        ]));
+
+        $responseId->assertStatus(200);
+        $ledgersId = $responseId->viewData('ledgers');
+        $this->assertCount(1, $ledgersId);
+        $this->assertEquals($ledger1->id, $ledgersId->first()->id);
+
+        // Filter with non-existent id
+        $responseNone = $this->actingAs($admin)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+            'entry_id' => 999999,
+        ]));
+
+        $responseNone->assertStatus(200);
+        $this->assertCount(0, $responseNone->viewData('ledgers'));
+        $responseNone->assertSee('No movements found for this item in this warehouse.');
+    }
+
+    public function test_admin_can_filter_print_item_history_by_ledger_entry_id()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Steel Bar', 'unit' => 'pcs']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main Warehouse', 'status' => 'ACTIVE']);
+
+        $ledger1 = Ledger::create([
+            'entry_date' => '2026-01-01',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+        ]);
+
+        $ledger2 = Ledger::create([
+            'entry_date' => '2026-01-02',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 20,
+            'warehouse_id' => $warehouse->id,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('ledgers.item_history.print', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+            'entry_id' => $ledger2->id,
+        ]));
+
+        $response->assertStatus(200);
+        $ledgers = $response->viewData('ledgers');
+        $this->assertCount(1, $ledgers);
+        $this->assertEquals($ledger2->id, $ledgers->first()->id);
+        $response->assertSee("<td>#{$ledger2->id}</td>", false);
+        $response->assertDontSee("<td>#{$ledger1->id}</td>", false);
+    }
 }

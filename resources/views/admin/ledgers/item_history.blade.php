@@ -36,15 +36,19 @@
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body p-4">
         <form action="{{ route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $item->id]) }}" method="GET" class="row g-3 align-items-end">
-            <div class="col-md-2">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted text-uppercase">Entry ID</label>
+                <input type="text" name="entry_id" class="form-control" placeholder="Search ID..." value="{{ request('entry_id', request('id')) }}">
+            </div>
+            <div class="col-md-3">
                 <label class="form-label small fw-bold text-muted text-uppercase">Start Date</label>
                 <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
             </div>
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <label class="form-label small fw-bold text-muted text-uppercase">End Date</label>
                 <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
             </div>
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <label class="form-label small fw-bold text-muted text-uppercase">Entry Type</label>
                 <select name="type" class="form-select">
                     <option value="">All Types</option>
@@ -52,7 +56,7 @@
                     <option value="OUT" {{ request('type') === 'OUT' ? 'selected' : '' }}>OUT</option>
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-4">
                 <label class="form-label small fw-bold text-muted text-uppercase">Action</label>
                 <select name="action" class="form-select">
                     <option value="">All Actions</option>
@@ -68,7 +72,7 @@
                     <option value="CORRECTION" {{ request('action') === 'CORRECTION' ? 'selected' : '' }}>Correction</option>
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-4">
                 <label class="form-label small fw-bold text-muted text-uppercase">Allocation</label>
                 <select name="allocation_id" class="form-select">
                     <option value="">All Allocations</option>
@@ -79,7 +83,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-2 d-flex gap-2">
+            <div class="col-md-4 d-flex gap-2">
                 <button type="submit" class="btn btn-primary flex-grow-1">
                     <i class="bi bi-filter"></i> Filter
                 </button>
