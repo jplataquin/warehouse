@@ -106,6 +106,9 @@
                     <i class="bi bi-trash me-1"></i> Bulk Delete (<span id="bulk-delete-count">0</span>)
                 </button>
             @endif
+            <button type="button" class="btn btn-outline-primary btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#quickLedgerModal" title="Go to ledger by ID (Shift + Alt + F)">
+                <i class="bi bi-search me-1"></i> Go to Ledger <kbd class="d-none d-md-inline ms-1 small" style="font-size: 0.7em;">Shift+Alt+F</kbd>
+            </button>
             <a href="{{ route('ledgers.item_history.print', ['warehouse' => $warehouse->id, 'item' => $item->id] + request()->query()) }}" 
                target="_blank" class="btn btn-outline-dark btn-sm shadow-sm">
                 <i class="bi bi-printer me-1"></i> Print Ledger
@@ -272,6 +275,37 @@
 </div>
 @endif
 
+<!-- Quick Go To Ledger Modal (Shift + Alt + F) -->
+<div class="modal fade" id="quickLedgerModal" tabindex="-1" aria-labelledby="quickLedgerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="quickLedgerModalLabel">
+                    <i class="bi bi-search me-2"></i> Go to Ledger Entry
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="quick-ledger-form">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="quick-ledger-id-input" class="form-label small fw-bold text-uppercase text-muted">Ledger ID <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-lg" id="quick-ledger-id-input" placeholder="e.g. 1024" required pattern="[#]?[0-9]+" autocomplete="off">
+                        <div class="form-text">
+                            Enter the ledger entry ID and press <kbd>Enter</kbd> to view details. Shortcut: <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>F</kbd>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-up-right me-1"></i> Go to Ledger
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @if(isset($lowStockAlert) && $lowStockAlert)
 <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080;">
     <div class="toast align-items-center text-dark bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true" id="toast-low-stock" data-bs-delay="10000">
@@ -369,6 +403,58 @@
             });
         }
         @endif
+
+        // Quick Go To Ledger shortcut (Shift + Alt + F) and Modal
+        const quickLedgerModalEl = document.getElementById('quickLedgerModal');
+        const quickLedgerForm = document.getElementById('quick-ledger-form');
+        const quickLedgerInput = document.getElementById('quick-ledger-id-input');
+
+        document.addEventListener('keydown', function (e) {
+            if (e.shiftKey && e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'f' || e.key === 'F' || e.code === 'KeyF')) {
+                e.preventDefault();
+                if (quickLedgerModalEl) {
+                    const bs = window.bootstrap || bootstrap;
+                    if (bs && bs.Modal) {
+                        const modal = bs.Modal.getOrCreateInstance ? bs.Modal.getOrCreateInstance(quickLedgerModalEl) : new bs.Modal(quickLedgerModalEl);
+                        modal.show();
+                    }
+                }
+            }
+        });
+
+        if (quickLedgerModalEl) {
+            quickLedgerModalEl.addEventListener('shown.bs.modal', function () {
+                if (quickLedgerInput) {
+                    quickLedgerInput.focus();
+                    quickLedgerInput.select();
+                }
+            });
+        }
+
+        function navigateToLedger() {
+            if (!quickLedgerInput) return;
+            let ledgerId = quickLedgerInput.value.trim();
+            ledgerId = ledgerId.replace(/^#/, '').trim();
+            if (ledgerId) {
+                window.location.href = `/ledgers/${encodeURIComponent(ledgerId)}`;
+            }
+        }
+
+        if (quickLedgerForm) {
+            quickLedgerForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                navigateToLedger();
+            });
+        }
+
+        if (quickLedgerInput) {
+            quickLedgerInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    navigateToLedger();
+                }
+            });
+        }
     });
 </script>
 @endsection

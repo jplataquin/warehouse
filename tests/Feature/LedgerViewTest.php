@@ -147,4 +147,44 @@ class LedgerViewTest extends TestCase
         $response->assertSee('<th>ID</th>', false);
         $response->assertSee("#{$ledger->id}");
     }
+
+    public function test_admin_item_history_view_has_quick_ledger_modal_and_hotkey_listener()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $warehouse = Warehouse::create(['name' => 'Main WH', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $item = Item::create([
+            'name' => 'Drill Bit',
+            'type' => 'BULK',
+            'unit' => 'pcs',
+        ]);
+
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 50,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+            'remarks' => 'Drill bits delivery',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('id="quickLedgerModal"', false);
+        $response->assertSee('id="quick-ledger-form"', false);
+        $response->assertSee('id="quick-ledger-id-input"', false);
+        $response->assertSee('Shift+Alt+F');
+        $response->assertSee('e.shiftKey && e.altKey', false);
+        $response->assertSee('/ledgers/${encodeURIComponent(ledgerId)}', false);
+
+        // Verify the target ledger display page exists and is accessible
+        $showResponse = $this->actingAs($admin)->get(route('ledgers.show', $ledger));
+        $showResponse->assertStatus(200);
+        $showResponse->assertSee("#{$ledger->id}");
+    }
 }
