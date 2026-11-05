@@ -74,6 +74,7 @@
                         <th>Item</th>
                         <th>Warehouse</th>
                         <th>Ledger ID</th>
+                        <th>Entry ID</th>
                         <th>Status</th>
                         <th>Detected At</th>
                         <th>Resolution Details</th>
@@ -106,6 +107,15 @@
                             <td>
                                 @if($discrepancy->ledger)
                                     <a href="{{ route('ledgers.item_history', ['warehouse' => $discrepancy->warehouse_id, 'item' => $discrepancy->ledger_id]) }}" target="_blank" rel="noopener noreferrer" class="fw-bold text-decoration-none">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i> #{{ $discrepancy->ledger_id }}
+                                    </a>
+                                @else
+                                    <span class="text-muted">#{{ $discrepancy->ledger_id }}</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($discrepancy->ledger)
+                                    <a href="{{ route('ledgers.show', $discrepancy->ledger_id) }}" target="_blank" rel="noopener noreferrer" class="fw-bold text-decoration-none">
                                         <i class="bi bi-box-arrow-up-right me-1"></i> Entry #{{ $discrepancy->ledger_id }}
                                     </a>
                                     <div class="small text-muted">
@@ -161,7 +171,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center py-5">
+                            <td colspan="9" class="text-center py-5">
                                 <i class="bi bi-shield-check text-success fs-1 d-block mb-3"></i>
                                 <h6 class="fw-bold text-dark">No Discrepancies Recorded</h6>
                                 <p class="text-muted small mb-0">No negative stock discrepancies match the selected status filter.</p>

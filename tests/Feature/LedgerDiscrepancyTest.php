@@ -133,15 +133,18 @@ class LedgerDiscrepancyTest extends TestCase
         ]);
 
         // Admin can access
-        $expectedUrl = route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $ledger->id]);
+        $expectedLedgerUrl = route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $ledger->id]);
+        $expectedEntryUrl = route('ledgers.show', $ledger->id);
 
         $adminResponse = $this->actingAs($admin)->get(route('discrepancies.index'));
         $adminResponse->assertStatus(200);
         $adminResponse->assertSee('Discrepancy Logs');
         $adminResponse->assertSee('Ledger ID');
+        $adminResponse->assertSee('Entry ID');
         $adminResponse->assertSee('Valves');
         $adminResponse->assertSee("Entry #{$ledger->id}");
-        $adminResponse->assertSee($expectedUrl);
+        $adminResponse->assertSee($expectedLedgerUrl);
+        $adminResponse->assertSee($expectedEntryUrl);
         $adminResponse->assertSee('target="_blank"', false);
 
         // Supervisor can access
@@ -149,9 +152,11 @@ class LedgerDiscrepancyTest extends TestCase
         $supervisorResponse->assertStatus(200);
         $supervisorResponse->assertSee('Discrepancy Logs');
         $supervisorResponse->assertSee('Ledger ID');
+        $supervisorResponse->assertSee('Entry ID');
         $supervisorResponse->assertSee('Valves');
         $supervisorResponse->assertSee("Entry #{$ledger->id}");
-        $supervisorResponse->assertSee($expectedUrl);
+        $supervisorResponse->assertSee($expectedLedgerUrl);
+        $supervisorResponse->assertSee($expectedEntryUrl);
         $supervisorResponse->assertSee('target="_blank"', false);
 
         // Logger cannot access
