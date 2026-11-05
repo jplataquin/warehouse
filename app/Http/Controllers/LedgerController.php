@@ -719,10 +719,10 @@ class LedgerController extends Controller
                 $targetLedger->update($targetUpdates);
             });
 
-            return redirect()->route('ledgers.item_history', [
+            return back(fallback: route('ledgers.item_history', [
                 'warehouse' => $ledger->warehouse_id,
                 'item' => $ledger->item_id,
-            ])->with('success', "Ledger entry #{$ledger->id} and #{$targetLedger->id} data swapped successfully.");
+            ]))->with('success', "Ledger entry #{$ledger->id} and #{$targetLedger->id} data swapped successfully.");
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }

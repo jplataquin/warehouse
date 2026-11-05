@@ -1781,11 +1781,21 @@ class LedgerTest extends TestCase
             'remarks' => 'Original Remarks 2',
         ]);
 
-        $response = $this->actingAs($admin)->post(route('ledgers.swap', $ledger1), [
-            'target_ledger_id' => $ledger2->id,
-            'swap_reason' => 'Fixing order sequence mistake',
+        $filteredUrl = route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+            'start_date' => '2026-05-01',
+            'type' => 'IN',
         ]);
 
+        $response = $this->actingAs($admin)
+            ->from($filteredUrl)
+            ->post(route('ledgers.swap', $ledger1), [
+                'target_ledger_id' => $ledger2->id,
+                'swap_reason' => 'Fixing order sequence mistake',
+            ]);
+
+        $response->assertRedirect($filteredUrl);
         $response->assertSessionHas('success');
 
         $ledger1 = $ledger1->fresh();
