@@ -163,14 +163,24 @@ document.addEventListener('DOMContentLoaded', function() {
         searchSpinner.style.display = 'inline-block';
 
         debounceTimeout = setTimeout(() => {
-            fetch(`{{ route('items.merge.search', $item) }}?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
+            fetch(`{{ route('items.merge.search', $item) }}?q=${encodeURIComponent(query)}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     searchSpinner.style.display = 'none';
                     searchIcon.style.display = 'inline-block';
 
                     resultsDropdown.innerHTML = '';
-                    if (data.length === 0) {
+                    if (!Array.isArray(data) || data.length === 0) {
                         resultsDropdown.innerHTML = '<div class="p-3 text-muted text-center small"><i class="bi bi-info-circle me-1"></i>No matching items found</div>';
                         resultsDropdown.style.display = 'block';
                         return;
@@ -187,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="text-muted extra-small d-flex align-items-center gap-1 mt-1" style="font-size: 0.75rem;">
                                 <span>ID: <strong class="text-primary">#${target.id}</strong></span> | 
                                 <span>Unit: ${target.unit}</span> | 
-                                <span>Type: <span class="badge bg-secondary bg-opacity-10 text-dark extra-small">${target.type}</span></span>
+                                <span>Type: <span class="badge bg-secondary bg-opacity-10 text-dark extra-small">${target.type || 'N/A'}</span></span>
                             </div>
                         `;
                         
@@ -208,6 +218,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     searchSpinner.style.display = 'none';
                     searchIcon.style.display = 'inline-block';
                     console.error('Error fetching merge targets:', err);
+                    resultsDropdown.innerHTML = '<div class="p-3 text-danger text-center small"><i class="bi bi-exclamation-triangle me-1"></i>Failed to fetch search results. Please try again.</div>';
+                    resultsDropdown.style.display = 'block';
                 });
         }, 250); // 250ms debounce
     });

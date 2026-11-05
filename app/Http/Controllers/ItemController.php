@@ -263,7 +263,7 @@ class ItemController extends Controller
             abort(403, 'Only admins are allowed to merge items.');
         }
 
-        $query = $request->query('q', '');
+        $query = trim($request->query('q', ''));
 
         if (strlen($query) < 1) {
             return response()->json([]);
@@ -276,13 +276,30 @@ class ItemController extends Controller
             $concatExpr = "CONCAT(name, ' ', COALESCE(specification, ''), ' ', unit)";
         }
 
-        $items = Item::withTrashed()
-            ->where('id', '!=', $item->id)
-            ->whereRaw("{$concatExpr} LIKE ?", ["%{$query}%"])
-            ->limit(20)
-            ->get(['id', 'name', 'specification', 'unit', 'type']);
+        $cleanQuery = ltrim($query, '#');
 
-        return response()->json($items);
+        $items = Item::with('itemType')
+            ->where('id', '!=', $item->id)
+            ->where(function ($q) use ($concatExpr, $query, $cleanQuery) {
+                $q->whereRaw("{$concatExpr} LIKE ?", ["%{$query}%"]);
+                if (is_numeric($cleanQuery)) {
+                    $q->orWhere('id', (int) $cleanQuery);
+                }
+            })
+            ->limit(20)
+            ->get(['id', 'name', 'specification', 'unit', 'item_type_id']);
+
+        $results = $items->map(function ($target) {
+            return [
+                'id' => $target->id,
+                'name' => $target->name,
+                'specification' => $target->specification,
+                'unit' => $target->unit,
+                'type' => $target->itemType ? $target->itemType->name : ($target->type ?? 'Bulk'),
+            ];
+        });
+
+        return response()->json($results);
     }
 
     public function mergeForm(Item $item)

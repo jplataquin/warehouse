@@ -202,6 +202,7 @@ class ItemTest extends TestCase
             'name' => 'Deformed Bar',
             'specification' => '16mm x 6m',
             'unit' => 'length',
+            'type' => 'Bulk',
         ]);
 
         // Search matching combination: "Cement Extra 40kg"
@@ -213,6 +214,27 @@ class ItemTest extends TestCase
             'name' => 'Cement Extra',
             'specification' => '40kg',
             'unit' => 'Bags',
+            'type' => 'Bulk',
+        ]);
+
+        // Search matching item by ID with hash: "#<id>"
+        $response = $this->actingAs($admin)->get(route('items.merge.search', ['item' => $item2, 'q' => '#' . $item1->id]));
+        $response->assertStatus(200);
+        $response->assertJsonCount(1);
+        $response->assertJsonFragment([
+            'id' => $item1->id,
+            'name' => 'Deformed Bar',
+            'type' => 'Bulk',
+        ]);
+
+        // Search matching item by pure numeric ID
+        $response = $this->actingAs($admin)->get(route('items.merge.search', ['item' => $item1, 'q' => $item2->id]));
+        $response->assertStatus(200);
+        $response->assertJsonCount(1);
+        $response->assertJsonFragment([
+            'id' => $item2->id,
+            'name' => 'Cement Extra',
+            'type' => 'Bulk',
         ]);
     }
 
