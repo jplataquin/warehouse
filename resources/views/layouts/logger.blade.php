@@ -142,9 +142,15 @@
             <!-- Right Side User & Badges -->
             <div class="navbar-nav ms-auto align-items-lg-center gap-2">
                 @if(isset($warehouse) && (Auth::user()->isLogger() || Auth::user()->isViewer()))
-                    <a href="{{ route('logger.warehouse.dashboard', $warehouse) }}" class="badge bg-primary py-2 px-3 text-decoration-none hover-opacity text-white">
-                        <i class="bi bi-geo-alt-fill me-1"></i> {{ $warehouse->name }}
-                    </a>
+                    @if($isViewOnly ?? false)
+                        <span class="badge bg-warning text-dark py-2 px-3 fw-bold shadow-sm">
+                            <i class="bi bi-eye me-1"></i> OTHER WAREHOUSE: {{ $warehouse->name }}
+                        </span>
+                    @else
+                        <a href="{{ route('logger.warehouse.dashboard', $warehouse) }}" class="badge bg-primary py-2 px-3 text-decoration-none hover-opacity text-white">
+                            <i class="bi bi-geo-alt-fill me-1"></i> {{ $warehouse->name }}
+                        </a>
+                    @endif
                 @endif
                 
                 <div class="nav-item dropdown">
@@ -169,8 +175,43 @@
 </nav>
 
 <div class="container-fluid px-4" style="margin-top: 80px;">
+    @php
+        $isExploreOther = request()->routeIs('logger.warehouses.explore');
+        $isOtherWarehouse = ($isViewOnly ?? false) || $isExploreOther || ($hideSidebar ?? false);
+        $showSidebar = Auth::check() && (Auth::user()->role === 'logger' || Auth::user()->role === 'viewer') && !$isOtherWarehouse;
+    @endphp
+
+    @if(isset($warehouse) && ($isViewOnly ?? false))
+        <div class="alert alert-warning border-0 shadow-sm d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 py-3 px-4">
+            <div class="d-flex align-items-center">
+                <div class="bg-warning bg-opacity-25 p-2 rounded-circle me-3">
+                    <i class="bi bi-building fs-3 text-dark"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <h4 class="alert-heading fw-bold mb-0 text-dark">{{ $warehouse->name }}</h4>
+                        <span class="badge bg-secondary">{{ $warehouse->type }}</span>
+                        <span class="badge bg-dark"><i class="bi bi-eye me-1"></i> View Only</span>
+                    </div>
+                    <div class="small text-muted">
+                        <i class="bi bi-briefcase me-1"></i> {{ $warehouse->project ? $warehouse->project->name : 'No Project Assigned' }}
+                        &bull; <span>Exploring other warehouse. Editing or adding entries is disabled.</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ route('logger.warehouses.explore') }}" class="btn btn-outline-dark btn-sm shadow-sm">
+                    <i class="bi bi-compass me-1"></i> Browse Other Warehouses
+                </a>
+                <a href="{{ route('home') }}" class="btn btn-dark btn-sm shadow-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Exit View Only
+                </a>
+            </div>
+        </div>
+    @endif
+
     <div class="row">
-        @if(Auth::check() && (Auth::user()->role === 'logger' || Auth::user()->role === 'viewer'))
+        @if($showSidebar)
             <div class="col-md-3 mb-4">
                 <div class="sticky-top" style="top: 80px; max-height: calc(100vh - 100px); overflow-y: auto;">
                     @php

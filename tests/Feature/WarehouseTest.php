@@ -433,6 +433,7 @@ class WarehouseTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Explore Other Warehouses');
         $response->assertSee('Unassigned Warehouse');
+        $response->assertDontSee('My Warehouses');
         $response->assertViewHas('otherWarehouses', function ($warehouses) use ($otherWarehouse, $myWarehouse) {
             return $warehouses->contains($otherWarehouse) && ! $warehouses->contains($myWarehouse);
         });
@@ -451,6 +452,9 @@ class WarehouseTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('View Only');
+        $response->assertSee('OTHER WAREHOUSE: Unassigned Warehouse 2');
+        $response->assertSee('Exploring other warehouse');
+        $response->assertDontSee('My Warehouses');
         $response->assertDontSee('New Entry');
         $response->assertDontSee('Add New Item');
     }
