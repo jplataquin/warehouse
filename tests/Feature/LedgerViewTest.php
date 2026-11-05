@@ -295,5 +295,6 @@ class LedgerViewTest extends TestCase
         // Verify that the negative balance renders with the text-danger class
         $response->assertSee('text-danger');
         $response->assertSee('-15.00');
+        $response->assertSee('Stock on Hand');
     }
 }

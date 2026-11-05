@@ -98,7 +98,7 @@
             </div>
             <div class="col-md-3 ps-3 d-flex flex-column justify-content-center text-end">
                 <div class="small text-muted text-uppercase fw-bold">Current Balance</div>
-                <div class="h3 fw-bold text-primary mb-0">{{ $balance }}</div>
+                <div class="h3 fw-bold text-primary mb-0">{{ number_format($balance, 2) }}</div>
             </div>
         </div>
 

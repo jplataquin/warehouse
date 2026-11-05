@@ -24,7 +24,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="text-start">
                         <div class="small text-white-50 text-uppercase fw-bold">Stock on Hand</div>
-                        <div class="h3 mb-0 fw-bold">{{ $balance }} <span class="fs-6 fw-normal opacity-75">{{ $item->unit }}</span></div>
+                        <div class="h3 mb-0 fw-bold">{{ number_format($balance, 2) }} <span class="fs-6 fw-normal opacity-75">{{ $item->unit }}</span></div>
                     </div>
                     <i class="bi bi-stack fs-1 opacity-25"></i>
                 </div>

@@ -112,7 +112,7 @@
                     <div class="mt-2">
                         <div class="small text-muted text-uppercase fw-bold">Stock Level</div>
                         <div class="h4 mb-0 fw-bold text-primary">
-                            {{ $sItem->balance }} <span class="fs-6 text-muted fw-normal">{{ $sItem->unit }}</span>
+                            {{ number_format($sItem->balance, 2) }} <span class="fs-6 text-muted fw-normal">{{ $sItem->unit }}</span>
                         </div>
                     </div>
                 </div>
