@@ -240,6 +240,15 @@
                                 <a href="{{ route('ledgers.edit', $ledger) }}" class="btn btn-outline-warning btn-sm shadow-sm" onclick="event.stopPropagation();">
                                     <i class="bi bi-pencil text-warning"></i> Edit
                                 </a>
+                                @if(auth()->check() && auth()->user()->isAdmin() && $item->type === 'BULK')
+                                    <button type="button" class="btn btn-outline-primary btn-sm shadow-sm btn-single-swap" 
+                                            data-id="{{ $ledger->id }}" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#swapLedgerModal" 
+                                            onclick="event.stopPropagation();">
+                                        <i class="bi bi-arrow-left-right"></i> Swap
+                                    </button>
+                                @endif
                                 @if(auth()->check() && auth()->user()->isAdmin())
                                     <button type="button" class="btn btn-outline-danger btn-sm shadow-sm btn-single-delete" 
                                             data-id="{{ $ledger->id }}" 
@@ -299,6 +308,42 @@
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger">
                         <i class="bi bi-trash"></i> Yes, Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Swap Ledger Modal -->
+<div class="modal fade" id="swapLedgerModal" tabindex="-1" aria-labelledby="swapLedgerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="swapLedgerModalLabel">
+                    <i class="bi bi-arrow-left-right me-2"></i> Swap Ledger Data
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="" method="POST" id="modal-swap-form">
+                @csrf
+                <div class="modal-body p-4">
+                    <p class="text-dark">This will swap the details/content of this ledger entry with another entry (excluding date and ID). A permanent system message will be appended to the remarks of both records.</p>
+
+                    <div class="mb-3">
+                        <label for="target_ledger_id" class="form-label small fw-bold text-uppercase text-muted">Target Ledger ID <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="target_ledger_id" name="target_ledger_id" required placeholder="e.g. 102">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="swap_reason" class="form-label small fw-bold text-uppercase text-muted">Reason for Swap <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="swap_reason" name="swap_reason" rows="3" required minlength="5" placeholder="Explain why these entries need to be swapped (minimum 5 characters)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top-0 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-arrow-left-right"></i> Confirm Swap
                     </button>
                 </div>
             </form>
@@ -432,6 +477,18 @@
                         hiddenContainer.appendChild(hiddenInput);
                     });
                 }
+            });
+        }
+
+        const swapModal = document.getElementById('swapLedgerModal');
+        if (swapModal) {
+            swapModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const ledgerId = button.getAttribute('data-id');
+                const form = document.getElementById('modal-swap-form');
+                form.action = `/ledgers/${ledgerId}/swap`;
+                document.getElementById('target_ledger_id').value = '';
+                document.getElementById('swap_reason').value = '';
             });
         }
         @endif

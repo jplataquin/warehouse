@@ -127,4 +127,85 @@ class GlobalSearchTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('PO-ADMIN-1');
     }
+
+    public function test_global_search_orders_ledgers_correctly()
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+
+        $warehouse = Warehouse::create([
+            'name' => 'Sort Warehouse',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+
+        $item = Item::create([
+            'name' => 'Sort Item',
+            'type' => 'BULK',
+            'unit' => 'PCS',
+        ]);
+
+        // Same entry_date, created_at, different id
+        $ledger1 = Ledger::create([
+            'entry_date' => '2026-05-01',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'po_number' => 'PO-SORT-TEST',
+            'status' => 'PENDING',
+            'created_at' => '2026-05-01 10:00:00',
+        ]);
+
+        $ledger2 = Ledger::create([
+            'entry_date' => '2026-05-01',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 2,
+            'warehouse_id' => $warehouse->id,
+            'po_number' => 'PO-SORT-TEST',
+            'status' => 'PENDING',
+            'created_at' => '2026-05-01 10:00:00',
+        ]);
+
+        // Newer entry_date
+        $ledger3 = Ledger::create([
+            'entry_date' => '2026-05-02',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 3,
+            'warehouse_id' => $warehouse->id,
+            'po_number' => 'PO-SORT-TEST',
+            'status' => 'PENDING',
+            'created_at' => '2026-05-01 09:00:00',
+        ]);
+
+        // Same entry_date as ledger1/2, but newer created_at
+        $ledger4 = Ledger::create([
+            'entry_date' => '2026-05-01',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 4,
+            'warehouse_id' => $warehouse->id,
+            'po_number' => 'PO-SORT-TEST',
+            'status' => 'PENDING',
+            'created_at' => '2026-05-01 11:00:00',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('global.search', ['query' => 'PO-SORT-TEST']));
+        $response->assertStatus(200);
+
+        $response->assertViewHas('ledgers', function ($ledgers) use ($ledger1, $ledger2, $ledger3, $ledger4) {
+            $ids = $ledgers->pluck('id')->all();
+            // Expected order:
+            // 1. ledger3 (latest entry_date: 2026-05-02)
+            // 2. ledger4 (entry_date: 2026-05-01, latest created_at: 11:00:00)
+            // 3. ledger2 (entry_date: 2026-05-01, created_at: 10:00:00, higher id)
+            // 4. ledger1 (entry_date: 2026-05-01, created_at: 10:00:00, lower id)
+            return $ids === [$ledger3->id, $ledger4->id, $ledger2->id, $ledger1->id];
+        });
+    }
 }

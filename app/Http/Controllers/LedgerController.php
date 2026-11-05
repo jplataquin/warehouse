@@ -580,6 +580,10 @@ class LedgerController extends Controller
             \Illuminate\Support\Facades\DB::transaction(function () use ($ledger, $validated) {
                 $item = \App\Models\Item::lockForUpdate()->findOrFail($ledger->item_id);
 
+                if ($item->type === 'ASSET') {
+                    throw new \Exception("Cannot delete ledger entries for ASSET items. Please use a CORRECTION entry instead.");
+                }
+
                 $ledger->update([
                     'delete_reason' => $validated['delete_reason'],
                     'deleted_by' => auth()->id(),
@@ -618,6 +622,10 @@ class LedgerController extends Controller
                     $ledger = Ledger::findOrFail($id);
                     $item = \App\Models\Item::lockForUpdate()->findOrFail($ledger->item_id);
 
+                    if ($item->type === 'ASSET') {
+                        throw new \Exception("Cannot delete ledger entry #{$ledger->id} because it belongs to an ASSET. Please use a CORRECTION entry instead.");
+                    }
+
                     $ledger->update([
                         'delete_reason' => $validated['delete_reason'],
                         'deleted_by' => auth()->id(),
@@ -639,6 +647,82 @@ class LedgerController extends Controller
                 'warehouse' => $firstLedger->warehouse_id,
                 'item' => $firstLedger->item_id
             ])->with('success', 'Selected ledger entries soft deleted successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function swap(Request $request, Ledger $ledger)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins are allowed to swap ledger entries.');
+        }
+
+        $validated = $request->validate([
+            'target_ledger_id' => 'required|exists:ledgers,id|different:' . $ledger->id,
+            'swap_reason' => 'required|string|min:5|max:255',
+        ]);
+
+        $item = $ledger->item;
+        if (! $item || $item->type !== 'BULK') {
+            return back()->with('error', 'Only ledger entries for BULK items can be swapped.');
+        }
+
+        $targetLedger = Ledger::findOrFail($validated['target_ledger_id']);
+        if ($targetLedger->item_id !== $ledger->item_id || $targetLedger->warehouse_id !== $ledger->warehouse_id) {
+            return back()->with('error', 'Both ledger entries must belong to the same item and warehouse.');
+        }
+
+        if ($targetLedger->item->type !== 'BULK') {
+            return back()->with('error', 'Target ledger entry must also belong to a BULK item.');
+        }
+
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($ledger, $targetLedger, $validated) {
+                // Fields to exclude from the swap
+                $excludedFields = [
+                    'id',
+                    'entry_date',
+                    'item_id',
+                    'warehouse_id',
+                    'created_at',
+                    'updated_at',
+                    'deleted_at',
+                ];
+
+                $ledgerAttributes = $ledger->getAttributes();
+                $targetAttributes = $targetLedger->getAttributes();
+
+                $swapFields = array_diff(array_keys($ledgerAttributes), $excludedFields);
+
+                $ledgerUpdates = [];
+                $targetUpdates = [];
+
+                foreach ($swapFields as $field) {
+                    $ledgerUpdates[$field] = $targetAttributes[$field] ?? null;
+                    $targetUpdates[$field] = $ledgerAttributes[$field] ?? null;
+                }
+
+                $timestamp = now()->toDateTimeString();
+                $reason = $validated['swap_reason'];
+
+                // Append system note to remarks
+                $ledgerNote = "\n\n[SYSTEM: Swapped data with Ledger #{$targetLedger->id} on {$timestamp}. Reason: {$reason}]";
+                $targetNote = "\n\n[SYSTEM: Swapped data with Ledger #{$ledger->id} on {$timestamp}. Reason: {$reason}]";
+
+                $ledgerUpdates['remarks'] = ($ledgerUpdates['remarks'] ?? '') . $ledgerNote;
+                $targetUpdates['remarks'] = ($targetUpdates['remarks'] ?? '') . $targetNote;
+                $ledgerUpdates['updated_by'] = auth()->id();
+                $targetUpdates['updated_by'] = auth()->id();
+
+                $ledger->update($ledgerUpdates);
+                $targetLedger->update($targetUpdates);
+            });
+
+            return redirect()->route('ledgers.item_history', [
+                'warehouse' => $ledger->warehouse_id,
+                'item' => $ledger->item_id,
+            ])->with('success', "Ledger entry #{$ledger->id} and #{$targetLedger->id} data swapped successfully.");
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }

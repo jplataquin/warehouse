@@ -54,6 +54,8 @@ class SearchController extends Controller
                 }
             })
             ->latest('entry_date')
+            ->latest('created_at')
+            ->latest('id')
             ->paginate(20)
             ->appends(['query' => $query]);
 

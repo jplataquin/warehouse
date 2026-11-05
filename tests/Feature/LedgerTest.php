@@ -1691,4 +1691,162 @@ class LedgerTest extends TestCase
         $supervisorResponse->assertSee('Diagnostic Check Passed');
         $supervisorResponse->assertSee('No discrepancy was found');
     }
+
+    public function test_admin_cannot_delete_asset_ledger_entry()
+    {
+        $this->withMiddleware();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $warehouse = Warehouse::create(['name' => 'Asset WH', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $item = Item::create(['name' => 'Excavator', 'type' => 'ASSET', 'unit' => 'unit']);
+
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        $response = $this->actingAs($admin)->delete(route('ledgers.destroy', $ledger), [
+            'delete_reason' => 'Mistakenly added asset',
+        ]);
+
+        $response->assertSessionHas('error', 'Cannot delete ledger entries for ASSET items. Please use a CORRECTION entry instead.');
+        $this->assertNull($ledger->fresh()->deleted_at);
+    }
+
+    public function test_admin_cannot_bulk_delete_asset_ledger_entry()
+    {
+        $this->withMiddleware();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $warehouse = Warehouse::create(['name' => 'Asset WH', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $item = Item::create(['name' => 'Bulldozer', 'type' => 'ASSET', 'unit' => 'unit']);
+
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        $response = $this->actingAs($admin)->delete(route('ledgers.bulk_destroy'), [
+            'ledger_ids' => [$ledger->id],
+            'delete_reason' => 'Bulk cleaning asset data',
+        ]);
+
+        $response->assertSessionHas('error');
+        $this->assertStringContainsString('Cannot delete ledger entry #' . $ledger->id . ' because it belongs to an ASSET', session('error'));
+        $this->assertNull($ledger->fresh()->deleted_at);
+    }
+
+    public function test_admin_can_swap_bulk_ledger_entries()
+    {
+        $this->withMiddleware();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $warehouse = Warehouse::create(['name' => 'Swap WH', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $item = Item::create(['name' => 'Sand', 'type' => 'BULK', 'unit' => 'm3']);
+
+        $date1 = '2026-05-01';
+        $date2 = '2026-05-02';
+
+        $ledger1 = Ledger::create([
+            'entry_date' => $date1,
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+            'po_number' => 'PO-001',
+            'remarks' => 'Original Remarks 1',
+        ]);
+
+        $ledger2 = Ledger::create([
+            'entry_date' => $date2,
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item->id,
+            'quantity' => 5,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+            'po_number' => 'PO-002',
+            'remarks' => 'Original Remarks 2',
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('ledgers.swap', $ledger1), [
+            'target_ledger_id' => $ledger2->id,
+            'swap_reason' => 'Fixing order sequence mistake',
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $ledger1 = $ledger1->fresh();
+        $ledger2 = $ledger2->fresh();
+
+        // entry_date and id must NOT swap
+        $this->assertEquals($date1, $ledger1->entry_date->format('Y-m-d'));
+        $this->assertEquals($date2, $ledger2->entry_date->format('Y-m-d'));
+
+        // Quantities and types MUST swap
+        $this->assertEquals(5, $ledger1->quantity);
+        $this->assertEquals('OUT', $ledger1->type);
+        $this->assertEquals('ALLOCATE', $ledger1->action);
+        $this->assertEquals('PO-002', $ledger1->po_number);
+
+        $this->assertEquals(10, $ledger2->quantity);
+        $this->assertEquals('IN', $ledger2->type);
+        $this->assertEquals('DELIVERY', $ledger2->action);
+        $this->assertEquals('PO-001', $ledger2->po_number);
+
+        // System messages appended to remarks
+        $this->assertStringContainsString('Fixing order sequence mistake', $ledger1->remarks);
+        $this->assertStringContainsString('Swapped data with Ledger #' . $ledger2->id, $ledger1->remarks);
+
+        $this->assertStringContainsString('Fixing order sequence mistake', $ledger2->remarks);
+        $this->assertStringContainsString('Swapped data with Ledger #' . $ledger1->id, $ledger2->remarks);
+    }
+
+    public function test_cannot_swap_asset_ledger_entries()
+    {
+        $this->withMiddleware();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $warehouse = Warehouse::create(['name' => 'Swap WH 2', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $assetItem = Item::create(['name' => 'Generator', 'type' => 'ASSET', 'unit' => 'unit']);
+
+        $ledger1 = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $assetItem->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        $ledger2 = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'OUT',
+            'action' => 'UTILIZE',
+            'item_id' => $assetItem->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('ledgers.swap', $ledger1), [
+            'target_ledger_id' => $ledger2->id,
+            'swap_reason' => 'Attempting to swap asset entries',
+        ]);
+
+        $response->assertSessionHas('error', 'Only ledger entries for BULK items can be swapped.');
+    }
 }
