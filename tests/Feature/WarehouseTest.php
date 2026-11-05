@@ -507,7 +507,7 @@ class WarehouseTest extends TestCase
         ]);
         $logger->warehouses()->attach($warehouse);
 
-        // Item with positive stock
+        // Bulk item with positive stock
         $itemWithStock = Item::create(['name' => 'Steel Rebar', 'type' => 'BULK', 'unit' => 'pcs']);
         Ledger::create([
             'entry_date' => now(),
@@ -515,6 +515,18 @@ class WarehouseTest extends TestCase
             'action' => 'DELIVERY',
             'item_id' => $itemWithStock->id,
             'quantity' => 50,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        // Asset item with positive stock
+        $assetWithStock = Item::create(['name' => 'Excavator', 'type' => 'ASSET', 'unit' => 'unit']);
+        Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $assetWithStock->id,
+            'quantity' => 1,
             'warehouse_id' => $warehouse->id,
             'status' => 'APPROVED',
         ]);
@@ -548,8 +560,13 @@ class WarehouseTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('WAREHOUSE INVENTORY REPORT');
         $response->assertSee('Inventory Print WH');
+        $response->assertSee('Bulk Items');
+        $response->assertSee('Asset Items');
         $response->assertSee('Steel Rebar');
         $response->assertSee('50.00 pcs');
+        $response->assertSee('Excavator');
+        $response->assertSee('1.00 unit');
+        $response->assertDontSee('<th>Type</th>');
         $response->assertDontSee('Gravel');
         $response->assertDontSee('Paint');
     }

@@ -63,46 +63,92 @@
             </div>
         </div>
 
-        <table class="table table-bordered table-striped align-middle">
-            <thead>
-                <tr>
-                    <th style="width: 5%;">#</th>
-                    <th style="width: 35%;">Item Name</th>
-                    <th style="width: 15%;">Type</th>
-                    <th style="width: 25%;">Specification</th>
-                    @if($warehouse->parent_id === null && $warehouse->children->isNotEmpty())
-                        <th style="width: 20%;">Warehouse Location</th>
-                    @endif
-                    <th style="width: 20%;" class="text-end">Current Stock</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($items as $index => $item)
+        @php
+            $bulkItems = $items->where('type', 'BULK');
+            $assetItems = $items->where('type', 'ASSET');
+        @endphp
+
+        <!-- Bulk Items Table -->
+        <div class="mb-4">
+            <h5 class="fw-bold mb-2 text-uppercase border-bottom pb-1">
+                Bulk Items <span class="badge bg-secondary fs-6 align-middle">{{ $bulkItems->count() }}</span>
+            </h5>
+            <table class="table table-bordered table-striped align-middle mb-0">
+                <thead>
                     <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td class="fw-bold">{{ $item->name }}</td>
-                        <td>
-                            <span class="badge {{ $item->type === 'ASSET' ? 'bg-success' : 'bg-secondary' }}">
-                                {{ $item->type }}
-                            </span>
-                        </td>
-                        <td>{{ $item->specification ?? '—' }}</td>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 40%;">Item Name</th>
+                        <th style="width: 30%;">Specification</th>
                         @if($warehouse->parent_id === null && $warehouse->children->isNotEmpty())
-                            <td>{{ $item->warehouse_context ? $item->warehouse_context->name : $warehouse->name }}</td>
+                            <th style="width: 25%;">Warehouse Location</th>
                         @endif
-                        <td class="text-end fw-bold">
-                            {{ number_format($item->current_stock, 2) }} {{ $item->unit }}
-                        </td>
+                        <th style="width: 25%;" class="text-end">Current Stock</th>
                     </tr>
-                @empty
+                </thead>
+                <tbody>
+                    @forelse($bulkItems as $index => $item)
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <td class="fw-bold">{{ $item->name }}</td>
+                            <td>{{ $item->specification ?? '—' }}</td>
+                            @if($warehouse->parent_id === null && $warehouse->children->isNotEmpty())
+                                <td>{{ $item->warehouse_context ? $item->warehouse_context->name : $warehouse->name }}</td>
+                            @endif
+                            <td class="text-end fw-bold">
+                                {{ number_format($item->current_stock, 2) }} {{ $item->unit }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="{{ ($warehouse->parent_id === null && $warehouse->children->isNotEmpty()) ? 5 : 4 }}" class="text-center py-3 text-muted">
+                                No bulk items with inventory found.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Asset Items Table -->
+        <div class="mb-4">
+            <h5 class="fw-bold mb-2 text-uppercase border-bottom pb-1">
+                Asset Items <span class="badge bg-success fs-6 align-middle">{{ $assetItems->count() }}</span>
+            </h5>
+            <table class="table table-bordered table-striped align-middle mb-0">
+                <thead>
                     <tr>
-                        <td colspan="{{ ($warehouse->parent_id === null && $warehouse->children->isNotEmpty()) ? 6 : 5 }}" class="text-center py-4 text-muted">
-                            No items with inventory found in this warehouse.
-                        </td>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 40%;">Item Name</th>
+                        <th style="width: 30%;">Specification</th>
+                        @if($warehouse->parent_id === null && $warehouse->children->isNotEmpty())
+                            <th style="width: 25%;">Warehouse Location</th>
+                        @endif
+                        <th style="width: 25%;" class="text-end">Current Stock</th>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @forelse($assetItems as $index => $item)
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <td class="fw-bold">{{ $item->name }}</td>
+                            <td>{{ $item->specification ?? '—' }}</td>
+                            @if($warehouse->parent_id === null && $warehouse->children->isNotEmpty())
+                                <td>{{ $item->warehouse_context ? $item->warehouse_context->name : $warehouse->name }}</td>
+                            @endif
+                            <td class="text-end fw-bold">
+                                {{ number_format($item->current_stock, 2) }} {{ $item->unit }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="{{ ($warehouse->parent_id === null && $warehouse->children->isNotEmpty()) ? 5 : 4 }}" class="text-center py-3 text-muted">
+                                No asset items with inventory found.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 </body>
 </html>
