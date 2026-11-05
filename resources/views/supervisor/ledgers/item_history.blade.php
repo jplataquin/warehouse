@@ -185,7 +185,7 @@
                         <td class="fw-bold">
                             {{ $ledger->quantity }} <small class="text-muted fw-normal">{{ $item->unit }}</small>
                         </td>
-                        <td class="fw-bold text-primary">
+                        <td class="fw-bold {{ $displayBal < 0 ? 'text-danger' : 'text-primary' }}">
                             {{ number_format($displayBal, 2) }} <small class="text-muted fw-normal">{{ $item->unit }}</small>
                         </td>
                         <td>

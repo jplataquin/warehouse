@@ -240,7 +240,7 @@
                             </td>
                         @endif
                         <td class="fw-bold">{{ $ledger->quantity }} <small class="text-muted fw-normal">{{ $ledger->item->unit }}</small></td>
-                        <td class="fw-bold {{ $item ? 'text-primary' : 'text-muted' }}">
+                        <td class="fw-bold {{ $item ? ($displayBal < 0 ? 'text-danger' : 'text-primary') : 'text-muted' }}">
                             @if($item)
                                 {{ number_format($displayBal, 2) }} <small class="fw-normal">{{ $ledger->item->unit }}</small>
                             @else

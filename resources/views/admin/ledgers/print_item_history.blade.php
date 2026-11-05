@@ -140,7 +140,7 @@
                     <td><span class="small fw-bold">{{ $ledger->action }}</span></td>
                     <td class="small">{{ $ledger->allocation->name ?? 'N/A' }}</td>
                     <td class="fw-bold text-end">{{ number_format($ledger->quantity, 2) }}</td>
-                    <td class="fw-bold text-end text-primary">{{ number_format($displayBal, 2) }}</td>
+                    <td class="fw-bold text-end {{ $displayBal < 0 ? 'text-danger' : 'text-primary' }}">{{ number_format($displayBal, 2) }}</td>
                     <td>
                         @if($ledger->po_number) <div class="small">PO: {{ $ledger->po_number }}</div> @endif
                         @if($ledger->delivery_receipt) <div class="small">DR: {{ $ledger->delivery_receipt }}</div> @endif

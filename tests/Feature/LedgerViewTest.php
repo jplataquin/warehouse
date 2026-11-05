@@ -268,4 +268,32 @@ class LedgerViewTest extends TestCase
         $response->assertSee('Diagnostic Check Passed');
         $response->assertSee('No discrepancy was found');
     }
+
+    public function test_negative_running_balance_has_red_text_in_item_history()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $warehouse = Warehouse::create(['name' => 'Balance WH', 'type' => 'CENTRAL', 'status' => 'ACTIVE']);
+        $item = Item::create(['name' => 'Deficit Item', 'type' => 'BULK', 'unit' => 'kg']);
+
+        // Create an OUT entry without prior stock causing a negative balance
+        $ledger = Ledger::create([
+            'entry_date' => now(),
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item->id,
+            'quantity' => 15,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('ledgers.item_history', [
+            'warehouse' => $warehouse->id,
+            'item' => $item->id,
+        ]));
+
+        $response->assertStatus(200);
+        // Verify that the negative balance renders with the text-danger class
+        $response->assertSee('text-danger');
+        $response->assertSee('-15.00');
+    }
 }
