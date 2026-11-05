@@ -140,9 +140,11 @@
                target="_blank" class="btn btn-outline-dark btn-sm shadow-sm">
                 <i class="bi bi-printer me-1"></i> Print Ledger
             </a>
+            @unless(Auth::user()->isViewer() || ($isViewOnly ?? false))
             <a href="{{ route('ledgers.create', ['warehouse_id' => $warehouse->id, 'item_id' => $item->id]) }}" class="btn btn-primary btn-sm shadow-sm">
                 <i class="bi bi-plus-circle me-1"></i> Add Entry
             </a>
+            @endunless
         </div>
     </div>
 

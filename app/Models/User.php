@@ -56,4 +56,27 @@ class User extends Authenticatable
     {
         return $this->role === 'viewer';
     }
+
+    public function hasWarehouseAccess($warehouseId)
+    {
+        if ($this->isAdmin() || $this->isSupervisor()) {
+            return true;
+        }
+
+        $warehouse = Warehouse::find($warehouseId);
+        if (!$warehouse) {
+            return false;
+        }
+
+        $isAssigned = $this->warehouses()->where('warehouses.id', $warehouseId)->active()->exists();
+        if ($isAssigned) {
+            return true;
+        }
+
+        if ($warehouse->parent_id) {
+            return $this->warehouses()->where('warehouses.id', $warehouse->parent_id)->active()->exists();
+        }
+
+        return false;
+    }
 }

@@ -4,11 +4,16 @@
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span>Dashboard</span>
-        <span class="badge bg-primary">{{ $warehouse->type }}</span>
+        <div>
+            @if($isViewOnly ?? false)
+                <span class="badge bg-warning text-dark me-1"><i class="bi bi-eye me-1"></i> View Only</span>
+            @endif
+            <span class="badge bg-primary">{{ $warehouse->type }}</span>
+        </div>
     </div>
     <div class="card-body">
         <div class="row">
-            <div class="@if(Auth::user()->isViewer()) col-md-10 @else col-md-8 @endif border-end mb-2">
+            <div class="@if(Auth::user()->isViewer() || ($isViewOnly ?? false)) col-md-10 @else col-md-8 @endif border-end mb-2">
                 <h5 class="text-muted small text-uppercase fw-bold">Project</h5>
                 <p class="text-dark mb-2 text-truncate" title="{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}">{{ $warehouse->project ? $warehouse->project->name : 'N/A' }}</p>
 
@@ -49,11 +54,11 @@
                     </div>
                 @endif
             </div>
-            <div class="col-md-2 @unless(Auth::user()->isViewer()) border-end @endunless mb-2">
+            <div class="col-md-2 @unless(Auth::user()->isViewer() || ($isViewOnly ?? false)) border-end @endunless mb-2">
                 <h5 class="text-muted small text-uppercase fw-bold">Item Count</h5>
                 <p class="fw-bold text-primary mb-0 fs-5">{{ $items->count() }}</p>
             </div>
-            @unless(Auth::user()->isViewer())
+            @unless(Auth::user()->isViewer() || ($isViewOnly ?? false))
             <div class="col-md-2 mb-2">
                 <h5 class="text-muted small text-uppercase fw-bold">Quick Actions</h5>
                 <div class="d-flex flex-column gap-2">

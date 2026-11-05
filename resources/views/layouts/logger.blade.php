@@ -131,6 +131,11 @@
                     <li class="nav-item">
                         <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('items.assets') }}">Assets</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('logger.warehouses.explore') ? 'text-white' : 'text-white-50' }} small fw-bold text-uppercase p-2" href="{{ route('logger.warehouses.explore') }}">
+                            <i class="bi bi-compass me-1"></i> Other Warehouses
+                        </a>
+                    </li>
                 @endif
             </ul>
 

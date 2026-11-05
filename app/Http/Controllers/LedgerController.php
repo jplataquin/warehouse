@@ -166,6 +166,11 @@ class LedgerController extends Controller
         }
 
         $selectedWarehouseId = $request->warehouse_id;
+
+        if ($selectedWarehouseId && auth()->user()->isLogger() && auth()->user()->warehouses()->exists() && ! auth()->user()->hasWarehouseAccess($selectedWarehouseId)) {
+            abort(403, 'You do not have write access to this warehouse.');
+        }
+
         $selectedItemId = $request->item_id;
         $items = Item::all();
         $warehouses = Warehouse::active()->with('parent')->get();
@@ -214,12 +219,18 @@ class LedgerController extends Controller
             'entries.*.remarks' => 'nullable|string',
         ]);
 
+        foreach ($validated['entries'] as $entry) {
+            if ($entry['action'] === 'CORRECTION' && ! auth()->user()->isAdmin()) {
+                abort(403, 'Only admins can perform corrections.');
+            }
+            if (auth()->user()->isLogger() && auth()->user()->warehouses()->exists() && ! auth()->user()->hasWarehouseAccess($entry['warehouse_id'])) {
+                abort(403, 'You do not have write access to one or more selected warehouses.');
+            }
+        }
+
         try {
             $warehouseId = null;
             foreach ($validated['entries'] as $entry) {
-                if ($entry['action'] === 'CORRECTION' && ! auth()->user()->isAdmin()) {
-                    abort(403, 'Only admins can perform corrections.');
-                }
                 $this->ledgerService->createEntry($entry);
                 $warehouseId = $entry['warehouse_id'];
             }
@@ -296,8 +307,9 @@ class LedgerController extends Controller
         }
 
         $negativeBalanceDiagnostic = $this->checkNegativeBalanceDiagnostic((int) $warehouse->id, (int) $item->id);
+        $isViewOnly = auth()->check() ? ! auth()->user()->hasWarehouseAccess($warehouse->id) : true;
 
-        return view($this->getRoleView('item_history'), compact('ledgers', 'item', 'warehouse', 'balance', 'openingBalance', 'allocations', 'lowStockAlert', 'negativeBalanceDiagnostic'));
+        return view($this->getRoleView('item_history'), compact('ledgers', 'item', 'warehouse', 'balance', 'openingBalance', 'allocations', 'lowStockAlert', 'negativeBalanceDiagnostic', 'isViewOnly'));
     }
 
     /**

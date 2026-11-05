@@ -60,6 +60,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/logger/rules', [DashboardController::class, 'loggerRules'])
         ->name('logger.rules')
         ->middleware('viewer_access');
+    Route::get('/logger/warehouses/explore', [DashboardController::class, 'exploreWarehouses'])
+        ->name('logger.warehouses.explore')
+        ->middleware('viewer_access');
     Route::get('/logger/items/create', [ItemController::class, 'loggerCreate'])
         ->name('logger.items.create')
         ->middleware('logger');

@@ -411,4 +411,85 @@ class WarehouseTest extends TestCase
         $this->assertDatabaseHas('warehouses', ['id' => $parentWarehouse->id]);
         $this->assertDatabaseHas('warehouses', ['id' => $subWarehouse->id]);
     }
+
+    public function test_logger_can_view_explore_other_warehouses_page()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $myWarehouse = Warehouse::create([
+            'name' => 'Assigned Warehouse',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+        $logger->warehouses()->attach($myWarehouse);
+
+        $otherWarehouse = Warehouse::create([
+            'name' => 'Unassigned Warehouse',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+
+        $response = $this->actingAs($logger)->get(route('logger.warehouses.explore'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Explore Other Warehouses');
+        $response->assertSee('Unassigned Warehouse');
+        $response->assertViewHas('otherWarehouses', function ($warehouses) use ($otherWarehouse, $myWarehouse) {
+            return $warehouses->contains($otherWarehouse) && ! $warehouses->contains($myWarehouse);
+        });
+    }
+
+    public function test_logger_can_view_unassigned_warehouse_dashboard_in_view_only_mode()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $otherWarehouse = Warehouse::create([
+            'name' => 'Unassigned Warehouse 2',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+
+        $response = $this->actingAs($logger)->get(route('logger.warehouse.dashboard', $otherWarehouse));
+
+        $response->assertStatus(200);
+        $response->assertSee('View Only');
+        $response->assertDontSee('New Entry');
+        $response->assertDontSee('Add New Item');
+    }
+
+    public function test_logger_cannot_create_entry_in_unassigned_warehouse()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $assignedWarehouse = Warehouse::create([
+            'name' => 'Assigned Warehouse 3',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+        $logger->warehouses()->attach($assignedWarehouse);
+
+        $otherWarehouse = Warehouse::create([
+            'name' => 'Unassigned Warehouse 3',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+
+        // Attempting to access create page
+        $createResponse = $this->actingAs($logger)->get(route('ledgers.create', ['warehouse_id' => $otherWarehouse->id]));
+        $createResponse->assertStatus(403);
+
+        // Attempting to store an entry
+        $item = Item::create(['name' => 'Cement', 'type' => 'BULK', 'unit' => 'bag']);
+        $storeResponse = $this->actingAs($logger)->post(route('ledgers.store'), [
+            'entries' => [
+                [
+                    'entry_date' => now()->toDateString(),
+                    'type' => 'IN',
+                    'action' => 'DELIVERY',
+                    'item_id' => $item->id,
+                    'quantity' => 10,
+                    'warehouse_id' => $otherWarehouse->id,
+                ],
+            ],
+        ]);
+
+        $storeResponse->assertStatus(403);
+    }
 }

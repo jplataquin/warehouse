@@ -25,25 +25,11 @@ class DashboardController extends Controller
     public function warehouseDashboard($warehouseId)
     {
         $user = auth()->user();
+        $isViewOnly = false;
 
         if ($user->role === 'logger' || $user->role === 'viewer') {
-            // Loggers and Viewers can access a warehouse if they are explicitly assigned to it,
-            // or if they are assigned to its parent warehouse.
-            $isAssigned = $user->warehouses()->where('warehouses.id', $warehouseId)->active()->exists();
-
-            if (!$isAssigned) {
-                $warehouse = Warehouse::active()->with('children')->findOrFail($warehouseId);
-                if ($warehouse->parent_id) {
-                    $isAssignedToParent = $user->warehouses()->where('warehouses.id', $warehouse->parent_id)->active()->exists();
-                    if (!$isAssignedToParent) {
-                        abort(404);
-                    }
-                } else {
-                    abort(404);
-                }
-            } else {
-                $warehouse = $user->warehouses()->active()->with('children')->findOrFail($warehouseId);
-            }
+            $warehouse = Warehouse::active()->with('children')->findOrFail($warehouseId);
+            $isViewOnly = ! $user->hasWarehouseAccess($warehouseId);
         } else {
             $warehouse = Warehouse::active()->with('children')->findOrFail($warehouseId);
         }
@@ -109,7 +95,38 @@ class DashboardController extends Controller
             }
         }
 
-        return view('logger.warehouses.dashboard', compact('warehouse', 'items', 'lowStockAlerts'));
+        return view('logger.warehouses.dashboard', compact('warehouse', 'items', 'lowStockAlerts', 'isViewOnly'));
+    }
+
+    public function exploreWarehouses(Request $request)
+    {
+        $user = auth()->user();
+
+        // Retrieve all assigned IDs including sub-warehouses
+        $assignedIds = $user->warehouses()->pluck('warehouses.id')->toArray();
+        $assignedParentIds = $user->warehouses()->whereNull('parent_id')->pluck('warehouses.id')->toArray();
+        $childAssignedIds = Warehouse::whereIn('parent_id', $assignedParentIds)->pluck('id')->toArray();
+        $allAssignedIds = array_unique(array_merge($assignedIds, $childAssignedIds));
+
+        $query = Warehouse::active()
+            ->whereNull('parent_id')
+            ->whereNotIn('id', $allAssignedIds)
+            ->with(['project', 'children']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('type', 'LIKE', "%{$search}%")
+                    ->orWhereHas('project', function ($pq) use ($search) {
+                        $pq->where('name', 'LIKE', "%{$search}%");
+                    });
+            });
+        }
+
+        $otherWarehouses = $query->paginate(12)->withQueryString();
+
+        return view('logger.warehouses.explore', compact('otherWarehouses'));
     }
 
     public function loggerRules()
