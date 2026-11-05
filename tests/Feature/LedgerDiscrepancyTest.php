@@ -133,21 +133,84 @@ class LedgerDiscrepancyTest extends TestCase
         ]);
 
         // Admin can access
+        $expectedUrl = route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $ledger->id]);
+
         $adminResponse = $this->actingAs($admin)->get(route('discrepancies.index'));
         $adminResponse->assertStatus(200);
         $adminResponse->assertSee('Discrepancy Logs');
+        $adminResponse->assertSee('Ledger ID');
         $adminResponse->assertSee('Valves');
         $adminResponse->assertSee("Entry #{$ledger->id}");
+        $adminResponse->assertSee($expectedUrl);
+        $adminResponse->assertSee('target="_blank"', false);
 
         // Supervisor can access
         $supervisorResponse = $this->actingAs($supervisor)->get(route('discrepancies.index'));
         $supervisorResponse->assertStatus(200);
         $supervisorResponse->assertSee('Discrepancy Logs');
+        $supervisorResponse->assertSee('Ledger ID');
         $supervisorResponse->assertSee('Valves');
+        $supervisorResponse->assertSee("Entry #{$ledger->id}");
+        $supervisorResponse->assertSee($expectedUrl);
+        $supervisorResponse->assertSee('target="_blank"', false);
 
         // Logger cannot access
         $loggerResponse = $this->actingAs($logger)->get(route('discrepancies.index'));
         $loggerResponse->assertStatus(403);
+    }
+
+    public function test_discrepancy_ledger_id_link_resolves_to_item_history_even_when_id_differs()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        $warehouse = Warehouse::create(['name' => 'North Yard', 'type' => 'SITE', 'status' => 'ACTIVE']);
+        $item1 = Item::create(['name' => 'Gravel', 'type' => 'BULK', 'unit' => 'bags']);
+        $item2 = Item::create(['name' => 'Pipes', 'type' => 'BULK', 'unit' => 'meters']);
+
+        // Advance ledger IDs so offending ledger ID differs from item2 ID
+        Ledger::create([
+            'entry_date' => '2026-01-01',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item1->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+        Ledger::create([
+            'entry_date' => '2026-01-01',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item1->id,
+            'quantity' => 5,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        // Offending ledger entry triggers negative discrepancy for Pipes
+        $offendingLedger = Ledger::create([
+            'entry_date' => '2026-01-02',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item2->id,
+            'quantity' => 5,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        // Ensure ledger ID and item ID differ
+        $this->assertNotEquals($offendingLedger->id, $item2->id);
+
+        $url = route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $offendingLedger->id]);
+
+        $adminResponse = $this->actingAs($admin)->get($url);
+        $adminResponse->assertStatus(200);
+        $adminResponse->assertSee('Pipes');
+
+        $supervisorResponse = $this->actingAs($supervisor)->get($url);
+        $supervisorResponse->assertStatus(200);
+        $supervisorResponse->assertSee('Pipes');
     }
 
     public function test_admin_and_supervisor_can_resolve_discrepancy()

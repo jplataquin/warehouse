@@ -73,7 +73,7 @@
                         <th class="ps-4" style="width: 70px;">ID</th>
                         <th>Item</th>
                         <th>Warehouse</th>
-                        <th>Offending Entry</th>
+                        <th>Ledger ID</th>
                         <th>Status</th>
                         <th>Detected At</th>
                         <th>Resolution Details</th>
@@ -105,7 +105,7 @@
                             </td>
                             <td>
                                 @if($discrepancy->ledger)
-                                    <a href="{{ route('ledgers.show', $discrepancy->ledger_id) }}" class="fw-bold text-decoration-none">
+                                    <a href="{{ route('ledgers.item_history', ['warehouse' => $discrepancy->warehouse_id, 'item' => $discrepancy->ledger_id]) }}" target="_blank" rel="noopener noreferrer" class="fw-bold text-decoration-none">
                                         <i class="bi bi-box-arrow-up-right me-1"></i> Entry #{{ $discrepancy->ledger_id }}
                                     </a>
                                     <div class="small text-muted">

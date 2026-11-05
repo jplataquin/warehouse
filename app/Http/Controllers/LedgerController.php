@@ -260,7 +260,7 @@ class LedgerController extends Controller
     public function itemHistory($warehouseId, $itemId, Request $request)
     {
         $warehouse = Warehouse::findOrFail($warehouseId);
-        $item = Item::findOrFail($itemId);
+        $item = $this->resolveItemOrLedgerItem($warehouse->id, $itemId);
 
         $query = Ledger::with(['item', 'warehouse', 'project', 'allocation', 'sourceWarehouse', 'destinationWarehouse'])
             ->where('warehouse_id', $warehouse->id)
@@ -301,6 +301,33 @@ class LedgerController extends Controller
     }
 
     /**
+     * Resolve an item by item ID, or fallback to resolving through a Ledger entry if a ledger ID was supplied.
+     */
+    private function resolveItemOrLedgerItem(int|string $warehouseId, int|string $itemId): Item
+    {
+        $item = Item::find($itemId);
+        $ledger = Ledger::withTrashed()->find($itemId);
+
+        if ($ledger && $ledger->warehouse_id == $warehouseId) {
+            if (!$item || !Ledger::where('warehouse_id', $warehouseId)->where('item_id', $itemId)->exists()) {
+                if ($ledger->item) {
+                    return $ledger->item;
+                }
+            }
+        }
+
+        if (!$item && $ledger && $ledger->item) {
+            return $ledger->item;
+        }
+
+        if (!$item) {
+            abort(404);
+        }
+
+        return $item;
+    }
+
+    /**
      * Run a diagnostic check to find the first ledger entry that caused a negative balance for the item in the warehouse.
      */
     private function checkNegativeBalanceDiagnostic(int $warehouseId, int $itemId): ?array
@@ -311,7 +338,7 @@ class LedgerController extends Controller
     public function printItemHistory($warehouseId, $itemId, Request $request)
     {
         $warehouse = Warehouse::findOrFail($warehouseId);
-        $item = Item::findOrFail($itemId);
+        $item = $this->resolveItemOrLedgerItem($warehouse->id, $itemId);
 
         $query = Ledger::with(['item', 'warehouse', 'project', 'allocation', 'sourceWarehouse', 'destinationWarehouse'])
             ->where('warehouse_id', $warehouse->id)
