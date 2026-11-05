@@ -57,6 +57,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/warehouses/{warehouse}/dashboard', [DashboardController::class, 'warehouseDashboard'])
         ->name('logger.warehouse.dashboard')
         ->middleware('viewer_access');
+    Route::get('/warehouses/{warehouse}/inventory/print', [DashboardController::class, 'printInventory'])
+        ->name('logger.warehouse.inventory.print')
+        ->middleware('viewer_access');
     Route::get('/logger/rules', [DashboardController::class, 'loggerRules'])
         ->name('logger.rules')
         ->middleware('viewer_access');

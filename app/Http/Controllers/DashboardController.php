@@ -184,4 +184,50 @@ class DashboardController extends Controller
         return redirect()->route('logger.warehouse.dashboard', $parentWarehouseId)
             ->with('success', 'Sub-warehouse created successfully.');
     }
+
+    public function printInventory($warehouseId)
+    {
+        $user = auth()->user();
+
+        $warehouse = Warehouse::active()->with('children')->findOrFail($warehouseId);
+
+        if ($warehouse->parent_id === null) {
+            $targetWarehouseIds = array_merge([$warehouse->id], $warehouse->children->pluck('id')->toArray());
+        } else {
+            $targetWarehouseIds = [$warehouse->id];
+        }
+
+        $targetWarehouses = Warehouse::whereIn('id', $targetWarehouseIds)->get()->keyBy('id');
+
+        $itemWarehousePairs = \DB::table('ledgers')
+            ->select('item_id', 'warehouse_id')
+            ->whereIn('warehouse_id', $targetWarehouseIds)
+            ->groupBy('item_id', 'warehouse_id')
+            ->get();
+
+        $itemIds = $itemWarehousePairs->pluck('item_id')->unique()->toArray();
+        $itemsMap = Item::whereIn('id', $itemIds)->get()->keyBy('id');
+
+        $items = collect();
+
+        foreach ($itemWarehousePairs as $pair) {
+            $item = $itemsMap->get($pair->item_id);
+            $wh = $targetWarehouses->get($pair->warehouse_id);
+
+            if ($item && $wh) {
+                $currentStock = $item->getBalance($wh->id);
+                // Do not include empty ledgers or zero inventory ledgers
+                if ($currentStock > 0) {
+                    $newItem = clone $item;
+                    $newItem->current_stock = $currentStock;
+                    $newItem->warehouse_context = $wh;
+                    $items->push($newItem);
+                }
+            }
+        }
+
+        $items = $items->sortBy('name')->values();
+
+        return view('logger.warehouses.print_inventory', compact('warehouse', 'items'));
+    }
 }

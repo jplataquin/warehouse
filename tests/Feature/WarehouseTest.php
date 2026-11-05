@@ -496,4 +496,61 @@ class WarehouseTest extends TestCase
 
         $storeResponse->assertStatus(403);
     }
+
+    public function test_logger_can_print_warehouse_inventory_showing_only_items_with_stock()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $warehouse = Warehouse::create([
+            'name' => 'Inventory Print WH',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+        $logger->warehouses()->attach($warehouse);
+
+        // Item with positive stock
+        $itemWithStock = Item::create(['name' => 'Steel Rebar', 'type' => 'BULK', 'unit' => 'pcs']);
+        Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $itemWithStock->id,
+            'quantity' => 50,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        // Item with zero stock (IN then OUT)
+        $itemZeroStock = Item::create(['name' => 'Gravel', 'type' => 'BULK', 'unit' => 'm3']);
+        Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $itemZeroStock->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+        Ledger::create([
+            'entry_date' => now(),
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $itemZeroStock->id,
+            'quantity' => 10,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+        ]);
+
+        // Item without any ledger movements
+        $itemNoStock = Item::create(['name' => 'Paint', 'type' => 'BULK', 'unit' => 'can']);
+
+        $response = $this->actingAs($logger)->get(route('logger.warehouse.inventory.print', $warehouse));
+
+        $response->assertStatus(200);
+        $response->assertSee('WAREHOUSE INVENTORY REPORT');
+        $response->assertSee('Inventory Print WH');
+        $response->assertSee('Steel Rebar');
+        $response->assertSee('50.00 pcs');
+        $response->assertDontSee('Gravel');
+        $response->assertDontSee('Paint');
+    }
 }

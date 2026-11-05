@@ -81,8 +81,11 @@
 </div>
 
 <div class="card mb-4">
-    <div class="card-header bg-white">
-        <i class="bi bi-box-seam me-2"></i> Inventory
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-box-seam me-2"></i> Inventory</span>
+        <a href="{{ route('logger.warehouse.inventory.print', $warehouse->id) }}" target="_blank" class="btn btn-outline-dark btn-sm shadow-sm">
+            <i class="bi bi-printer me-1"></i> Print Inventory
+        </a>
     </div>
     <div class="card-body">
         <div class="row align-items-end">
