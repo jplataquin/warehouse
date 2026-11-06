@@ -77,11 +77,13 @@
         <form action="{{ route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $item->id]) }}" method="GET" class="row g-3 align-items-end">
             <div class="col-md-2">
                 <label class="form-label small fw-bold text-muted text-uppercase">Start Date</label>
-                <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+                <input type="text" class="form-control date-mask" placeholder="MM/DD/YYYY" value="{{ request('start_date') ? \Carbon\Carbon::parse(request('start_date'))->format('m/d/Y') : '' }}">
+                <input type="hidden" name="start_date" value="{{ request('start_date') }}">
             </div>
             <div class="col-md-2">
                 <label class="form-label small fw-bold text-muted text-uppercase">End Date</label>
-                <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+                <input type="text" class="form-control date-mask" placeholder="MM/DD/YYYY" value="{{ request('end_date') ? \Carbon\Carbon::parse(request('end_date'))->format('m/d/Y') : '' }}">
+                <input type="hidden" name="end_date" value="{{ request('end_date') }}">
             </div>
             <div class="col-md-2">
                 <label class="form-label small fw-bold text-muted text-uppercase">Entry Type</label>
@@ -97,7 +99,8 @@
                     <option value="">All Actions</option>
                     <option value="TRANSFER" {{ request('action') === 'TRANSFER' ? 'selected' : '' }}>Transfer</option>
                     <option value="DELIVERY" {{ request('action') === 'DELIVERY' ? 'selected' : '' }}>Delivery</option>
-                    <option value="ASSET_RETURN" {{ request('action') === 'ASSET_RETURN' ? 'selected' : '' }}>Asset Return</option>
+                    <option value="RETURN_ASSET" {{ request('action') === 'RETURN_ASSET' ? 'selected' : '' }}>Return Asset</option>
+                    <option value="RETURN_ALLOCATION" {{ request('action') === 'RETURN_ALLOCATION' ? 'selected' : '' }}>Return Allocation</option>
                     <option value="ALLOCATE" {{ request('action') === 'ALLOCATE' ? 'selected' : '' }}>Allocate</option>
                     <option value="DISPOSE" {{ request('action') === 'DISPOSE' ? 'selected' : '' }}>Dispose</option>
                     <option value="UTILIZE" {{ request('action') === 'UTILIZE' ? 'selected' : '' }}>Utilize</option>

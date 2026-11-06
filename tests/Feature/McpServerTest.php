@@ -590,7 +590,7 @@ class McpServerTest extends TestCase
             'item_id' => $item1->id,
             'quantity' => 30,
             'type' => 'OUT',
-            'action' => 'DISPATCH',
+            'action' => 'UTILIZE',
             'entry_date' => '2026-10-15',
         ]);
 
@@ -608,7 +608,7 @@ class McpServerTest extends TestCase
             'item_id' => $item2->id,
             'quantity' => 10,
             'type' => 'OUT',
-            'action' => 'DISPATCH',
+            'action' => 'UTILIZE',
             'entry_date' => '2026-11-01',
         ]);
 
@@ -832,7 +832,7 @@ class McpServerTest extends TestCase
             'quantity' => 1,
         ]);
 
-        // Asset 3: OUT UTILIZE then ASSET_RETURN IN (Returned, should NOT appear)
+        // Asset 3: OUT UTILIZE then RETURN_ASSET IN (Returned, should NOT appear)
         $asset3 = Item::create([
             'name' => 'Survey Theodolite',
             'unit' => 'unit',
@@ -851,7 +851,7 @@ class McpServerTest extends TestCase
             'warehouse_id' => $warehouse1->id,
             'item_id' => $asset3->id,
             'type' => 'IN',
-            'action' => 'ASSET_RETURN',
+            'action' => 'RETURN_ASSET',
             'entry_date' => Carbon::today()->subDays(2)->format('Y-m-d'),
             'quantity' => 1,
         ]);

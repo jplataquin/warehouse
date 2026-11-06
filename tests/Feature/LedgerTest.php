@@ -180,7 +180,7 @@ class LedgerTest extends TestCase
                 [
                     'entry_date' => now()->format('Y-m-d'),
                     'type' => 'IN',
-                    'action' => 'ASSET_RETURN',
+                    'action' => 'RETURN_ASSET',
                     'item_id' => $item->id,
                     'quantity' => 1,
                     'warehouse_id' => $warehouse->id,
@@ -285,7 +285,7 @@ class LedgerTest extends TestCase
                 [
                     'entry_date' => now()->format('Y-m-d'),
                     'type' => 'IN',
-                    'action' => 'ASSET_RETURN',
+                    'action' => 'RETURN_ASSET',
                     'item_id' => $item->id,
                     'quantity' => 10,
                     'warehouse_id' => $warehouse->id,
@@ -598,7 +598,7 @@ class LedgerTest extends TestCase
                 [
                     'entry_date' => now()->format('Y-m-d'),
                     'type' => 'IN',
-                    'action' => 'ASSET_RETURN',
+                    'action' => 'RETURN_ASSET',
                     'item_id' => $item->id,
                     'quantity' => 1,
                     'warehouse_id' => $warehouse->id,
@@ -642,7 +642,7 @@ class LedgerTest extends TestCase
                 [
                     'entry_date' => now()->format('Y-m-d'),
                     'type' => 'IN',
-                    'action' => 'ASSET_RETURN',
+                    'action' => 'RETURN_ASSET',
                     'item_id' => $item->id,
                     'quantity' => 1,
                     'warehouse_id' => $warehouse->id,
@@ -686,13 +686,13 @@ class LedgerTest extends TestCase
             'status' => 'APPROVED',
         ]);
 
-        // Attempt ASSET_RETURN
+        // Attempt RETURN_ASSET
         $response = $this->actingAs($user)->post('/ledgers', [
             'entries' => [
                 [
                     'entry_date' => now()->format('Y-m-d'),
                     'type' => 'IN',
-                    'action' => 'ASSET_RETURN',
+                    'action' => 'RETURN_ASSET',
                     'item_id' => $item->id,
                     'quantity' => 1,
                     'warehouse_id' => $warehouse->id,
@@ -738,13 +738,13 @@ class LedgerTest extends TestCase
         ]);
         $item->update(['current_warehouse_id' => null, 'is_asset_utilized' => true]);
 
-        // Post ASSET_RETURN
+        // Post RETURN_ASSET
         $response = $this->actingAs($user)->post('/ledgers', [
             'entries' => [
                 [
                     'entry_date' => now()->format('Y-m-d'),
                     'type' => 'IN',
-                    'action' => 'ASSET_RETURN',
+                    'action' => 'RETURN_ASSET',
                     'item_id' => $item->id,
                     'quantity' => 1,
                     'warehouse_id' => $warehouse->id,
@@ -756,7 +756,7 @@ class LedgerTest extends TestCase
         $response->assertSessionHas('success', 'Ledger entries created successfully.');
 
         $returnLedger = Ledger::where('item_id', $item->id)
-            ->where('action', 'ASSET_RETURN')
+            ->where('action', 'RETURN_ASSET')
             ->first();
 
         $this->assertNotNull($returnLedger);
@@ -1858,5 +1858,138 @@ class LedgerTest extends TestCase
         ]);
 
         $response->assertSessionHas('error', 'Only ledger entries for BULK items can be swapped.');
+    }
+
+    public function test_return_allocation_must_be_bulk()
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'ASSET', 'name' => 'Drill Asset', 'unit' => 'Units']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main WH', 'status' => 'ACTIVE']);
+        $project = Project::create(['name' => 'Project Alpha']);
+        $allocation = Allocation::create(['name' => 'Alloc 1', 'warehouse_id' => $warehouse->id]);
+
+        $response = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'IN',
+                    'action' => 'RETURN_ALLOCATION',
+                    'item_id' => $item->id,
+                    'quantity' => 1,
+                    'warehouse_id' => $warehouse->id,
+                    'project_id' => $project->id,
+                    'allocation_id' => $allocation->id,
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHas('error', 'Return Allocation action can only be performed on BULK items.');
+    }
+
+    public function test_return_allocation_increases_stock_and_validates_quantity()
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Cement 40kg', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main WH', 'status' => 'ACTIVE']);
+        $project = Project::create(['name' => 'Bridge Construction']);
+        $allocation = Allocation::create(['name' => 'Foundation', 'warehouse_id' => $warehouse->id]);
+
+        // 1. Initial delivery of 100 bags
+        Ledger::create([
+            'entry_date' => now(),
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 100,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+            'po_number' => 'PO-100',
+            'delivery_receipt' => 'DR-100',
+            'plate_no' => 'ABC-1234',
+        ]);
+
+        $this->assertEquals(100, $item->getBalance($warehouse->id));
+
+        // 2. Allocate 40 bags to the project
+        Ledger::create([
+            'entry_date' => now(),
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item->id,
+            'quantity' => 40,
+            'warehouse_id' => $warehouse->id,
+            'project_id' => $project->id,
+            'allocation_id' => $allocation->id,
+            'status' => 'APPROVED',
+        ]);
+
+        $this->assertEquals(60, $item->getBalance($warehouse->id));
+
+        // 3. Attempt to return more than allocated (e.g. 50 bags)
+        $failResponse = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'IN',
+                    'action' => 'RETURN_ALLOCATION',
+                    'item_id' => $item->id,
+                    'quantity' => 50,
+                    'warehouse_id' => $warehouse->id,
+                    'project_id' => $project->id,
+                    'allocation_id' => $allocation->id,
+                ],
+            ],
+        ]);
+
+        $failResponse->assertSessionHas('error');
+        $this->assertEquals(60, $item->getBalance($warehouse->id));
+
+        // 4. Return valid quantity (15 bags)
+        $successResponse = $this->actingAs($user)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => now()->format('Y-m-d'),
+                    'type' => 'IN',
+                    'action' => 'RETURN_ALLOCATION',
+                    'item_id' => $item->id,
+                    'quantity' => 15,
+                    'warehouse_id' => $warehouse->id,
+                    'project_id' => $project->id,
+                    'allocation_id' => $allocation->id,
+                ],
+            ],
+        ]);
+
+        $successResponse->assertSessionHas('success');
+        $this->assertEquals(75, $item->getBalance($warehouse->id));
+    }
+
+    public function test_return_allocation_sample_seeder_executes_successfully()
+    {
+        $this->seed(\Database\Seeders\ReturnAllocationSampleSeeder::class);
+
+        $project = Project::where('name', 'Skyline Tower Project')->first();
+        $this->assertNotNull($project);
+
+        $warehouse = Warehouse::where('name', 'Skyline Site Warehouse')->first();
+        $this->assertNotNull($warehouse);
+
+        $allocation = Allocation::where('name', 'Foundation & Columns')->first();
+        $this->assertNotNull($allocation);
+
+        $cement = Item::where('name', 'Portland Cement (Type 1)')->first();
+        $this->assertNotNull($cement);
+
+        // Check stock: 500 IN - 100 OUT = 400
+        $this->assertEquals(400, $cement->getBalance($warehouse->id));
+
+        // Check allocated amount
+        $allocatedCement = Ledger::where('item_id', $cement->id)
+            ->where('project_id', $project->id)
+            ->where('allocation_id', $allocation->id)
+            ->where('action', 'ALLOCATE')
+            ->sum('quantity');
+
+        $this->assertEquals(100, $allocatedCement);
     }
 }

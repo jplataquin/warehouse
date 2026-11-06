@@ -108,7 +108,7 @@ class UnreturnedAssetsReportTest extends TestCase
             'warehouse_id' => $warehouse->id,
             'item_id' => $asset3->id,
             'type' => 'IN',
-            'action' => 'ASSET_RETURN',
+            'action' => 'RETURN_ASSET',
             'entry_date' => Carbon::today()->subDays(2)->format('Y-m-d'),
             'quantity' => 1,
         ]);

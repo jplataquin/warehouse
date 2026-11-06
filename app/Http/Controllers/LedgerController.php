@@ -203,7 +203,7 @@ class LedgerController extends Controller
             'entries' => 'required|array|min:1',
             'entries.*.entry_date' => 'required|date|before_or_equal:today',
             'entries.*.type' => 'required|in:IN,OUT',
-            'entries.*.action' => 'required|in:TRANSFER,DELIVERY,ASSET_RETURN,ALLOCATE,DISPOSE,LOST,REJECT,MAINTENANCE,CORRECTION,INITIAL_STOCK,UTILIZE',
+            'entries.*.action' => 'required|in:TRANSFER,DELIVERY,RETURN_ASSET,ALLOCATE,DISPOSE,LOST,REJECT,MAINTENANCE,CORRECTION,INITIAL_STOCK,UTILIZE,RETURN_ALLOCATION',
             'entries.*.item_id' => 'required|exists:items,id',
             'entries.*.quantity' => 'required|numeric|min:0.01',
             'entries.*.warehouse_id' => 'required|exists:warehouses,id',
@@ -539,7 +539,7 @@ class LedgerController extends Controller
         $validated = $request->validate([
             'entry_date' => 'required|date|before_or_equal:today',
             'type' => 'required|in:IN,OUT',
-            'action' => 'required|in:TRANSFER,DELIVERY,ASSET_RETURN,ALLOCATE,DISPOSE,LOST,REJECT,MAINTENANCE,CORRECTION,INITIAL_STOCK,UTILIZE',
+            'action' => 'required|in:TRANSFER,DELIVERY,RETURN_ASSET,ALLOCATE,DISPOSE,LOST,REJECT,MAINTENANCE,CORRECTION,INITIAL_STOCK,UTILIZE,RETURN_ALLOCATION',
             'item_id' => 'required|exists:items,id',
             'quantity' => 'required|numeric|min:0.01',
             'warehouse_id' => 'required|exists:warehouses,id',

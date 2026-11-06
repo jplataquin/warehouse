@@ -106,10 +106,10 @@ class AssetUtilizationTest extends TestCase
         $this->assertCount(1, $item->assetUtilizations);
         $this->assertEquals($utilizeLedger->id, $item->assetUtilizations->first()->ledger_id);
 
-        // 3. IN ASSET_RETURN (Automatically tracks IN in asset_utilizations)
+        // 3. IN RETURN_ASSET (Automatically tracks IN in asset_utilizations)
         $returnLedger = $service->createEntry([
             'type' => 'IN',
-            'action' => 'ASSET_RETURN',
+            'action' => 'RETURN_ASSET',
             'item_id' => $item->id,
             'quantity' => 1,
             'warehouse_id' => $warehouse->id,
@@ -120,7 +120,7 @@ class AssetUtilizationTest extends TestCase
         $item = $item->fresh();
         $this->assertFalse($item->is_asset_utilized);
 
-        // Assert asset_utilizations contains both UTILIZE and ASSET_RETURN records linked
+        // Assert asset_utilizations contains both UTILIZE and RETURN_ASSET records linked
         $this->assertCount(2, $item->assetUtilizations);
 
         $linkedLedgerIds = $item->assetUtilizations->pluck('ledger_id')->toArray();

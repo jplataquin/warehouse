@@ -341,5 +341,71 @@ class ProjectAllocationSummaryTest extends TestCase
         $response->assertSee('Test Item');
         $response->assertSee('45.00');
     }
+
+    /**
+     * Test that RETURN_ALLOCATION entries subtract from the total quantity across summary, details, and print views.
+     */
+    public function test_return_allocation_subtracts_from_reports_properly(): void
+    {
+        $project = Project::create(['name' => 'Project Epsilon']);
+        $allocation = Allocation::create(['name' => 'Allocation Epsilon', 'warehouse_id' => $this->warehouse->id]);
+
+        // Outbound allocate 50 units
+        Ledger::create([
+            'entry_date' => '2026-08-01',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $this->item->id,
+            'quantity' => 50.00,
+            'warehouse_id' => $this->warehouse->id,
+            'project_id' => $project->id,
+            'allocation_id' => $allocation->id,
+        ]);
+
+        // Return 15 units of allocation
+        Ledger::create([
+            'entry_date' => '2026-08-05',
+            'type' => 'IN',
+            'action' => 'RETURN_ALLOCATION',
+            'item_id' => $this->item->id,
+            'quantity' => 15.00,
+            'warehouse_id' => $this->warehouse->id,
+            'project_id' => $project->id,
+            'allocation_id' => $allocation->id,
+        ]);
+
+        // 1. Check summary report: 50 - 15 = 35.00
+        $summaryResponse = $this->actingAs($this->user)
+            ->get(route('reports.project-allocation-summary', [
+                'project_id' => $project->id,
+            ]));
+
+        $summaryResponse->assertStatus(200);
+        $summaryResponse->assertSee('35.00');
+        $summaryResponse->assertDontSee('50.00');
+
+        // 2. Check details report
+        $detailsResponse = $this->actingAs($this->user)
+            ->get(route('reports.project-allocation-summary.details', [
+                'project_id' => $project->id,
+                'allocation_id' => $allocation->id,
+                'item_id' => $this->item->id,
+            ]));
+
+        $detailsResponse->assertStatus(200);
+        $detailsResponse->assertSee('Total Sum: 35.00');
+        $detailsResponse->assertSee('-15.00');
+        $detailsResponse->assertSee('+50.00');
+
+        // 3. Check print report
+        $printResponse = $this->actingAs($this->user)
+            ->get(route('reports.project-allocation-summary.print', [
+                'project_id' => $project->id,
+            ]));
+
+        $printResponse->assertStatus(200);
+        $printResponse->assertSee('35.00');
+    }
 }
+
 

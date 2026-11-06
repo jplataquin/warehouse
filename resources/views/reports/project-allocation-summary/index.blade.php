@@ -31,11 +31,13 @@
                         </div>
                         <div class="col-md-3">
                             <label for="from_date" class="form-label fw-bold">From Date</label>
-                            <input type="date" name="from_date" id="from_date" class="form-control" value="{{ request('from_date') }}">
+                            <input type="text" class="form-control date-mask" placeholder="MM/DD/YYYY" value="{{ request('from_date') ? \Carbon\Carbon::parse(request('from_date'))->format('m/d/Y') : '' }}">
+                            <input type="hidden" name="from_date" id="from_date" value="{{ request('from_date') }}">
                         </div>
                         <div class="col-md-3">
                             <label for="to_date" class="form-label fw-bold">To Date</label>
-                            <input type="date" name="to_date" id="to_date" class="form-control" value="{{ request('to_date') }}">
+                            <input type="text" class="form-control date-mask" placeholder="MM/DD/YYYY" value="{{ request('to_date') ? \Carbon\Carbon::parse(request('to_date'))->format('m/d/Y') : '' }}">
+                            <input type="hidden" name="to_date" id="to_date" value="{{ request('to_date') }}">
                         </div>
                         <div class="col-md-2 d-flex align-items-end gap-2">
                             <button type="submit" class="btn btn-primary w-100">

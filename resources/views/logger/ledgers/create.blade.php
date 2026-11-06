@@ -145,7 +145,8 @@
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-uppercase text-muted">Entry Date</label>
-                    <input type="date" name="entries[__INDEX__][entry_date]" class="form-control shadow-sm" value="{{ date('Y-m-d') }}" max="{{ date('Y-m-d') }}" required>
+                    <input type="text" class="form-control shadow-sm date-mask" placeholder="MM/DD/YYYY" value="{{ date('m/d/Y') }}" required>
+                    <input type="hidden" name="entries[__INDEX__][entry_date]" value="{{ date('Y-m-d') }}">
                 </div>
 
                 <div class="col-md-3">
@@ -485,6 +486,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         container.appendChild(element);
 
+        if (window.initDateMasks) {
+            window.initDateMasks();
+        }
+
         // Initialize Tom Select for Destination select tag to be searchable
         const destSelect = element.querySelector('.dest-warehouse-select');
         if (destSelect && !destSelect.tomselect && typeof TomSelect !== 'undefined') {
@@ -522,7 +527,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 { value: 'INITIAL_STOCK', text: 'INITIAL STOCK' }
             ];
             if (currentItem.type === 'ASSET') {
-                options.splice(1, 0, { value: 'ASSET_RETURN', text: 'ASSET_RETURN (Asset Log-in)' });
+                options.splice(1, 0, { value: 'RETURN_ASSET', text: 'RETURN_ASSET (Asset Log-in)' });
+            }
+            if (currentItem.type === 'BULK') {
+                options.splice(1, 0, { value: 'RETURN_ALLOCATION', text: 'RETURN ALLOCATION (Return from Project)' });
             }
         } else {
             options = [
@@ -602,12 +610,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (type === 'IN') {
             // TRANSFER (IN) is now hidden from manual selection as it is handled automatically from OUT-TRANSFER
             
-            // Show allocation for BULK items on DELIVERY IN (Except for CENTRAL warehouses)
-            if (currentItem.type === 'BULK' && action === 'DELIVERY' && !isCentral) {
+            // Show allocation for BULK items on DELIVERY IN (Except for CENTRAL warehouses) or on RETURN_ALLOCATION
+            if (currentItem.type === 'BULK' && ((action === 'DELIVERY' && !isCentral) || action === 'RETURN_ALLOCATION')) {
                 outAllocate.style.display = 'block';
             }
             
-            const isAssetReturn = action === 'ASSET_RETURN';
+            const isAssetReturn = action === 'RETURN_ASSET';
             const isInitialStock = action === 'INITIAL_STOCK';
             const showReceipts = action === 'DELIVERY' || action === 'TRANSFER';
             if (showReceipts && !isInitialStock) receiptRow.style.display = 'flex';

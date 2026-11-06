@@ -75,7 +75,8 @@
                             {{-- Entry Date --}}
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Entry Date</label>
-                                <input type="date" name="entry_date" class="form-control shadow-sm" value="{{ $ledger->entry_date ? $ledger->entry_date->format('Y-m-d') : date('Y-m-d') }}" max="{{ date('Y-m-d') }}" required>
+                                <input type="text" class="form-control shadow-sm date-mask" placeholder="MM/DD/YYYY" value="{{ $ledger->entry_date ? $ledger->entry_date->format('m/d/Y') : date('m/d/Y') }}" required>
+                                <input type="hidden" name="entry_date" value="{{ $ledger->entry_date ? $ledger->entry_date->format('Y-m-d') : date('Y-m-d') }}">
                             </div>
 
                             {{-- Movement Type --}}
@@ -356,7 +357,11 @@ document.addEventListener('DOMContentLoaded', function() {
             ];
 
             if (itemType === 'ASSET') {
-                options.push({ value: 'ASSET_RETURN', text: 'ASSET RETURN (From Site/Staff)' });
+                options.push({ value: 'RETURN_ASSET', text: 'ASSET RETURN (From Site/Staff)' });
+            }
+
+            if (itemType === 'BULK') {
+                options.push({ value: 'RETURN_ALLOCATION', text: 'RETURN ALLOCATION (Return from Project)' });
             }
 
             options.push({ value: 'TRANSFER', text: 'TRANSFER (Auto-logged Receipt)' });
@@ -452,11 +457,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (assignedAsterisk) assignedAsterisk.style.display = 'none';
 
         if (type === 'IN') {
-            if (itemType === 'BULK' && action === 'DELIVERY' && !isCentral) {
+            if (itemType === 'BULK' && ((action === 'DELIVERY' && !isCentral) || action === 'RETURN_ALLOCATION')) {
                 outAllocate.style.display = 'block';
             }
 
-            const isAssetReturn = action === 'ASSET_RETURN';
+            const isAssetReturn = action === 'RETURN_ASSET';
             const isInitialStock = action === 'INITIAL_STOCK';
             const showReceipts = action === 'DELIVERY' || action === 'TRANSFER';
             if (showReceipts && !isInitialStock) receiptRow.style.display = 'flex';

@@ -61,13 +61,18 @@
             </div>
 
             <!-- Entries Card -->
+            @php
+                $totalNetQuantity = $ledgers->reduce(function ($carry, $l) {
+                    return $carry + ($l->action === 'RETURN_ALLOCATION' ? -$l->quantity : $l->quantity);
+                }, 0);
+            @endphp
             <div class="card shadow-sm">
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                     <h5 class="m-0 fw-bold text-primary">
                         <i class="bi bi-journal-text me-2"></i>Contributing Ledger Entries
                     </h5>
                     <span class="badge bg-primary fs-6 py-2 px-3">
-                        Total Sum: {{ number_format($ledgers->sum('quantity'), 2) }} {{ $item->unit }}
+                        Total Sum: {{ number_format($totalNetQuantity, 2) }} {{ $item->unit }}
                     </span>
                 </div>
                 <div class="card-body p-0">
@@ -99,10 +104,10 @@
                                                 <span class="text-secondary">{{ $ledger->warehouse->name ?? 'N/A' }}</span>
                                             </td>
                                             <td>
-                                                <span class="badge bg-light text-dark text-uppercase border">{{ $ledger->action }}</span>
+                                                <span class="badge border {{ $ledger->action === 'RETURN_ALLOCATION' ? 'border-warning text-warning' : 'border-secondary text-secondary' }} text-uppercase">{{ $ledger->action }}</span>
                                             </td>
-                                            <td class="fw-bold text-success">
-                                                {{ number_format($ledger->quantity, 2) }}
+                                            <td class="fw-bold {{ $ledger->action === 'RETURN_ALLOCATION' ? 'text-danger' : 'text-success' }}">
+                                                {{ $ledger->action === 'RETURN_ALLOCATION' ? '-' : '+' }}{{ number_format($ledger->quantity, 2) }}
                                                 <small class="text-muted fw-normal ms-1">{{ $item->unit }}</small>
                                             </td>
                                             <td>

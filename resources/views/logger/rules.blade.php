@@ -29,7 +29,7 @@
                         <th class="py-3">Type</th>
                         <th class="py-3 text-center">Bulk</th>
                         <th class="py-3 text-center">Asset</th>
-                        <th class="py-3">Usage</th>
+                        <th class="py-3">Usage & Validation Requirements</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -39,7 +39,10 @@
                         <td><span class="badge bg-success">IN</span></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td>Use this for purchased items that are going in the warehouse.</td>
+                        <td>
+                            <div>Purchased items received into warehouse stock.</div>
+                            <small class="text-muted">Requires: PO Number, Delivery Receipt, Vehicle Plate No.</small>
+                        </td>
                     </tr>
                     <!-- INITIAL_STOCK -->
                     <tr>
@@ -47,23 +50,54 @@
                         <td><span class="badge bg-success">IN</span></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td>Use this when setting inital item stock of the warehouse.</td>
+                        <td>
+                            <div>Setting opening/initial stock levels for a warehouse.</div>
+                            <small class="text-muted">Requires: Remarks explaining stock origin.</small>
+                        </td>
                     </tr>
-                    <!-- ASSET_RETURN -->
+                    <!-- RETURN_ASSET -->
                     <tr>
-                        <td><strong>ASSET_RETURN</strong></td>
+                        <td><strong>RETURN_ASSET</strong></td>
                         <td><span class="badge bg-success">IN</span></td>
                         <td class="text-center text-muted">-</td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td>Use this for Assets that are delivered back to the warehouse.</td>
+                        <td>
+                            <div>Receiving assigned/utilized equipment back into warehouse stock.</div>
+                            <small class="text-muted">Requires: Remarks. Item must have an active OUT-UTILIZE record in the warehouse.</small>
+                        </td>
                     </tr>
-                    <!-- TRANSFER -->
+                    <!-- RETURN_ALLOCATION -->
+                    <tr>
+                        <td><strong>RETURN_ALLOCATION</strong></td>
+                        <td><span class="badge bg-success">IN</span></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center text-muted">-</td>
+                        <td>
+                            <div>Returning unconsumed bulk materials from a project allocation back into warehouse stock.</div>
+                            <small class="text-muted">Requires: Target Allocation, Project. Quantity cannot exceed net allocated amount; automatically deducts from reports.</small>
+                        </td>
+                    </tr>
+                    <!-- TRANSFER (IN) -->
+                    <tr>
+                        <td><strong>TRANSFER</strong></td>
+                        <td><span class="badge bg-success">IN</span></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td>
+                            <div>Inbound arrival of items transferred from another warehouse.</div>
+                            <small class="text-muted">Auto-generated automatically whenever an OUT-TRANSFER is dispatched.</small>
+                        </td>
+                    </tr>
+                    <!-- TRANSFER (OUT) -->
                     <tr>
                         <td><strong>TRANSFER</strong></td>
                         <td><span class="badge bg-danger">OUT</span></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td>Use this if the items are transfered from one warehouse to another.</td>
+                        <td>
+                            <div>Transferring materials or equipment to another warehouse.</div>
+                            <small class="text-muted">Requires: Destination Warehouse, Vehicle Plate No.</small>
+                        </td>
                     </tr>
                     <!-- ALLOCATE -->
                     <tr>
@@ -71,7 +105,10 @@
                         <td><span class="badge bg-danger">OUT</span></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center text-muted">-</td>
-                        <td>Use this if the the item being logged out is used for a budgeted work item (Component).</td>
+                        <td>
+                            <div>Issuing bulk materials towards a budgeted project work item/component.</div>
+                            <small class="text-muted">Requires: Target Allocation. Tracked on Project Allocation Reports.</small>
+                        </td>
                     </tr>
                     <!-- UTILIZE -->
                     <tr>
@@ -79,31 +116,10 @@
                         <td><span class="badge bg-danger">OUT</span></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td>Use this if the the item being logged out is utlized, but not used for any budgeted work item (Component).</td>
-                    </tr>
-                    <!-- DISPOSE -->
-                    <tr>
-                        <td><strong>DISPOSE</strong></td>
-                        <td><span class="badge bg-danger">OUT</span></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td>Used for materials logged out as scrap or waste.</td>
-                    </tr>
-                    <!-- LOST -->
-                    <tr>
-                        <td><strong>LOST</strong></td>
-                        <td><span class="badge bg-danger">OUT</span></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td>Deducts stock levels for missing or stolen items.</td>
-                    </tr>
-                    <!-- REJECT -->
-                    <tr>
-                        <td><strong>REJECT</strong></td>
-                        <td><span class="badge bg-danger">OUT</span></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td>Used for sending/rejecting items back to supplier.</td>
+                        <td>
+                            <div>Issuing items for operational consumption or deploying assets to personnel.</div>
+                            <small class="text-muted">Requires: Remarks. If Asset, strictly requires Assigned Personnel.</small>
+                        </td>
                     </tr>
                     <!-- MAINTENANCE -->
                     <tr>
@@ -111,7 +127,57 @@
                         <td><span class="badge bg-danger">OUT</span></td>
                         <td class="text-center text-muted">-</td>
                         <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
-                        <td>Logs out items temporarily for service.</td>
+                        <td>
+                            <div>Logging out equipment temporarily for servicing, repair, or calibration.</div>
+                            <small class="text-muted">Requires: Remarks specifying maintenance details.</small>
+                        </td>
+                    </tr>
+                    <!-- DISPOSE -->
+                    <tr>
+                        <td><strong>DISPOSE</strong></td>
+                        <td><span class="badge bg-danger">OUT</span></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td>
+                            <div>Removing obsolete, expired, or condemned materials as scrap/waste.</div>
+                            <small class="text-muted">Requires: Remarks.</small>
+                        </td>
+                    </tr>
+                    <!-- LOST -->
+                    <tr>
+                        <td><strong>LOST</strong></td>
+                        <td><span class="badge bg-danger">OUT</span></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td>
+                            <div>Deducting inventory for missing, damaged, or stolen items.</div>
+                            <small class="text-muted">Requires: Remarks detailing loss incident.</small>
+                        </td>
+                    </tr>
+                    <!-- REJECT -->
+                    <tr>
+                        <td><strong>REJECT</strong></td>
+                        <td><span class="badge bg-danger">OUT</span></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td>
+                            <div>Returning defective, substandard, or rejected goods back to the supplier.</div>
+                            <small class="text-muted">Requires: Remarks, PO Number, Delivery Receipt.</small>
+                        </td>
+                    </tr>
+                    <!-- CORRECTION -->
+                    <tr>
+                        <td><strong>CORRECTION</strong></td>
+                        <td>
+                            <span class="badge bg-success">IN</span>
+                            <span class="badge bg-danger ms-1">OUT</span>
+                        </td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                        <td>
+                            <div>Manual inventory adjustment to align recorded stock with physical count.</div>
+                            <small class="text-muted">Restricted to Administrators only. Requires: Remarks.</small>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -125,6 +191,12 @@
             <ul class="mb-0 text-muted small ps-3">
                 <li class="mb-1"><strong>Asset Quantity Constraint:</strong> Asset items can only be processed **one at a time** (quantity must always be **exactly 1.00** per entry).</li>
                 <li class="mb-1"><strong>Stock Level Check:</strong> You cannot log out (`OUT`) more quantity than what is currently available in the active warehouse.</li>
+                <li class="mb-1"><strong>Return Validations:</strong>
+                    <ul>
+                        <li><code>RETURN_ASSET</code>: Can only return an asset that currently has an active <code>OUT &gt; UTILIZE</code> entry in the warehouse.</li>
+                        <li><code>RETURN_ALLOCATION</code>: Can only return bulk items up to the net quantity previously logged under <code>OUT &gt; ALLOCATE</code> for that component.</li>
+                    </ul>
+                </li>
                 <li><strong>Central vs. Site Rules:</strong> Central warehouses deal with deliveries and bulk transfers; Site warehouses can allocate bulk goods down to specific project tasks.</li>
             </ul>
         </div>

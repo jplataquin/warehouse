@@ -26,8 +26,8 @@ class ProjectAllocationSummaryController extends Controller
 
         if ($projectId) {
             $reportData = Ledger::select('allocation_id', 'item_id')
-                ->selectRaw('SUM(quantity) as total_quantity')
-                ->where('action', 'ALLOCATE')
+                ->selectRaw('SUM(CASE WHEN action = "RETURN_ALLOCATION" THEN -quantity ELSE quantity END) as total_quantity')
+                ->whereIn('action', ['ALLOCATE', 'RETURN_ALLOCATION'])
                 ->where('project_id', $projectId)
                 ->whereNotNull('allocation_id')
                 ->when($fromDate, function ($query) use ($fromDate) {
@@ -70,7 +70,7 @@ class ProjectAllocationSummaryController extends Controller
         $allocation = Allocation::findOrFail($allocationId);
         $item = Item::findOrFail($itemId);
 
-        $ledgers = Ledger::where('action', 'ALLOCATE')
+        $ledgers = Ledger::whereIn('action', ['ALLOCATE', 'RETURN_ALLOCATION'])
             ->where('project_id', $projectId)
             ->where('allocation_id', $allocationId)
             ->where('item_id', $itemId)
@@ -80,7 +80,9 @@ class ProjectAllocationSummaryController extends Controller
             ->when($toDate, function ($query) use ($toDate) {
                 return $query->whereDate('entry_date', '<=', $toDate);
             })
-            ->orderBy('entry_date', 'desc')
+            ->latest('entry_date')
+            ->latest('created_at')
+            ->latest('id')
             ->with(['warehouse', 'creator'])
             ->get();
 
@@ -110,8 +112,8 @@ class ProjectAllocationSummaryController extends Controller
         $project = Project::findOrFail($projectId);
 
         $reportData = Ledger::select('allocation_id', 'item_id')
-            ->selectRaw('SUM(quantity) as total_quantity')
-            ->where('action', 'ALLOCATE')
+            ->selectRaw('SUM(CASE WHEN action = "RETURN_ALLOCATION" THEN -quantity ELSE quantity END) as total_quantity')
+            ->whereIn('action', ['ALLOCATE', 'RETURN_ALLOCATION'])
             ->where('project_id', $projectId)
             ->whereNotNull('allocation_id')
             ->when($fromDate, function ($query) use ($fromDate) {

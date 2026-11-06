@@ -35,9 +35,9 @@ class LedgerService
 
             $this->validateRules($item, $data);
 
-            // Fetch last utilize record for ASSET_RETURN linking
+            // Fetch last utilize record for RETURN_ASSET linking
             $lastUtilize = null;
-            if ($item->type === 'ASSET' && $data['type'] === 'IN' && $data['action'] === 'ASSET_RETURN') {
+            if ($item->type === 'ASSET' && $data['type'] === 'IN' && $data['action'] === 'RETURN_ASSET') {
                 $lastUtilize = Ledger::where('item_id', $item->id)
                     ->where('warehouse_id', $data['warehouse_id'])
                     ->orderBy('id', 'desc')
@@ -62,8 +62,8 @@ class LedgerService
                     'current_warehouse_id' => $data['type'] === 'IN' ? $data['warehouse_id'] : null,
                 ]);
 
-                // Automatically track utilization when logging OUT with UTILIZE or returning IN with ASSET_RETURN
-                if ($data['action'] === 'UTILIZE' || $data['action'] === 'ASSET_RETURN') {
+                // Automatically track utilization when logging OUT with UTILIZE or returning IN with RETURN_ASSET
+                if ($data['action'] === 'UTILIZE' || $data['action'] === 'RETURN_ASSET') {
                     if ($data['action'] === 'UTILIZE') {
                         $item->update(['is_asset_utilized' => true]);
                     } else {
@@ -183,8 +183,8 @@ class LedgerService
                     'current_warehouse_id' => $data['type'] === 'IN' ? $data['warehouse_id'] : null,
                 ]);
 
-                // Automatically track utilization when logging OUT with UTILIZE or returning IN with ASSET_RETURN
-                if ($data['action'] === 'UTILIZE' || $data['action'] === 'ASSET_RETURN') {
+                // Automatically track utilization when logging OUT with UTILIZE or returning IN with RETURN_ASSET
+                if ($data['action'] === 'UTILIZE' || $data['action'] === 'RETURN_ASSET') {
                     if ($data['action'] === 'UTILIZE') {
                         $newItem->update(['is_asset_utilized' => true]);
                     } else {
@@ -207,7 +207,7 @@ class LedgerService
                         ]);
                     }
                 } else {
-                    // If action is no longer UTILIZE or ASSET_RETURN, remove any existing utilization record
+                    // If action is no longer UTILIZE or RETURN_ASSET, remove any existing utilization record
                     AssetUtilization::where('ledger_id', $ledger->id)->delete();
                 }
             }
@@ -301,8 +301,8 @@ class LedgerService
             }
         }
 
-        // Rule: ASSET_RETURN is for logging asset items back in
-        if ($action === 'ASSET_RETURN') {
+        // Rule: RETURN_ASSET is for logging asset items back in
+        if ($action === 'RETURN_ASSET') {
             if ($item->type !== 'ASSET') {
                 throw new Exception('Asset Return action can only be performed on ASSET items.');
             }
@@ -338,6 +338,40 @@ class LedgerService
             }
             if (empty($data['allocation_id'])) {
                 throw new Exception('Allocate action requires an allocation ID.');
+            }
+        }
+
+        // Rule: RETURN_ALLOCATION is for returning previously allocated BULK items back into warehouse
+        if ($action === 'RETURN_ALLOCATION') {
+            if ($item->type !== 'BULK') {
+                throw new Exception('Return Allocation action can only be performed on BULK items.');
+            }
+            if ($type !== 'IN') {
+                throw new Exception('Return Allocation action must be of type IN.');
+            }
+            if (empty($data['allocation_id'])) {
+                throw new Exception('Return Allocation action requires an allocation ID.');
+            }
+            if (empty($data['project_id'])) {
+                throw new Exception('Return Allocation action requires a project ID.');
+            }
+
+            $totalAllocated = Ledger::where('item_id', $item->id)
+                ->where('project_id', $data['project_id'])
+                ->where('allocation_id', $data['allocation_id'])
+                ->where('action', 'ALLOCATE')
+                ->sum('quantity');
+
+            $totalReturned = Ledger::where('item_id', $item->id)
+                ->where('project_id', $data['project_id'])
+                ->where('allocation_id', $data['allocation_id'])
+                ->where('action', 'RETURN_ALLOCATION')
+                ->sum('quantity');
+
+            $availableToReturn = (float) $totalAllocated - (float) $totalReturned;
+
+            if ((float) $data['quantity'] > $availableToReturn) {
+                throw new Exception("Cannot return more than the net allocated quantity. Total Allocated: {$totalAllocated}, Already Returned: {$totalReturned}, Available to Return: {$availableToReturn}.");
             }
         }
 
