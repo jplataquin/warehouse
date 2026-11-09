@@ -65,6 +65,17 @@
                                         @endif
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {{ request()->routeIs('ledgers.disposals') ? 'active fw-bold' : '' }} d-flex align-items-center gap-1" href="{{ route('ledgers.disposals') }}">
+                                        Disposals
+                                        @php
+                                            $pendingDisposalsCount = \App\Models\Ledger::where('action', 'DISPOSE')->where('status', 'PENDING')->count();
+                                        @endphp
+                                        @if($pendingDisposalsCount > 0)
+                                            <span class="badge bg-danger rounded-pill" style="font-size: 0.75rem; padding: 0.25em 0.5em;">{{ $pendingDisposalsCount }}</span>
+                                        @endif
+                                    </a>
+                                </li>
                             @endif
                             @if(Auth::user()->isAdmin() || Auth::user()->isSupervisor())
                                 <li class="nav-item">

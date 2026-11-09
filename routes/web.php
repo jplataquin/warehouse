@@ -146,6 +146,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('mcp-tokens', McpTokenController::class)->only(['index', 'store', 'destroy']);
         Route::resource('item-types', ItemTypeController::class);
         Route::get('settings', [AdminSettingsController::class, 'index'])->name('admin.settings');
+        Route::get('disposals', [LedgerController::class, 'pendingDisposals'])->name('ledgers.disposals');
         Route::post('ledgers/{ledger}/approve', [LedgerController::class, 'approve'])->name('ledgers.approve');
         Route::get('items/{item}/merge/search', [ItemController::class, 'searchMergeTargets'])->name('items.merge.search');
         Route::get('items/{item}/merge', [ItemController::class, 'mergeForm'])->name('items.merge.form');

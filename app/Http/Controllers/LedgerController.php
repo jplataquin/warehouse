@@ -564,6 +564,19 @@ class LedgerController extends Controller
         }
     }
 
+    public function pendingDisposals()
+    {
+        $disposals = Ledger::with(['item', 'warehouse', 'creator'])
+            ->where('action', 'DISPOSE')
+            ->where('status', 'PENDING')
+            ->latest('entry_date')
+            ->latest('created_at')
+            ->latest('id')
+            ->paginate(15);
+
+        return view('admin.ledgers.disposals', compact('disposals'));
+    }
+
     public function approve(Ledger $ledger)
     {
         $ledger->update([
@@ -593,7 +606,13 @@ class LedgerController extends Controller
                 $item = \App\Models\Item::lockForUpdate()->findOrFail($ledger->item_id);
 
                 if ($item->type === 'ASSET') {
-                    throw new \Exception("Cannot delete ledger entries for ASSET items. Please use a CORRECTION entry instead.");
+                    if (! ($ledger->action === 'DISPOSE' && $ledger->status === 'PENDING')) {
+                        throw new \Exception("Cannot delete ledger entries for ASSET items. Please use a CORRECTION entry instead.");
+                    }
+
+                    if ($ledger->type === 'OUT') {
+                        $item->update(['current_warehouse_id' => $ledger->warehouse_id]);
+                    }
                 }
 
                 $ledger->update([
@@ -608,6 +627,10 @@ class LedgerController extends Controller
                     throw new \Exception("Cannot delete this entry because it would result in a negative stock balance for '{$item->name}'.");
                 }
             });
+
+            if ($request->filled('redirect_to')) {
+                return redirect($request->input('redirect_to'))->with('success', 'Ledger entry soft deleted successfully.');
+            }
 
             return redirect()->route('ledgers.item_history', ['warehouse' => $ledger->warehouse_id, 'item' => $ledger->item_id])
                 ->with('success', 'Ledger entry soft deleted successfully.');

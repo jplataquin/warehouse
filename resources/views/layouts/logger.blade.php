@@ -83,6 +83,17 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('ledgers.disposals') ? 'active fw-bold' : 'text-white-50' }} small fw-bold text-uppercase p-2 d-flex align-items-center gap-1" href="{{ route('ledgers.disposals') }}">
+                            Disposals
+                            @php
+                                $pendingDisposalsCount = \App\Models\Ledger::where('action', 'DISPOSE')->where('status', 'PENDING')->count();
+                            @endphp
+                            @if($pendingDisposalsCount > 0)
+                                <span class="badge bg-danger rounded-pill" style="font-size: 0.7rem; padding: 0.25em 0.5em;">{{ $pendingDisposalsCount }}</span>
+                            @endif
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link text-white-50 small fw-bold text-uppercase p-2" href="{{ route('items.assets') }}">Assets</a>
                     </li>
                     <li class="nav-item">
