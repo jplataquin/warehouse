@@ -168,4 +168,52 @@ class PendingDisposalsTest extends TestCase
         $item->refresh();
         $this->assertEquals($warehouse->id, $item->current_warehouse_id);
     }
+
+    public function test_admin_can_approve_disposal_for_asset_item_updates_status_to_disposed_and_removes_from_asset_list()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main Warehouse', 'status' => 'ACTIVE']);
+        $asset = Item::create([
+            'type' => 'ASSET',
+            'name' => 'Old Generator',
+            'unit' => 'Units',
+            'status' => 'Operational',
+            'current_warehouse_id' => null,
+        ]);
+
+        $disposal = Ledger::create([
+            'entry_date' => now()->format('Y-m-d'),
+            'type' => 'OUT',
+            'action' => 'DISPOSE',
+            'item_id' => $asset->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'PENDING',
+            'remarks' => 'Scrapped due to age',
+        ]);
+
+        // Prior to approval, asset is visible in the asset list
+        $response = $this->actingAs($admin)->get(route('items.assets'));
+        $response->assertStatus(200);
+        $response->assertSee('Old Generator');
+
+        // Admin approves the disposal
+        $response = $this->actingAs($admin)->post(route('ledgers.approve', $disposal));
+        $response->assertRedirect();
+
+        // Ledger status becomes APPROVED
+        $this->assertDatabaseHas('ledgers', [
+            'id' => $disposal->id,
+            'status' => 'APPROVED',
+        ]);
+
+        // Asset item's status becomes 'Disposed'
+        $asset->refresh();
+        $this->assertEquals('Disposed', $asset->status);
+
+        // Asset should not appear in asset list anymore
+        $response = $this->actingAs($admin)->get(route('items.assets'));
+        $response->assertStatus(200);
+        $response->assertDontSee('Old Generator');
+    }
 }

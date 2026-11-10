@@ -83,7 +83,12 @@ class ItemController extends Controller
     {
         $query = Item::whereHas('itemType', function ($q) {
             $q->where('base_behavior', 'ASSET');
-        })->with(['currentWarehouse', 'latestUtilizeLedger']);
+        })
+        ->where('status', '!=', 'Disposed')
+        ->whereDoesntHave('ledgers', function ($q) {
+            $q->where('action', 'DISPOSE')->where('status', 'APPROVED');
+        })
+        ->with(['currentWarehouse', 'latestUtilizeLedger']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -196,7 +201,7 @@ class ItemController extends Controller
             'name' => 'required|string|max:255',
             'specification' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
-            'status' => 'nullable|in:Operational,Out of Order',
+            'status' => 'nullable|in:Operational,Out of Order,Disposed',
             'photo_file' => 'nullable|image|mimes:jpeg,jpg,png|max:5120',
             'temp_photo_file' => 'nullable|string',
         ]);
@@ -249,7 +254,7 @@ class ItemController extends Controller
     public function updateStatus(Request $request, Item $item)
     {
         $validated = $request->validate([
-            'status' => 'required|in:Operational,Out of Order',
+            'status' => 'required|in:Operational,Out of Order,Disposed',
         ]);
 
         $item->update(['status' => $validated['status']]);

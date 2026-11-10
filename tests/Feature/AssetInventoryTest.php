@@ -306,4 +306,28 @@ class AssetInventoryTest extends TestCase
         $response->assertDontSee('Heavy Crane');
         $response->assertSee('Sledge Hammer');
     }
+
+    public function test_disposed_asset_does_not_appear_in_asset_inventory()
+    {
+        $operationalAsset = Item::create([
+            'name' => 'Active Forklift',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'status' => 'Operational',
+        ]);
+
+        $disposedAsset = Item::create([
+            'name' => 'Decommissioned Crane',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'status' => 'Disposed',
+        ]);
+
+        $response = $this->actingAs($this->supervisor)
+            ->get(route('items.assets'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Active Forklift');
+        $response->assertDontSee('Decommissioned Crane');
+    }
 }

@@ -42,6 +42,7 @@
                     <select name="status" class="form-select">
                         <option value="Operational" {{ $item->status === 'Operational' ? 'selected' : '' }}>Operational</option>
                         <option value="Out of Order" {{ $item->status === 'Out of Order' ? 'selected' : '' }}>Out of Order</option>
+                        <option value="Disposed" {{ $item->status === 'Disposed' ? 'selected' : '' }}>Disposed</option>
                     </select>
                 </div>
                 <div class="mb-3">

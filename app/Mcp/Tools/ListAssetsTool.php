@@ -93,6 +93,11 @@ class ListAssetsTool extends Tool
 
         if ($request->filled('status')) {
             $query->where('status', $request->get('status'));
+        } else {
+            $query->where('status', '!=', 'Disposed')
+                ->whereDoesntHave('ledgers', function ($q) {
+                    $q->where('action', 'DISPOSE')->where('status', 'APPROVED');
+                });
         }
 
         $assets = $query->get();

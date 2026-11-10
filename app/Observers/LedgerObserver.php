@@ -19,6 +19,16 @@ class LedgerObserver
      */
     public function saved(Ledger $ledger): void
     {
+        if ($ledger->action === 'DISPOSE' && $ledger->status === 'APPROVED' && $ledger->item_id) {
+            $item = $ledger->item ?: \App\Models\Item::find($ledger->item_id);
+            if ($item && $item->type === 'ASSET' && $item->status !== 'Disposed') {
+                $item->update([
+                    'status' => 'Disposed',
+                    'is_asset_utilized' => false,
+                ]);
+            }
+        }
+
         if ($ledger->warehouse_id && $ledger->item_id) {
             $this->diagnosticService->checkAndLog((int) $ledger->warehouse_id, (int) $ledger->item_id);
         }

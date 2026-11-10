@@ -579,10 +579,22 @@ class LedgerController extends Controller
 
     public function approve(Ledger $ledger)
     {
-        $ledger->update([
-            'status' => 'APPROVED',
-            'updated_by' => auth()->id(),
-        ]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($ledger) {
+            $ledger->update([
+                'status' => 'APPROVED',
+                'updated_by' => auth()->id(),
+            ]);
+
+            if ($ledger->action === 'DISPOSE') {
+                $item = $ledger->item ?: \App\Models\Item::find($ledger->item_id);
+                if ($item && $item->type === 'ASSET') {
+                    $item->update([
+                        'status' => 'Disposed',
+                        'is_asset_utilized' => false,
+                    ]);
+                }
+            }
+        });
 
         return back()->with('success', 'Ledger entry approved.');
     }

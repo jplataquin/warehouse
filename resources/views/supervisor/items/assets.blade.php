@@ -86,6 +86,8 @@
                             <label class="small text-muted text-uppercase fw-bold d-block mb-1">Status</label>
                             @if($asset->status === 'Out of Order')
                                 <span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i> Out of Order</span>
+                            @elseif($asset->status === 'Disposed')
+                                <span class="badge bg-secondary"><i class="bi bi-trash3-fill me-1"></i> Disposed</span>
                             @else
                                 <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i> Operational</span>
                             @endif
