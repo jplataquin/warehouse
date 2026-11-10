@@ -51,6 +51,7 @@
                             <th scope="col">Item</th>
                             <th scope="col">Type</th>
                             <th scope="col">Warehouse</th>
+                            <th scope="col">Entry ID</th>
                             <th scope="col" class="text-end">Quantity</th>
                             <th scope="col">Remarks / Reason</th>
                             <th scope="col">Requested By</th>
@@ -80,6 +81,11 @@
                                 </td>
                                 <td>
                                     {{ $disposal->warehouse ? $disposal->warehouse->name : 'N/A' }}
+                                </td>
+                                <td>
+                                    <a href="{{ route('ledgers.show', $disposal) }}" class="fw-bold text-decoration-none">
+                                        #{{ $disposal->id }}
+                                    </a>
                                 </td>
                                 <td class="text-end fw-bold">
                                     {{ number_format($disposal->quantity, 2) }} {{ $disposal->item ? $disposal->item->unit : '' }}
@@ -143,7 +149,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-5 text-muted">
+                                <td colspan="9" class="text-center py-5 text-muted">
                                     <i class="bi bi-check2-circle fs-1 text-success d-block mb-2"></i>
                                     No pending item disposals found.
                                 </td>

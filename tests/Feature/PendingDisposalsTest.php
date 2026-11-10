@@ -68,6 +68,9 @@ class PendingDisposalsTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Damaged gravel bags');
         $response->assertDontSee('Already approved disposal');
+        $response->assertSeeInOrder(['Warehouse', 'Entry ID', 'Quantity']);
+        $response->assertSeeInOrder([$warehouse->name, '#' . $pendingDisposal->id, '5.00']);
+        $response->assertSee(route('ledgers.show', $pendingDisposal));
     }
 
     public function test_admin_can_approve_disposal()
