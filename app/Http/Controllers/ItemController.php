@@ -88,7 +88,7 @@ class ItemController extends Controller
         ->whereDoesntHave('ledgers', function ($q) {
             $q->where('action', 'DISPOSE')->where('status', 'APPROVED');
         })
-        ->with(['currentWarehouse', 'latestUtilizeLedger']);
+        ->with(['currentWarehouse', 'latestUtilizeLedger', 'latestLedger']);
 
         if ($request->filled('search')) {
             $search = $request->search;

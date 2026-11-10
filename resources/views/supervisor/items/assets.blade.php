@@ -132,8 +132,11 @@
                             <span class="badge bg-info-subtle text-info border border-info-subtle">
                                 {{ $asset->unit }}
                             </span>
-                            @if($asset->currentWarehouse)
-                                <a href="{{ route('ledgers.item_history', ['warehouse' => $asset->current_warehouse_id, 'item' => $asset->id]) }}" class="btn btn-sm btn-link text-decoration-none p-0">
+                            @php
+                                $historyWarehouseId = $asset->history_warehouse_id ?? ($warehouses->first()?->id ?? null);
+                            @endphp
+                            @if($historyWarehouseId)
+                                <a href="{{ route('ledgers.item_history', ['warehouse' => $historyWarehouseId, 'item' => $asset->id]) }}" class="btn btn-sm btn-link text-decoration-none p-0">
                                     View History <i class="bi bi-arrow-right small"></i>
                                 </a>
                             @endif

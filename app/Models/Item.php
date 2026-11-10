@@ -74,6 +74,21 @@ class Item extends Model
             ->latest('id');
     }
 
+    public function latestLedger()
+    {
+        return $this->hasOne(Ledger::class)
+            ->latest('entry_date')
+            ->latest('created_at')
+            ->latest('id');
+    }
+
+    public function getHistoryWarehouseIdAttribute()
+    {
+        return $this->current_warehouse_id
+            ?? $this->latestLedger?->warehouse_id
+            ?? $this->latestUtilizeLedger?->warehouse_id;
+    }
+
     public function getBalance($warehouseId = null)
     {
         $query = $this->ledgers();

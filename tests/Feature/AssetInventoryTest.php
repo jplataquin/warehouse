@@ -330,4 +330,68 @@ class AssetInventoryTest extends TestCase
         $response->assertSee('Active Forklift');
         $response->assertDontSee('Decommissioned Crane');
     }
+
+    public function test_view_history_is_available_when_asset_is_not_in_storage()
+    {
+        $warehouse = Warehouse::create([
+            'name' => 'Logistics Depot',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+
+        $asset = Item::create([
+            'name' => 'Field Generator',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'status' => 'Operational',
+            'current_warehouse_id' => null,
+        ]);
+
+        // Prior utilize ledger in Logistics Depot
+        Ledger::create([
+            'entry_date' => now()->format('Y-m-d'),
+            'type' => 'OUT',
+            'action' => 'UTILIZE',
+            'item_id' => $asset->id,
+            'quantity' => 1,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'APPROVED',
+            'assigned_to' => 'Field Crew Alpha',
+        ]);
+
+        $response = $this->actingAs($this->supervisor)
+            ->get(route('items.assets'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Field Generator');
+        $response->assertSee('Not in storage');
+        $response->assertSee('View History');
+        $response->assertSee(route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $asset->id]));
+    }
+
+    public function test_view_history_is_available_for_new_asset_without_prior_movements()
+    {
+        $warehouse = Warehouse::create([
+            'name' => 'Central Hub',
+            'type' => 'CENTRAL',
+            'status' => 'ACTIVE',
+        ]);
+
+        $asset = Item::create([
+            'name' => 'Unassigned Drone',
+            'type' => 'ASSET',
+            'unit' => 'UNIT',
+            'status' => 'Operational',
+            'current_warehouse_id' => null,
+        ]);
+
+        $response = $this->actingAs($this->supervisor)
+            ->get(route('items.assets'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Unassigned Drone');
+        $response->assertSee('Not in storage');
+        $response->assertSee('View History');
+        $response->assertSee(route('ledgers.item_history', ['warehouse' => $warehouse->id, 'item' => $asset->id]));
+    }
 }
