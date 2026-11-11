@@ -102,4 +102,58 @@ class Item extends Model
 
         return $in - $out;
     }
+
+    public function validateChronologicalBalance($warehouseId, $affectedDate = null)
+    {
+        $baseQuery = $this->ledgers()->where('warehouse_id', $warehouseId);
+
+        $startingBalance = 0.0;
+
+        if ($affectedDate) {
+            $dateStr = $affectedDate instanceof \Carbon\CarbonInterface
+                ? $affectedDate->toDateString()
+                : (string) $affectedDate;
+
+            if (strlen($dateStr) > 10) {
+                $dateStr = substr($dateStr, 0, 10);
+            }
+
+            $priorQuery = (clone $baseQuery)->where(function ($q) use ($dateStr) {
+                $q->where('entry_date', '<', $dateStr)
+                  ->orWhereNull('entry_date');
+            });
+            $in = (clone $priorQuery)->where('type', 'IN')->sum('quantity');
+            $out = (clone $priorQuery)->where('type', 'OUT')->sum('quantity');
+            $startingBalance = (float) ($in - $out);
+
+            $entriesQuery = (clone $baseQuery)->where('entry_date', '>=', $dateStr);
+        } else {
+            $entriesQuery = clone $baseQuery;
+        }
+
+        $ledgers = $entriesQuery
+            ->orderBy('entry_date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->get(['id', 'entry_date', 'type', 'quantity']);
+
+        $running = $startingBalance;
+
+        foreach ($ledgers as $ledger) {
+            if ($ledger->type === 'IN') {
+                $running += (float) $ledger->quantity;
+            } else {
+                $running -= (float) $ledger->quantity;
+            }
+
+            if (round($running, 4) < 0) {
+                $formattedDate = $ledger->entry_date
+                    ? ($ledger->entry_date instanceof \Carbon\CarbonInterface
+                        ? $ledger->entry_date->format('Y-m-d')
+                        : substr((string) $ledger->entry_date, 0, 10))
+                    : 'N/A';
+                throw new \Exception("Transaction would cause a negative historical balance of {$running} on {$formattedDate} (Ledger ID: {$ledger->id}) for '{$this->name}'.");
+            }
+        }
+    }
 }

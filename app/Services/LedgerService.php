@@ -104,9 +104,7 @@ class LedgerService
             }
 
             // Post-operation balance check to prevent negative stock
-            if ($item->getBalance($entry->warehouse_id) < 0) {
-                throw new Exception("Transaction would result in a negative stock balance for '{$item->name}'.");
-            }
+            $item->validateChronologicalBalance($entry->warehouse_id, $entry->entry_date);
 
             return $entry;
         });
@@ -121,6 +119,7 @@ class LedgerService
             $originalItemId = $ledger->item_id;
             $newItemId = $data['item_id'] ?? $originalItemId;
             $originalWarehouseId = $ledger->warehouse_id;
+            $originalDate = $ledger->entry_date;
 
             $originalItem = Item::lockForUpdate()->findOrFail($originalItemId);
             $newItem = ($originalItemId == $newItemId) ? $originalItem : Item::lockForUpdate()->findOrFail($newItemId);
@@ -212,16 +211,17 @@ class LedgerService
                 }
             }
 
-            // Post-operation balance check to prevent negative stock (bypassed for Admins)
+            // Post-operation balance check to prevent negative stock (strictly enforced for everyone)
             $newWarehouseId = $ledger->warehouse_id;
-            if ($newItem->getBalance($newWarehouseId) < 0 && (! auth()->user() || ! auth()->user()->isAdmin())) {
-                throw new Exception("Transaction would result in a negative stock balance for '{$newItem->name}'.");
-            }
+            $newDate = $ledger->entry_date;
+            $earliestDate = ($originalDate && $newDate)
+                ? ($originalDate < $newDate ? $originalDate : $newDate)
+                : ($originalDate ?: $newDate);
+
+            $newItem->validateChronologicalBalance($newWarehouseId, $earliestDate);
 
             if ($originalItemId != $newItemId || $originalWarehouseId != $newWarehouseId) {
-                if ($originalItem->getBalance($originalWarehouseId) < 0 && (! auth()->user() || ! auth()->user()->isAdmin())) {
-                    throw new Exception("Transaction would result in a negative stock balance for '{$originalItem->name}' in the original warehouse.");
-                }
+                $originalItem->validateChronologicalBalance($originalWarehouseId, $originalDate);
             }
 
             return $ledger;

@@ -634,10 +634,8 @@ class LedgerController extends Controller
 
                 $ledger->delete();
 
-                // Check post-deletion balance (bypassed for Admins)
-                if (! auth()->user()->isAdmin() && $item->getBalance($ledger->warehouse_id) < 0) {
-                    throw new \Exception("Cannot delete this entry because it would result in a negative stock balance for '{$item->name}'.");
-                }
+                // Check post-deletion balance (strictly enforced for everyone)
+                $item->validateChronologicalBalance($ledger->warehouse_id, $ledger->entry_date);
             });
 
             if ($request->filled('redirect_to')) {
@@ -680,10 +678,8 @@ class LedgerController extends Controller
 
                     $ledger->delete();
 
-                    // Check post-deletion balance (bypassed for Admins)
-                    if (! auth()->user()->isAdmin() && $item->getBalance($ledger->warehouse_id) < 0) {
-                        throw new \Exception("Cannot delete entry #{$ledger->id} because it would result in a negative stock balance for '{$item->name}'.");
-                    }
+                    // Check post-deletion balance (strictly enforced for everyone)
+                    $item->validateChronologicalBalance($ledger->warehouse_id, $ledger->entry_date);
                 }
             });
 

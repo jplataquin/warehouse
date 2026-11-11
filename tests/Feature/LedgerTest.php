@@ -840,7 +840,7 @@ class LedgerTest extends TestCase
         $this->assertEquals($admin->id, $ledger->fresh()->updated_by);
     }
 
-    public function test_admin_update_bypasses_stock_limits_validation()
+    public function test_admin_cannot_update_out_movement_if_it_causes_negative_stock()
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $item = Item::create(['type' => 'BULK', 'name' => 'Cement', 'unit' => 'Bags']);
@@ -879,8 +879,8 @@ class LedgerTest extends TestCase
             'remarks' => 'Utilize more than stock',
         ]);
 
-        $response->assertSessionHas('success');
-        $this->assertEquals(15, $ledger2->fresh()->quantity); // Quantity should be changed
+        $response->assertSessionHas('error');
+        $this->assertEquals(8, $ledger2->fresh()->quantity); // Quantity should NOT be changed
     }
 
     public function test_logger_can_access_item_history_print_page()
@@ -1014,7 +1014,7 @@ class LedgerTest extends TestCase
         $this->assertNull($ledger->fresh()->deleted_at);
     }
 
-    public function test_admin_can_update_ledger_entry_even_if_it_results_in_negative_stock()
+    public function test_admin_cannot_update_ledger_entry_if_it_results_in_negative_stock()
     {
         $this->withMiddleware();
 
@@ -1055,11 +1055,11 @@ class LedgerTest extends TestCase
             'remarks' => 'Reduced Initial',
         ]);
 
-        $response->assertSessionHas('success');
-        $this->assertEquals(5, $ledgerIn->fresh()->quantity); // Assert quantity is changed
+        $response->assertSessionHas('error');
+        $this->assertEquals(10, $ledgerIn->fresh()->quantity); // Assert quantity is NOT changed
     }
 
-    public function test_admin_can_delete_ledger_entry_even_if_it_results_in_negative_stock()
+    public function test_admin_cannot_delete_ledger_entry_if_it_results_in_negative_stock()
     {
         $this->withMiddleware();
 
@@ -1094,8 +1094,8 @@ class LedgerTest extends TestCase
             'delete_reason' => 'Deleting initial stock to break balance',
         ]);
 
-        $response->assertSessionHas('success');
-        $this->assertNotNull($ledgerIn->fresh()->deleted_at); // Assert it IS deleted
+        $response->assertSessionHas('error');
+        $this->assertNull($ledgerIn->fresh()->deleted_at); // Assert it was NOT deleted
     }
 
     public function test_admin_can_bulk_delete_ledger_entries()
@@ -1991,5 +1991,149 @@ class LedgerTest extends TestCase
             ->sum('quantity');
 
         $this->assertEquals(100, $allocatedCement);
+    }
+
+    public function test_backdated_out_action_causing_negative_historical_running_balance_is_blocked_even_if_overall_balance_is_positive()
+    {
+        $logger = User::factory()->create(['role' => 'logger']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Reinforced Steel', 'unit' => 'Bags']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        $project = Project::create(['name' => 'Project A']);
+        $allocation = Allocation::create(['name' => 'Alloc A', 'warehouse_id' => $warehouse->id, 'project_id' => $project->id]);
+
+        // Jan 10: IN 50
+        Ledger::create([
+            'entry_date' => '2026-01-10',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 50,
+            'warehouse_id' => $warehouse->id,
+            'po_number' => 'PO-1',
+            'delivery_receipt' => 'DR-1',
+            'plate_no' => 'ABC-123',
+            'status' => 'APPROVED',
+        ]);
+
+        // Jan 20: OUT 30 (Running balance = 20)
+        Ledger::create([
+            'entry_date' => '2026-01-20',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item->id,
+            'quantity' => 30,
+            'warehouse_id' => $warehouse->id,
+            'allocation_id' => $allocation->id,
+            'project_id' => $project->id,
+            'status' => 'APPROVED',
+        ]);
+
+        // Jan 25: IN 50 (Overall balance = 70)
+        Ledger::create([
+            'entry_date' => '2026-01-25',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 50,
+            'warehouse_id' => $warehouse->id,
+            'po_number' => 'PO-2',
+            'delivery_receipt' => 'DR-2',
+            'plate_no' => 'DEF-456',
+            'status' => 'APPROVED',
+        ]);
+
+        // Logger tries to log a backdated OUT of 40 on Jan 15.
+        // Balance on Jan 15: 50 - 40 = 10.
+        // But on Jan 20: 10 - 30 = -20 (Negative historical running balance!),
+        // even though overall final balance would be positive (50 - 40 - 30 + 50 = +30).
+        $response = $this->actingAs($logger)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => '2026-01-15',
+                    'type' => 'OUT',
+                    'action' => 'ALLOCATE',
+                    'item_id' => $item->id,
+                    'quantity' => 40,
+                    'warehouse_id' => $warehouse->id,
+                    'allocation_id' => $allocation->id,
+                    'project_id' => $project->id,
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHas('error');
+        $this->assertStringContainsString('negative historical balance', session('error'));
+        // Assert entry was not created
+        $this->assertEquals(3, Ledger::where('item_id', $item->id)->count());
+    }
+
+    public function test_admin_cannot_insert_backdated_out_causing_negative_historical_running_balance()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $item = Item::create(['type' => 'BULK', 'name' => 'Copper Pipes', 'unit' => 'Pcs']);
+        $warehouse = Warehouse::create(['type' => 'CENTRAL', 'name' => 'Main', 'status' => 'ACTIVE']);
+        $project = Project::create(['name' => 'Project B']);
+        $allocation = Allocation::create(['name' => 'Alloc B', 'warehouse_id' => $warehouse->id, 'project_id' => $project->id]);
+
+        // Jan 10: IN 50
+        Ledger::create([
+            'entry_date' => '2026-01-10',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 50,
+            'warehouse_id' => $warehouse->id,
+            'po_number' => 'PO-1',
+            'delivery_receipt' => 'DR-1',
+            'plate_no' => 'ABC-123',
+            'status' => 'APPROVED',
+        ]);
+
+        // Jan 20: OUT 30 (Running balance = 20)
+        Ledger::create([
+            'entry_date' => '2026-01-20',
+            'type' => 'OUT',
+            'action' => 'ALLOCATE',
+            'item_id' => $item->id,
+            'quantity' => 30,
+            'warehouse_id' => $warehouse->id,
+            'allocation_id' => $allocation->id,
+            'project_id' => $project->id,
+            'status' => 'APPROVED',
+        ]);
+
+        // Jan 25: IN 50 (Overall balance = 70)
+        Ledger::create([
+            'entry_date' => '2026-01-25',
+            'type' => 'IN',
+            'action' => 'DELIVERY',
+            'item_id' => $item->id,
+            'quantity' => 50,
+            'warehouse_id' => $warehouse->id,
+            'po_number' => 'PO-2',
+            'delivery_receipt' => 'DR-2',
+            'plate_no' => 'DEF-456',
+            'status' => 'APPROVED',
+        ]);
+
+        // Admin also cannot cause negative running balance
+        $response = $this->actingAs($admin)->post('/ledgers', [
+            'entries' => [
+                [
+                    'entry_date' => '2026-01-15',
+                    'type' => 'OUT',
+                    'action' => 'ALLOCATE',
+                    'item_id' => $item->id,
+                    'quantity' => 40,
+                    'warehouse_id' => $warehouse->id,
+                    'allocation_id' => $allocation->id,
+                    'project_id' => $project->id,
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHas('error');
+        $this->assertStringContainsString('negative historical balance', session('error'));
+        $this->assertEquals(3, Ledger::where('item_id', $item->id)->count());
     }
 }
